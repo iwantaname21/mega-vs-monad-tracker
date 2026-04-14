@@ -970,18 +970,20 @@ function wireScopeToggles() {
   });
 }
 
-// Per-protocol logo lookup.
-// Priority: local /public/logos/<slug>.png → official logo URL from the API → DeFiLlama's CDN by slug.
+// Per-protocol logo lookup. Returns an ordered list of URLs to try.
+// Priority: API-provided logo → local slug → local normalized name → DeFiLlama CDN.
 function logoFor(proto) {
   const name = typeof proto === 'string' ? proto : proto?.name;
-  const slug = normName(name);
-  const apiLogo = typeof proto === 'object' ? (proto.logo || null) : null;
-  const apiSlug = typeof proto === 'object' ? (proto.slug || proto.defillamaId || slug) : slug;
-  return {
-    local: `public/logos/${slug}.png`,
-    api: apiLogo,
-    remote: `https://icons.llamao.fi/icons/protocols/${apiSlug}?w=48&h=48`,
-  };
+  const normSlug  = normName(name);
+  const apiLogo   = typeof proto === 'object' ? (proto.logo || null) : null;
+  const apiSlug   = typeof proto === 'object' ? (proto.slug || proto.defillamaId || null) : null;
+  const candidates = [];
+  if (apiLogo) candidates.push(apiLogo);
+  if (apiSlug) candidates.push(`public/logos/${apiSlug}.png`);
+  candidates.push(`public/logos/${normSlug}.png`);
+  const remoteSlug = apiSlug || normSlug;
+  candidates.push(`https://icons.llamao.fi/icons/protocols/${remoteSlug}?w=48&h=48`);
+  return candidates;
 }
 
 // ---------- formatters ----------
@@ -1720,6 +1722,7 @@ async function loadAll() {
       .filter(p => p.volume24h != null)
       .map(p => ({
         name: p.name,
+        slug: p.slug,              // keep DefiLlama slug so logoFor can use it
         total24h: p.volume24h,
         total7d: p.volume7d,
         total30d: p.volume30d,
@@ -2187,15 +2190,15 @@ function renderProtocols(d) {
       .sort((a, b) => b.val - a.val);
   };
 
+  // Walk through each candidate URL on successive onerror events; only hide
+  // the <img> once every candidate has failed.
   const renderLogo = (proto) => {
-    const l = logoFor(proto);
-    const first = l.api || l.local;
-    const second = l.api ? l.local : l.remote;
-    const third = l.api ? l.remote : null;
-    const onError = third
-      ? `this.onerror=function(){this.onerror=function(){this.style.display='none';};this.src='${third}';};this.src='${second}';`
-      : `this.onerror=function(){this.style.display='none';};this.src='${second}';`;
-    return `<img class="proto-logo" src="${first}" alt="" onerror="${onError}" />`;
+    const escaped = logoFor(proto).map(u => JSON.stringify(u));
+    let onError = `this.style.display='none';`;
+    for (let i = escaped.length - 1; i >= 1; i--) {
+      onError = `this.onerror=function(){${onError}};this.src=${escaped[i]};`;
+    }
+    return `<img class="proto-logo" src=${escaped[0]} alt="" onerror="${onError.replace(/"/g, '&quot;')}" />`;
   };
   const renderList = (arr) => {
     const items = arr.slice(0, 30);
