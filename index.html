@@ -611,7 +611,9 @@
     font-style: italic;
   }
   .chart-tooltip {
-    position: absolute;
+    position: fixed;       /* escapes card overflow:hidden and floats above */
+    top: 0;
+    left: 0;
     pointer-events: none;
     background: var(--night-sky);
     color: var(--moon-white);
@@ -620,12 +622,15 @@
     font-size: 12px;
     font-weight: 500;
     line-height: 1.45;
-    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.22);
+    box-shadow: 0 6px 24px rgba(0, 0, 0, 0.35);
     white-space: nowrap;
-    z-index: 10;
-    transform: translate(-50%, -110%);
+    z-index: 9999;
     opacity: 0;
-    transition: opacity 0.1s;
+    /* Transform handles both position and the -50%/-110% centering offset in
+       one shot, so transitions stay smooth when the cursor moves quickly. */
+    transform: translate3d(0, 0, 0) translate(-50%, -110%);
+    transition: opacity 0.18s ease-out, transform 0.12s cubic-bezier(.2,.7,.3,1);
+    will-change: transform, opacity;
   }
   .chart-tooltip.show { opacity: 1; }
   .chart-tooltip .tt-date {
@@ -721,6 +726,12 @@
     table.cmp tbody tr:not(.group-row):not(.sum-divider) td:nth-child(5) { display: none; }
     table.cmp td, table.cmp th { padding: 10px 8px; font-size: 13px; }
     table.cmp th { font-size: 10px; }
+    /* With columns 4-5 hidden, column 3 (Monad) becomes the visual last cell
+       — explicitly round its right edge so the winner-tinted row doesn't end
+       square. Column 1 keeps its left-rounded via the desktop :first-child rule. */
+    table.cmp tbody tr:not(.group-row):not(.sum-divider) td:nth-child(3) {
+      border-radius: 0 8px 8px 0;
+    }
 
     .card-header-toggles { flex-direction: row; flex-wrap: wrap; justify-self: start; align-items: stretch; }
     .scope-btn { padding: 7px 12px; font-size: 10px; }
@@ -1343,9 +1354,11 @@ function renderLineChart(containerId, megaSeries, monadSeries, opts = {}) {
         <span class="tt-label"><span class="tt-dot"></span>Monad</span>
         <span class="tt-val">${n ? yFormat(n[1]) : '—'}</span>
       </div>`;
-    const pxX = (parseFloat(lineX) / W) * rect.width;
-    tooltip.style.left = `${pxX}px`;
-    tooltip.style.top  = `${(pad.top / H) * rect.height}px`;
+    // Viewport-absolute coords (tooltip is position: fixed now, so these are
+    // relative to the viewport rather than the svg-wrap).
+    const pxX = rect.left + (parseFloat(lineX) / W) * rect.width;
+    const pxY = rect.top  + (pad.top / H) * rect.height;
+    tooltip.style.transform = `translate3d(${pxX.toFixed(1)}px, ${pxY.toFixed(1)}px, 0) translate(-50%, -110%)`;
     tooltip.classList.add('show');
   };
   const onLeave = () => {
@@ -1495,9 +1508,9 @@ function renderMultiLineChart(containerId, series, opts = {}) {
           <span class="tt-val">${p ? yFormat(p[1]) : '—'}</span>
         </div>`;
       }).join('')}`;
-    const pxX = (parseFloat(lineX) / W) * rect.width;
-    tooltip.style.left = `${pxX}px`;
-    tooltip.style.top  = `${(pad.top / H) * rect.height}px`;
+    const pxX = rect.left + (parseFloat(lineX) / W) * rect.width;
+    const pxY = rect.top  + (pad.top / H) * rect.height;
+    tooltip.style.transform = `translate3d(${pxX.toFixed(1)}px, ${pxY.toFixed(1)}px, 0) translate(-50%, -110%)`;
     tooltip.classList.add('show');
   };
   const onLeave = () => {
