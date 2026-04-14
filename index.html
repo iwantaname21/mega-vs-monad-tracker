@@ -626,9 +626,9 @@
     white-space: nowrap;
     z-index: 9999;
     opacity: 0;
-    /* Transform handles both position and the -50%/-110% centering offset in
-       one shot, so transitions stay smooth when the cursor moves quickly. */
-    transform: translate3d(0, 0, 0) translate(-50%, -110%);
+    /* JS computes the final top-left corner (clamped to viewport) and writes
+       it here as translate3d — no CSS-side centering offset. */
+    transform: translate3d(-9999px, -9999px, 0);
     transition: opacity 0.18s ease-out, transform 0.12s cubic-bezier(.2,.7,.3,1);
     will-change: transform, opacity;
   }
@@ -1186,6 +1186,33 @@ function renderTable(containerId, rowsHtml) {
     </table>`;
 }
 
+// Position a `.chart-tooltip` (position: fixed) so it (a) points at the
+// given anchor (pxX, pxY in viewport coords), (b) stays inside the viewport
+// with an 8px margin on every edge, and (c) flips below the anchor if
+// there isn't room above.
+function positionTooltip(tt, anchorX, anchorY) {
+  const margin = 8;
+  const gap = 8;
+  const rect = tt.getBoundingClientRect();
+  const tw = rect.width  || 160;   // before first layout, fall back to ~typical
+  const th = rect.height || 60;
+  const vw = window.innerWidth  - margin;
+  const vh = window.innerHeight - margin;
+
+  // Default placement: centered horizontally on the anchor, gap px above it.
+  let x = anchorX - tw / 2;
+  let y = anchorY - th - gap;
+
+  // Flip below anchor if it would clip the top.
+  if (y < margin) y = anchorY + gap;
+
+  // Clamp inside the viewport.
+  x = Math.max(margin, Math.min(x, vw - tw));
+  y = Math.max(margin, Math.min(y, vh - th));
+
+  tt.style.transform = `translate3d(${x.toFixed(1)}px, ${y.toFixed(1)}px, 0)`;
+}
+
 // ---------- chart rendering ----------
 // Renders an SVG dual-line chart (Mega vs Monad) into the given element.
 // Sizes the viewBox to the container's actual pixel width so axis labels
@@ -1354,11 +1381,10 @@ function renderLineChart(containerId, megaSeries, monadSeries, opts = {}) {
         <span class="tt-label"><span class="tt-dot"></span>Monad</span>
         <span class="tt-val">${n ? yFormat(n[1]) : '—'}</span>
       </div>`;
-    // Viewport-absolute coords (tooltip is position: fixed now, so these are
-    // relative to the viewport rather than the svg-wrap).
+    // Viewport-absolute anchor point for the cursor.
     const pxX = rect.left + (parseFloat(lineX) / W) * rect.width;
     const pxY = rect.top  + (pad.top / H) * rect.height;
-    tooltip.style.transform = `translate3d(${pxX.toFixed(1)}px, ${pxY.toFixed(1)}px, 0) translate(-50%, -110%)`;
+    positionTooltip(tooltip, pxX, pxY);
     tooltip.classList.add('show');
   };
   const onLeave = () => {
@@ -1510,7 +1536,7 @@ function renderMultiLineChart(containerId, series, opts = {}) {
       }).join('')}`;
     const pxX = rect.left + (parseFloat(lineX) / W) * rect.width;
     const pxY = rect.top  + (pad.top / H) * rect.height;
-    tooltip.style.transform = `translate3d(${pxX.toFixed(1)}px, ${pxY.toFixed(1)}px, 0) translate(-50%, -110%)`;
+    positionTooltip(tooltip, pxX, pxY);
     tooltip.classList.add('show');
   };
   const onLeave = () => {
