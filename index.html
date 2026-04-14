@@ -497,6 +497,24 @@
   }
   .proto-list li .pval { color: #555; font-variant-numeric: tabular-nums; }
 
+  /* ---------- Combined ranking mode ---------- */
+  .proto-cols.combined { grid-template-columns: 1fr; }
+  .proto-cols.combined .proto-col:first-child { display: none; }
+  .proto-cols.combined .proto-col h3 { display: none; }
+  .proto-row.mega  { border-left: 3px solid var(--mega-r); padding-left: 9px !important; background: rgba(109, 208, 169, 0.14) !important; }
+  .proto-row.monad { border-left: 3px solid #836EF9;       padding-left: 9px !important; background: rgba(131, 110, 249, 0.12) !important; }
+  .chain-tag {
+    font-family: var(--display);
+    font-size: 9px;
+    font-weight: 800;
+    letter-spacing: 0.1em;
+    padding: 2px 7px;
+    border-radius: 999px;
+    margin-left: 8px;
+  }
+  .chain-tag.mega  { background: linear-gradient(90deg, var(--mega-l), var(--mega-r)); color: var(--night-sky); }
+  .chain-tag.monad { background: linear-gradient(90deg, #A594FF, #836EF9);              color: var(--moon-white); }
+
   .footer-link {
     display: block;
     text-align: center;
@@ -632,11 +650,36 @@
   }
 
   @media (max-width: 860px) {
-    .summary { grid-template-columns: 1fr; }
+    .container { padding: 16px 14px 48px; }
+    .summary { grid-template-columns: 1fr; padding: 12px 0; }
     .summary-card { border-right: none; border-bottom: 1px solid rgba(25, 25, 26, 0.15); padding: 12px 20px; }
     .summary-card:last-child { border-bottom: none; }
-    .grid { grid-template-columns: 1fr; }
-    .proto-cols { grid-template-columns: 1fr; }
+    .summary-card .value { font-size: clamp(22px, 6vw, 30px); }
+    .grid { grid-template-columns: 1fr; gap: 14px; }
+    .card { padding: 16px; }
+    .card h2 { font-size: 16px; }
+    .proto-cols { grid-template-columns: 1fr; gap: 12px; }
+
+    /* Allow wide comparison tables to scroll horizontally instead of squishing. */
+    #activity-table, #fees-table, #derived-table, #perf-table, #stable-table,
+    #ecosystem-table { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+    table.cmp { min-width: 520px; }
+
+    .card-header-toggles { flex-direction: row; flex-wrap: wrap; justify-self: start; align-items: stretch; }
+    .scope-btn { padding: 7px 12px; font-size: 10px; }
+    .chart-svg { height: auto; }
+  }
+
+  @media (max-width: 520px) {
+    .title-block { margin: 12px 0 24px; }
+    .hero-logo { height: clamp(32px, 8vw, 52px); }
+    .hero-vs { font-size: clamp(20px, 5vw, 32px); }
+    .summary-card .value { font-size: clamp(20px, 7vw, 28px); }
+    .card h2 { font-size: 15px; letter-spacing: -0.015em; }
+    .card .card-sub { font-size: 11px; }
+    .chart-axis { font-size: 10px; }
+    .diff { font-size: 10px; padding: 2px 6px; }
+    .pill { font-size: 9px; padding: 2px 7px; }
   }
 </style>
 <!-- Scraped perps snapshot — refreshed daily by .github/workflows/scrape-perps.yml.
@@ -773,6 +816,7 @@
           <div class="scope-toggle" data-card="proto-scope">
             <button class="scope-btn active" data-scope="all">All Apps</button>
             <button class="scope-btn" data-scope="native">Native</button>
+            <button class="scope-btn" data-scope="combined">Combined</button>
           </div>
         </div>
       </div>
@@ -876,14 +920,23 @@ function isNative(chain, protoName) {
 }
 
 // Sticky last-known-good values — if a remote API intermittently fails, reuse
-// the last successful value so the UI never flashes an empty "—".
-const LAST_GOOD = {
-  monPriceUSD: null,
-  monadFDV: null,
-  monadMarketCap: null,
-  tbillRate: null,
-  megaUSDM: null,
+// the last successful value so the UI never flashes an empty "—". Persisted in
+// localStorage so a cold page load after a CoinGecko rate-limit still renders.
+const LAST_GOOD_KEY = 'mega-vs-monad:last-good:v1';
+// Conservative cold-start fallbacks — only used when both the fresh fetch AND
+// localStorage are empty (e.g. very first load with CoinGecko rate-limited).
+const FALLBACKS = {
+  monPriceUSD: 0.0353,     // approximate MON spot as of 2026-04
+  tbillRate:   0.0370,     // ~12-month T-Bill
+  megaUSDM:    63_640_000, // rounded DefiLlama USDM/MegaETH supply
 };
+const LAST_GOOD = (() => {
+  try { return { ...FALLBACKS, ...JSON.parse(localStorage.getItem(LAST_GOOD_KEY) || '{}') }; }
+  catch { return { ...FALLBACKS }; }
+})();
+function persistLastGood() {
+  try { localStorage.setItem(LAST_GOOD_KEY, JSON.stringify(LAST_GOOD)); } catch {}
+}
 
 // Per-card toggles — each card owns its own scope.
 const STATE = {
@@ -1703,6 +1756,7 @@ async function loadAll() {
     }
   }
   if (megaUSDM > 0) LAST_GOOD.megaUSDM = megaUSDM;
+  persistLastGood();
 
   const gran = {
     megaChainFees: pick(megaChainFeesData),
@@ -2152,8 +2206,28 @@ function renderProtocols(d) {
         <span class="pval">${fmtUSD(p.val)}</span>
       </li>`).join('');
   };
-  document.getElementById('proto-mega').innerHTML = renderList(pickList('mega'));
-  document.getElementById('proto-monad').innerHTML = renderList(pickList('monad'));
+  const cols = document.querySelector('.proto-cols');
+  if (scope === 'combined') {
+    // Merge Mega + Monad protocols into one ranked list, tagged per chain.
+    const mega  = pickList('mega').map(p => ({ ...p, chain: 'mega' }));
+    const monad = pickList('monad').map(p => ({ ...p, chain: 'monad' }));
+    const merged = [...mega, ...monad].sort((a, b) => (b.val || 0) - (a.val || 0));
+    if (cols) cols.classList.add('combined');
+    const items = merged.slice(0, 30);
+    const html = !items.length
+      ? '<li><span class="pname">No data</span><span class="pval">—</span></li>'
+      : items.map((p, i) => `
+        <li class="proto-row ${p.chain}">
+          <span class="pname"><span class="prank">${i + 1}</span>${renderLogo(p)}${p.name}<span class="chain-tag ${p.chain}">${p.chain === 'mega' ? 'MEGA' : 'MONAD'}</span></span>
+          <span class="pval">${fmtUSD(p.val)}</span>
+        </li>`).join('');
+    document.getElementById('proto-mega').innerHTML  = '';
+    document.getElementById('proto-monad').innerHTML = html;
+  } else {
+    if (cols) cols.classList.remove('combined');
+    document.getElementById('proto-mega').innerHTML  = renderList(pickList('mega'));
+    document.getElementById('proto-monad').innerHTML = renderList(pickList('monad'));
+  }
 
   // TVL is a point-in-time metric — hide the 24h/7d/30d slider when it's active.
   const winGroup = document.querySelector('.scope-toggle[data-card="proto-window"]');
