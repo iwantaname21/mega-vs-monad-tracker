@@ -1,0 +1,12 @@
+{
+  "name": "mega-vs-monad-tracker",
+  "version": "0.0.1",
+  "private": true,
+  "description": "Live dashboard comparing MegaETH and Monad on-chain activity.",
+  "scripts": {
+    "scrape:perps": "node scripts/scrape-perps.mjs"
+  },
+  "devDependencies": {
+    "playwright": "^1.48.0"
+  }
+}

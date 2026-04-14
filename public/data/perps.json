@@ -1,0 +1,14 @@
+{
+  "updatedAt": null,
+  "source": "https://defillama.com",
+  "protocols": [
+    { "slug": "world-markets",  "chain": "MegaETH", "name": "World Markets", "volume24h": null },
+    { "slug": "gmx-v2-perps",   "chain": "MegaETH", "name": "GMX V2 Perps",  "volume24h": null },
+    { "slug": "perpl",          "chain": "Monad",   "name": "Perpl",         "volume24h": null },
+    { "slug": "leverup",        "chain": "Monad",   "name": "LeverUp",       "volume24h": null }
+  ],
+  "chains": {
+    "MegaETH": { "perpsVolume24h": null },
+    "Monad":   { "perpsVolume24h": null }
+  }
+}

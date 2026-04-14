@@ -1,0 +1,1813 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>MEGA vs MONAD TRACKER</title>
+<style>
+  :root {
+    --night-sky: #19191A;
+    --full-moon: #DFD9D9;
+    --moon-white: #ECE8E8;
+    --muted: #9E9A9A;
+    --mega-l: #90D79F;
+    --mega-r: #6DD0A9;
+    --monad-l: #A594FF;
+    --monad-r: #836EF9;
+    --teal-l: #7EAAD4;
+    --teal-r: #70BAD2;
+    --salmon-l: #F5AF94;
+    --salmon-r: #F5949D;
+    --card-dark: #222225;
+    --card-border: rgba(236, 232, 232, 0.1);
+    --display: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+    --body: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+  }
+
+  * { box-sizing: border-box; }
+
+  html, body {
+    margin: 0;
+    padding: 0;
+    background: var(--night-sky);
+    color: var(--moon-white);
+    font-family: var(--body);
+    font-variant-numeric: tabular-nums;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .container {
+    max-width: 1280px;
+    margin: 0 auto;
+    padding: 24px 28px 64px;
+  }
+
+  /* ---------- Top bar ---------- */
+  .topbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 40px;
+  }
+  .topbar .wordmark {
+    height: 24px;
+    width: auto;
+    display: block;
+  }
+  .topbar .wordmark.monad-full {
+    height: 32px;
+    filter: brightness(0) invert(1);
+  }
+  .topbar .wordmark.monad {
+    height: 22px;
+    color: var(--moon-white);
+    font-family: var(--display);
+    font-size: 18px;
+    font-weight: 800;
+    letter-spacing: 0.08em;
+    line-height: 1;
+    display: inline-flex; align-items: center; gap: 10px;
+  }
+  .monad-mark {
+    width: 22px; height: 22px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #836EF9 0%, #A0055D 100%);
+    display: inline-block;
+  }
+  .monad-mark.img {
+    background: none;
+    object-fit: contain;
+  }
+
+  /* ---------- Title block ---------- */
+  .title-block {
+    margin: 24px 0 40px;
+    width: 100%;
+  }
+  .hero {
+    width: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: clamp(20px, 3vw, 48px);
+  }
+  .hero-logo {
+    display: block;
+    height: clamp(40px, 5.4vw, 70px);
+    width: auto;
+    max-width: 100%;
+    object-fit: contain;
+  }
+  .hero-logo.monad { filter: brightness(0) invert(1); }
+  .hero-vs {
+    font-family: var(--display);
+    color: var(--moon-white);
+    font-weight: 900;
+    font-size: clamp(24px, 3.5vw, 48px);
+    letter-spacing: -0.02em;
+    line-height: 1;
+  }
+  .last-updated {
+    text-align: center;
+    color: var(--muted);
+    font-size: 12px;
+    margin-bottom: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    flex-wrap: wrap;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  /* Toggle */
+  .toggle-bar {
+    display: flex;
+    justify-content: center;
+    margin-bottom: 28px;
+  }
+  .toggle-group {
+    display: inline-flex;
+    background: var(--card-dark);
+    border: 1px solid var(--card-border);
+    border-radius: 999px;
+    padding: 4px;
+  }
+  .toggle-group { flex-wrap: wrap; gap: 2px; }
+  .toggle-btn {
+    background: transparent;
+    border: none;
+    color: var(--muted);
+    padding: 8px 16px;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    border-radius: 999px;
+    cursor: pointer;
+    transition: all 0.2s;
+    font-family: inherit;
+    white-space: nowrap;
+  }
+  .toggle-btn.active {
+    background: linear-gradient(90deg, var(--salmon-l), var(--salmon-r));
+    color: var(--night-sky);
+  }
+  .toggle-btn:not(.active):hover {
+    color: var(--moon-white);
+  }
+  .live-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: linear-gradient(90deg, var(--salmon-l), var(--salmon-r));
+    color: var(--night-sky);
+    font-weight: 800;
+    font-size: 11px;
+    padding: 3px 10px;
+    border-radius: 999px;
+    letter-spacing: 0.5px;
+  }
+  .live-dot {
+    width: 7px; height: 7px; border-radius: 50%;
+    background: var(--night-sky);
+    animation: pulse 1.4s infinite ease-in-out;
+  }
+  @keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.35; }
+  }
+
+  /* ---------- Summary bar ---------- */
+  .summary {
+    display: grid;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    gap: 0;
+    width: 100%;
+    background: var(--full-moon);
+    color: var(--night-sky);
+    border-radius: 14px;
+    padding: 24px 0;
+    margin-bottom: 40px;
+    box-sizing: border-box;
+  }
+  .summary-card {
+    padding: 4px 20px;
+    text-align: left;
+    border-right: 1px solid rgba(25, 25, 26, 0.15);
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    min-width: 0;
+  }
+  .summary-card:last-child { border-right: none; }
+  .summary-card .label {
+    font-size: 11px;
+    font-weight: 700;
+    color: #666;
+    letter-spacing: -0.01em;
+    text-transform: uppercase;
+    margin-bottom: 10px;
+  }
+  .summary-card .value {
+    font-family: var(--display);
+    font-size: clamp(20px, 2.4vw, 32px);
+    font-weight: 800;
+    color: var(--night-sky);
+    line-height: 1;
+    margin-bottom: 10px;
+    letter-spacing: -0.015em;
+    word-break: break-word;
+  }
+  .summary-card .sub {
+    font-size: 11px;
+    color: #666;
+    letter-spacing: -0.005em;
+    font-weight: 500;
+  }
+  .summary-card .bar {
+    margin-top: 12px;
+    height: 6px;
+    background: rgba(25, 25, 26, 0.12);
+    border-radius: 3px;
+    overflow: hidden;
+  }
+  .summary-card .bar span {
+    display: block;
+    height: 100%;
+    background: linear-gradient(90deg, var(--salmon-l), var(--salmon-r));
+    border-radius: 3px;
+  }
+
+  /* ---------- Grid ---------- */
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 20px;
+    width: 100%;
+  }
+  .card {
+    background: var(--full-moon);
+    color: var(--night-sky);
+    border: 1px solid rgba(25, 25, 26, 0.08);
+    border-radius: 12px;
+    padding: 22px;
+  }
+  .card.full { grid-column: 1 / -1; }
+  .card h2 {
+    margin: 0 0 6px;
+    font-family: var(--display);
+    font-size: 19px;
+    font-weight: 900;
+    letter-spacing: -0.02em;
+    text-transform: uppercase;
+    color: var(--night-sky);
+  }
+  .card .card-sub {
+    color: #666;
+    font-size: 12px;
+    margin-bottom: 20px;
+    letter-spacing: -0.005em;
+    font-weight: 500;
+  }
+  .card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 16px;
+    margin-bottom: 4px;
+    flex-wrap: wrap;
+  }
+  .card-header .card-sub { margin-bottom: 16px; }
+  .card-header-toggles {
+    display: flex; gap: 8px; flex-wrap: wrap;
+  }
+  .scope-toggle {
+    display: inline-flex;
+    background: rgba(25, 25, 26, 0.08);
+    border-radius: 999px;
+    padding: 3px;
+  }
+  .scope-btn {
+    background: transparent;
+    border: none;
+    color: #555;
+    padding: 6px 14px;
+    font-size: 10px;
+    font-weight: 800;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    border-radius: 999px;
+    cursor: pointer;
+    transition: all 0.2s;
+    font-family: inherit;
+    white-space: nowrap;
+  }
+  .scope-btn.active {
+    background: var(--night-sky);
+    color: var(--moon-white);
+  }
+  .scope-btn:not(.active):hover { color: var(--night-sky); }
+
+  /* ---------- Comparison table ---------- */
+  table.cmp {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0 6px;
+    font-size: 14px;
+    table-layout: fixed;
+  }
+  table.cmp td { word-break: break-word; }
+  table.cmp th {
+    text-align: left;
+    font-weight: 700;
+    color: #666;
+    font-size: 10px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    padding: 4px 12px;
+  }
+  table.cmp th .chain-head {
+    display: inline-flex; align-items: center; gap: 8px;
+    color: var(--night-sky);
+    font-family: var(--display);
+    font-size: 13px;
+    letter-spacing: 0.06em;
+    font-weight: 800;
+  }
+  table.cmp th .chain-dot {
+    width: 10px; height: 10px; border-radius: 50%;
+    display: inline-block;
+  }
+  table.cmp th .chain-dot.mega { background: linear-gradient(135deg, var(--mega-l), var(--mega-r)); }
+  table.cmp th .chain-dot.monad { background: linear-gradient(135deg, #A594FF, #836EF9); }
+
+  .col-label {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-family: var(--display);
+    font-size: 12px;
+    font-weight: 800;
+    letter-spacing: -0.01em;
+    color: var(--night-sky);
+    text-transform: none;
+    white-space: nowrap;
+  }
+  .col-label .chain-dot {
+    width: 8px; height: 8px; border-radius: 50%;
+    display: inline-block;
+  }
+  .col-label .chain-dot.mega  { background: linear-gradient(135deg, var(--mega-l), var(--mega-r)); }
+  .col-label .chain-dot.monad { background: linear-gradient(135deg, #A594FF, #836EF9); }
+  table.cmp td {
+    padding: 12px;
+    font-weight: 600;
+    color: var(--night-sky);
+  }
+  table.cmp tr {
+    background: rgba(25, 25, 26, 0.04);
+    border-radius: 8px;
+  }
+  table.cmp tr.mega { background: rgba(109, 208, 169, 0.18); }
+  table.cmp tr.monad { background: rgba(131, 110, 249, 0.16); }
+  table.cmp td:first-child { border-radius: 8px 0 0 8px; color: #555; font-weight: 500; }
+  table.cmp td:last-child { border-radius: 0 8px 8px 0; }
+  .val-win-mega { color: #2e9a57; font-weight: 800; }
+  .val-win-monad { color: #6B5AE8; font-weight: 800; }
+
+  table.cmp tr.group-row { background: transparent; }
+  table.cmp tr.group-row td {
+    padding: 18px 2px 8px;
+    border: none;
+  }
+  .group-title {
+    font-family: var(--display);
+    font-size: 14px;
+    font-weight: 900;
+    letter-spacing: -0.01em;
+    text-transform: uppercase;
+    color: var(--night-sky);
+    margin-bottom: 4px;
+  }
+  .group-desc {
+    font-size: 12px;
+    line-height: 1.45;
+    color: #555;
+    font-weight: 500;
+    max-width: 760px;
+  }
+
+  .pill {
+    display: inline-block;
+    padding: 3px 9px;
+    border-radius: 999px;
+    font-size: 10px;
+    font-weight: 800;
+    letter-spacing: 0.5px;
+    color: var(--night-sky);
+    white-space: nowrap;
+  }
+  .pill.mega { background: linear-gradient(90deg, var(--mega-l), var(--mega-r)); }
+  .pill.monad { background: linear-gradient(90deg, var(--monad-l), var(--monad-r)); }
+  .pill.neutral { background: var(--teal-l); color: var(--night-sky); }
+  .pill.warn { background: linear-gradient(90deg, var(--monad-l), var(--monad-r)); }
+
+  .diff {
+    display: inline-block;
+    font-size: 11px;
+    font-weight: 700;
+    padding: 3px 8px;
+    border-radius: 6px;
+    background: rgba(25, 25, 26, 0.08);
+    color: #555;
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+    max-width: 100%;
+  }
+  .diff.mega { background: rgba(109, 208, 169, 0.25); color: #1e7a43; }
+  .diff.monad { background: rgba(131, 110, 249, 0.22); color: #5a47d4; }
+  .diff-cell { color: #555; }
+
+  /* ---------- Top protocols ---------- */
+  .proto-cols {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+  }
+  .proto-col h3 {
+    display: flex; align-items: center; gap: 10px;
+    font-family: var(--display);
+    font-size: 15px;
+    margin: 0 0 14px;
+    color: var(--night-sky);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    font-weight: 800;
+  }
+  .proto-col h3 .chain-dot {
+    width: 12px; height: 12px; border-radius: 50%;
+    display: inline-block;
+  }
+  .proto-col h3 .chain-dot.mega { background: linear-gradient(135deg, var(--mega-l), var(--mega-r)); }
+  .proto-col h3 .chain-dot.monad { background: linear-gradient(135deg, #A594FF, #836EF9); }
+  .proto-list {
+    list-style: none; padding: 0; margin: 0;
+    max-height: 640px;
+    overflow-y: auto;
+    padding-right: 6px;
+  }
+  .proto-list::-webkit-scrollbar { width: 6px; }
+  .proto-list::-webkit-scrollbar-thumb { background: rgba(25, 25, 26, 0.2); border-radius: 3px; }
+  .prank {
+    display: inline-block;
+    width: 22px;
+    font-size: 11px;
+    font-weight: 700;
+    color: #888;
+    text-align: right;
+    margin-right: 4px;
+    font-variant-numeric: tabular-nums;
+  }
+  .proto-list li {
+    display: flex; justify-content: space-between;
+    padding: 10px 12px;
+    background: rgba(25, 25, 26, 0.05);
+    border-radius: 8px;
+    margin-bottom: 6px;
+    font-size: 13px;
+  }
+  .proto-list li .pname {
+    color: var(--night-sky); font-weight: 600;
+    display: inline-flex; align-items: center; gap: 10px;
+  }
+  .proto-logo {
+    width: 22px; height: 22px; border-radius: 5px;
+    object-fit: cover;
+    background: #fff;
+  }
+  .proto-list li .pval { color: #555; font-variant-numeric: tabular-nums; }
+
+  .footer-link {
+    display: block;
+    text-align: center;
+    margin-top: 28px;
+    background: var(--night-sky);
+    color: var(--moon-white);
+    padding: 14px;
+    border-radius: 12px;
+    border: 1px solid var(--card-border);
+    text-decoration: none;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    font-size: 13px;
+  }
+  .footer-link:hover { background: #222225; }
+
+  /* .loading intentionally empty — refresh shouldn't dim the page. */
+  .loading { }
+
+  .chart-block { margin-top: 22px; }
+  .chart-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 12px;
+    margin-bottom: 8px;
+    flex-wrap: wrap;
+  }
+  .chart-title {
+    font-family: var(--display);
+    font-size: 13px;
+    font-weight: 800;
+    letter-spacing: -0.01em;
+    text-transform: uppercase;
+    color: var(--night-sky);
+  }
+  .chart-legend { display: flex; gap: 14px; flex-wrap: wrap; }
+  .chart-key {
+    display: inline-flex; align-items: center; gap: 6px;
+    font-size: 11px; font-weight: 700;
+    color: #333;
+  }
+  .chart-key .dot { width: 10px; height: 10px; border-radius: 50%; display: inline-block; }
+  .chart-key.mega  .dot { background: linear-gradient(135deg, var(--mega-l), var(--mega-r)); }
+  .chart-key.monad .dot { background: linear-gradient(135deg, #A594FF, #836EF9); }
+  .chart-svg-wrap { position: relative; width: 100%; }
+  .chart-svg { display: block; max-width: 100%; }
+  .chart-axis {
+    font-family: var(--body);
+    font-size: 12px;
+    font-weight: 500;
+    fill: #666;
+    letter-spacing: -0.005em;
+  }
+  .chart-empty {
+    font-size: 12px;
+    color: #888;
+    padding: 28px 0;
+    text-align: center;
+    font-style: italic;
+  }
+  .chart-tooltip {
+    position: absolute;
+    pointer-events: none;
+    background: var(--night-sky);
+    color: var(--moon-white);
+    border-radius: 8px;
+    padding: 10px 12px;
+    font-size: 12px;
+    font-weight: 500;
+    line-height: 1.45;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.22);
+    white-space: nowrap;
+    z-index: 10;
+    transform: translate(-50%, -110%);
+    opacity: 0;
+    transition: opacity 0.1s;
+  }
+  .chart-tooltip.show { opacity: 1; }
+  .chart-tooltip .tt-date {
+    font-family: var(--display);
+    font-weight: 800;
+    font-size: 11px;
+    letter-spacing: 0.02em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 6px;
+  }
+  .chart-tooltip .tt-row {
+    display: flex; justify-content: space-between; gap: 12px;
+    align-items: center;
+  }
+  .chart-tooltip .tt-row .tt-label {
+    display: inline-flex; align-items: center; gap: 6px;
+  }
+  .chart-tooltip .tt-row .tt-dot {
+    width: 8px; height: 8px; border-radius: 50%; display: inline-block;
+  }
+  .chart-tooltip .tt-row.mega  .tt-dot { background: linear-gradient(135deg, var(--mega-l), var(--mega-r)); }
+  .chart-tooltip .tt-row.monad .tt-dot { background: linear-gradient(135deg, #A594FF, #836EF9); }
+  .chart-tooltip .tt-val { font-weight: 700; color: var(--moon-white); font-variant-numeric: tabular-nums; }
+  .chart-tooltip .tt-row.active {
+    padding: 4px 6px;
+    margin: 2px -4px;
+    border-radius: 6px;
+    background: rgba(255, 255, 255, 0.08);
+  }
+  .chart-tooltip .tt-row.active .tt-val { font-size: 14px; font-weight: 800; }
+  .chart-tooltip .tt-row.active .tt-dot { width: 10px; height: 10px; }
+  .chart-tooltip .tt-row.dim { opacity: 0.55; }
+  .error {
+    background: rgba(255, 138, 168, 0.1);
+    border: 1px solid var(--monad-l);
+    color: var(--monad-l);
+    padding: 12px;
+    border-radius: 8px;
+    margin-bottom: 16px;
+    font-size: 13px;
+    text-align: center;
+  }
+
+  .stable-list {
+    display: flex; flex-wrap: wrap; gap: 6px;
+    margin-top: 10px;
+  }
+  .stable-chip {
+    background: rgba(25, 25, 26, 0.08);
+    color: var(--night-sky);
+    padding: 4px 10px;
+    border-radius: 999px;
+    font-size: 11px;
+    font-weight: 600;
+  }
+
+  @media (max-width: 860px) {
+    .summary { grid-template-columns: 1fr; }
+    .summary-card { border-right: none; border-bottom: 1px solid rgba(25, 25, 26, 0.15); padding: 12px 20px; }
+    .summary-card:last-child { border-bottom: none; }
+    .grid { grid-template-columns: 1fr; }
+    .proto-cols { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <div class="title-block">
+    <div class="hero">
+      <img class="hero-logo mega" src="public/megaeth-logo.svg" alt="MegaETH" />
+      <span class="hero-vs">VS</span>
+      <img class="hero-logo monad" src="public/Assets/Monad/Full.png" alt="Monad" />
+    </div>
+  </div>
+
+  <div class="last-updated">
+    <span class="live-pill"><span class="live-dot"></span>LIVE</span>
+    <span id="updated-text">Loading…</span>
+  </div>
+
+  <div id="error-box"></div>
+
+  <!-- Summary -->
+  <div class="summary" id="summary"></div>
+
+  <!-- Grid of cards -->
+  <div class="grid">
+
+    <!-- Section 1: Performance (static) -->
+    <div class="card full">
+      <h2>Performance &amp; Cost</h2>
+      <div class="card-sub">Chain-level specs (static, from each chain's public docs)</div>
+      <div id="perf-table"></div>
+    </div>
+
+    <!-- Section 2: TVL + Activity -->
+    <div class="card">
+      <div class="card-header">
+        <div>
+          <h2>TVL &amp; On-Chain Activity</h2>
+          <div class="card-sub">Capital locked, DEX volume, protocol count</div>
+        </div>
+        <div class="scope-toggle" data-card="tvl">
+          <button class="scope-btn active" data-scope="all">All Apps</button>
+          <button class="scope-btn" data-scope="native">Native</button>
+        </div>
+      </div>
+      <div id="activity-table"></div>
+      <div class="chart-block" id="chart-tvl"></div>
+      <div class="chart-block" id="chart-dex"></div>
+      <div class="chart-block" id="chart-perps"></div>
+    </div>
+
+    <!-- Section 3: Fees / Revenue -->
+    <div class="card">
+      <div class="card-header">
+        <div>
+          <h2 id="fees-heading">Fees</h2>
+          <div class="card-sub" id="fees-sub">Protocol fees collected on each chain</div>
+        </div>
+        <div class="card-header-toggles">
+          <div class="scope-toggle" data-card="fees-metric">
+            <button class="scope-btn active" data-metric="fees">Fees</button>
+            <button class="scope-btn" data-metric="revenue">Revenue</button>
+          </div>
+          <div class="scope-toggle" data-card="fees">
+            <button class="scope-btn active" data-scope="all">All Apps</button>
+            <button class="scope-btn" data-scope="native">Native</button>
+          </div>
+        </div>
+      </div>
+      <div id="fees-table"></div>
+      <div class="chart-block" id="chart-fees-chain"></div>
+      <div class="chart-block" id="chart-fees-app"></div>
+    </div>
+
+    <!-- Section 4: Stablecoins -->
+    <div class="card">
+      <h2>Stablecoin Supply</h2>
+      <div class="card-sub">Dollars parked on each chain</div>
+      <div id="stable-table"></div>
+      <div id="stable-breakdown"></div>
+    </div>
+
+    <!-- Section 5: Derived -->
+    <div class="card">
+      <h2>Derived Value Metrics</h2>
+      <div class="card-sub">FDV ratios — lower is cheaper</div>
+      <div id="derived-table"></div>
+    </div>
+
+    <!-- Section 6: Top protocols -->
+    <div class="card full">
+      <div class="card-header">
+        <div>
+          <h2 id="proto-heading">Top Protocols</h2>
+          <div class="card-sub">Ranked live from DeFiLlama</div>
+        </div>
+        <div class="card-header-toggles">
+          <div class="scope-toggle" data-card="proto-metric">
+            <button class="scope-btn active" data-metric="tvl">By TVL</button>
+            <button class="scope-btn" data-metric="fees">By Fees</button>
+            <button class="scope-btn" data-metric="volspot">Volume · Spot</button>
+            <button class="scope-btn" data-metric="volperps">Volume · Perps</button>
+          </div>
+          <div class="scope-toggle" data-card="proto-scope">
+            <button class="scope-btn active" data-scope="all">All Apps</button>
+            <button class="scope-btn" data-scope="native">Native</button>
+          </div>
+        </div>
+      </div>
+      <div class="proto-cols">
+        <div class="proto-col">
+          <h3><span class="chain-dot mega"></span>MegaETH</h3>
+          <ul class="proto-list" id="proto-mega"></ul>
+        </div>
+        <div class="proto-col">
+          <h3><span class="chain-dot monad"></span>Monad</h3>
+          <ul class="proto-list" id="proto-monad"></ul>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <a class="footer-link" href="https://defillama.com/chains" target="_blank" rel="noopener">VIEW ON DEFILLAMA →</a>
+</div>
+
+<script>
+const COL_HEAD_MEGA  = '<span class="col-label"><span class="chain-dot mega"></span>MegaETH</span>';
+const COL_HEAD_MONAD = '<span class="col-label"><span class="chain-dot monad"></span>Monad</span>';
+
+// MegaETH pre-TGE — live price pulled from Hyperliquid pre-market (`MEGA`) when available.
+// Fallback is the pre-market FDV the user quoted (~$1.35B ⇒ ~$0.135 per token).
+const MEGA_SUPPLY = 10_000_000_000;
+let MEGA_FDV_ESTIMATE = 1_350_000_000;
+let MEGA_PRICE = MEGA_FDV_ESTIMATE / MEGA_SUPPLY;
+const MONAD_SUPPLY = 100_700_000_000;
+
+async function fetchMegaHyperliquidPrice() {
+  try {
+    const r = await fetch('https://api.hyperliquid.xyz/info', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ type: 'allMids' }),
+    });
+    if (!r.ok) return null;
+    const mids = await r.json();
+    // Hyperliquid pre-market ticker can be MEGA, kMEGA, MEGAETH — try each.
+    for (const sym of ['MEGA', 'kMEGA', 'MEGAETH', 'Mega']) {
+      const v = mids[sym];
+      if (v != null) {
+        const price = parseFloat(v);
+        if (isFinite(price) && price > 0) return price;
+      }
+    }
+  } catch (e) {
+    console.warn('Hyperliquid MEGA price fetch failed', e);
+  }
+  return null;
+}
+
+// Native apps — projects built specifically for each chain.
+// Matched loosely (case-insensitive, stripped of punctuation/spaces) against
+// DeFiLlama protocol names so close variants still hit.
+const NATIVE_APPS = {
+  mega: [
+    'Kumbaya',
+    'World Markets', 'WM',
+    'Avon',
+    'Prism',
+    'Sector One', 'SectorOne',
+    'Canonic',
+    'WarpX', 'Warp X',
+    'Pump Party', 'PumpParty',
+    'HitOne', 'Hit One',
+  ],
+  monad: [
+    'Currvance',
+    'Neverland',
+    'SHMonad', 'sHMONAD', 'SH Monad',
+    'Magma Staking', 'Magma',
+    'LeverUp', 'Lever Up',
+    'Kuru', 'Kuru Exchange',
+    'Perpl', 'PerpL',
+    'Capricorn',
+    'Townsquare', 'Town Square',
+    'Atlantis DEX', 'Atlantis',
+    'Nad.fun', 'Nadfun',
+    'Kizzy',
+  ],
+};
+// normalize a name: lowercase + alphanumeric only
+const normName = (s) => (s || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+const NATIVE_NORM = {
+  mega: new Set(NATIVE_APPS.mega.map(normName)),
+  monad: new Set(NATIVE_APPS.monad.filter(n => n !== 'Pancake Swap').map(normName)),
+};
+function isNative(chain, protoName) {
+  const n = normName(protoName);
+  if (!n) return false;
+  const set = NATIVE_NORM[chain];
+  // exact match or substring either way (handles "CurveHands" vs "Curve.Hands")
+  if (set.has(n)) return true;
+  for (const candidate of set) {
+    if (n.includes(candidate) || candidate.includes(n)) return true;
+  }
+  return false;
+}
+
+// Sticky last-known-good values — if a remote API intermittently fails, reuse
+// the last successful value so the UI never flashes an empty "—".
+const LAST_GOOD = {
+  monPriceUSD: null,
+  monadFDV: null,
+  monadMarketCap: null,
+};
+
+// Per-card toggles — each card owns its own scope.
+const STATE = {
+  tvlScope: 'all',      // TVL & Activity card
+  feesScope: 'all',     // Fees card
+  feesMetric: 'fees',   // Fees card — fees vs revenue
+  protoMetric: 'tvl',   // Top Protocols card — ranking axis
+  protoScope: 'all',    // Top Protocols card — all vs native
+};
+let LAST_DATA = null;
+
+function wireScopeToggles() {
+  document.querySelectorAll('.scope-toggle').forEach(group => {
+    const card = group.dataset.card;
+    group.querySelectorAll('.scope-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        group.querySelectorAll('.scope-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        if (card === 'tvl') STATE.tvlScope = btn.dataset.scope;
+        else if (card === 'fees') STATE.feesScope = btn.dataset.scope;
+        else if (card === 'fees-metric') STATE.feesMetric = btn.dataset.metric;
+        else if (card === 'proto-metric') STATE.protoMetric = btn.dataset.metric;
+        else if (card === 'proto-scope') STATE.protoScope = btn.dataset.scope;
+        if (LAST_DATA) renderAll(LAST_DATA);
+      });
+    });
+  });
+}
+
+// Per-protocol logo lookup.
+// Priority: local /public/logos/<slug>.png → official logo URL from the API → DeFiLlama's CDN by slug.
+function logoFor(proto) {
+  const name = typeof proto === 'string' ? proto : proto?.name;
+  const slug = normName(name);
+  const apiLogo = typeof proto === 'object' ? (proto.logo || null) : null;
+  const apiSlug = typeof proto === 'object' ? (proto.slug || proto.defillamaId || slug) : slug;
+  return {
+    local: `public/logos/${slug}.png`,
+    api: apiLogo,
+    remote: `https://icons.llamao.fi/icons/protocols/${apiSlug}?w=48&h=48`,
+  };
+}
+
+// ---------- formatters ----------
+const fmtUSD = (v) => {
+  if (v == null || isNaN(v)) return '—';
+  if (v >= 1e9) return `$${(v / 1e9).toFixed(2)}B`;
+  if (v >= 1e6) return `$${(v / 1e6).toFixed(1)}M`;
+  if (v >= 1e3) return `$${(v / 1e3).toFixed(1)}K`;
+  return `$${v.toFixed(0)}`;
+};
+const fmtPct = (v) => {
+  if (v == null || isNaN(v)) return '—';
+  const s = v >= 0 ? '+' : '';
+  return `${s}${v.toFixed(1)}%`;
+};
+const fmtNum = (v) => v == null || isNaN(v) ? '—' : v.toLocaleString();
+const fmtRatio = (a, b) => {
+  if (!a || !b) return '—';
+  const hi = Math.max(a, b), lo = Math.min(a, b);
+  return `1 : ${(hi / lo).toFixed(1)}x`;
+};
+
+function getWinner(mega, monad, lowerIsBetter = false) {
+  if (mega == null || monad == null || isNaN(mega) || isNaN(monad)) return 'neutral';
+  if (mega === monad) return 'neutral';
+  if (lowerIsBetter) return mega < monad ? 'mega' : 'monad';
+  return mega > monad ? 'mega' : 'monad';
+}
+
+// Computes the "+450% · 5.5x" style diff badge for the winner side.
+function diffBadge(megaVal, monadVal, winner) {
+  if (winner === 'neutral') return '';
+  if (megaVal == null || monadVal == null || isNaN(megaVal) || isNaN(monadVal)) return '';
+  const hi = Math.max(megaVal, monadVal);
+  const lo = Math.min(megaVal, monadVal);
+  if (lo === 0 || !isFinite(hi / lo)) return '<span class="diff">∞</span>';
+  const mult = hi / lo;
+  const pct = ((hi - lo) / lo) * 100;
+  const multStr = mult >= 100 ? `${mult.toFixed(0)}x` : mult >= 10 ? `${mult.toFixed(1)}x` : `${mult.toFixed(2)}x`;
+  const pctStr = pct >= 1000 ? `+${(pct / 1000).toFixed(1)}k%` : `+${pct.toFixed(0)}%`;
+  return `<span class="diff ${winner}">${pctStr} · ${multStr}</span>`;
+}
+
+function renderRow(label, megaVal, monadVal, megaDisp, monadDisp, lowerIsBetter = false, winnerLabel = null) {
+  const w = winnerLabel || getWinner(megaVal, monadVal, lowerIsBetter);
+  const cls = w === 'mega' ? 'mega' : w === 'monad' ? 'monad' : '';
+  const mCls = w === 'mega' ? 'val-win-mega' : '';
+  const nCls = w === 'monad' ? 'val-win-monad' : '';
+  const badge = diffBadge(megaVal, monadVal, w);
+  const pill = w === 'mega'
+    ? '<span class="pill mega">MEGA</span>'
+    : w === 'monad'
+      ? '<span class="pill monad">MONAD</span>'
+      : '<span class="pill neutral">—</span>';
+  return `
+    <tr class="${cls}">
+      <td>${label}</td>
+      <td class="${mCls}">${megaDisp}</td>
+      <td class="${nCls}">${monadDisp}</td>
+      <td class="diff-cell">${badge}</td>
+      <td>${pill}</td>
+    </tr>`;
+}
+
+function renderTable(containerId, rowsHtml) {
+  document.getElementById(containerId).innerHTML = `
+    <table class="cmp">
+      <thead>
+        <tr>
+          <th style="width: 22%">Metric</th>
+          <th style="width: 18%">${COL_HEAD_MEGA}</th>
+          <th style="width: 18%">${COL_HEAD_MONAD}</th>
+          <th style="width: 22%">Difference</th>
+          <th style="width: 20%">Winner</th>
+        </tr>
+      </thead>
+      <tbody>${rowsHtml}</tbody>
+    </table>`;
+}
+
+// ---------- chart rendering ----------
+// Renders an SVG dual-line chart (Mega vs Monad) into the given element.
+// Sizes the viewBox to the container's actual pixel width so axis labels
+// render at their true 12px size (no horizontal squish).
+function renderLineChart(containerId, megaSeries, monadSeries, opts = {}) {
+  const el = document.getElementById(containerId);
+  if (!el) return;
+  const { title = '', days = 30, yFormat = fmtUSD, height = 260 } = opts;
+
+  const nowSec = Math.floor(Date.now() / 1000);
+  const cutoff = nowSec - days * 86400;
+  const clip = (arr) => (arr || []).filter(([t]) => t >= cutoff).sort((a, b) => a[0] - b[0]);
+  const mega  = clip(megaSeries);
+  const monad = clip(monadSeries);
+
+  if (!mega.length && !monad.length) {
+    el.innerHTML = `
+      <div class="chart-title">${title}</div>
+      <div class="chart-empty">No historical data available</div>`;
+    return;
+  }
+
+  const latest = (arr) => arr.length ? arr[arr.length - 1][1] : null;
+  const mLatest = latest(mega), nLatest = latest(monad);
+
+  // Set the header first so we can measure the container width for the SVG.
+  el.innerHTML = `
+    <div class="chart-header">
+      <div class="chart-title">${title}</div>
+      <div class="chart-legend">
+        <span class="chart-key mega"><span class="dot"></span>MegaETH${mLatest != null ? ` · ${yFormat(mLatest)}` : ''}</span>
+        <span class="chart-key monad"><span class="dot"></span>Monad${nLatest != null ? ` · ${yFormat(nLatest)}` : ''}</span>
+      </div>
+    </div>
+    <div class="chart-svg-wrap"></div>`;
+
+  const wrap = el.querySelector('.chart-svg-wrap');
+  const W = Math.max(320, Math.floor(wrap.clientWidth || el.clientWidth || 720));
+  const H = height;
+  const pad = { top: 16, right: 18, bottom: 32, left: 72 };
+  const plotW = W - pad.left - pad.right;
+  const plotH = H - pad.top - pad.bottom;
+
+  const allVals = [...mega, ...monad].map(p => p[1]).filter(v => v != null && isFinite(v));
+  const maxY = Math.max(1, Math.max(...allVals));
+  const allTimes = [...mega, ...monad].map(p => p[0]);
+  const minT = Math.min(...allTimes);
+  const maxT = Math.max(...allTimes);
+
+  const x = (t) => pad.left + ((t - minT) / Math.max(1, maxT - minT)) * plotW;
+  const y = (v) => pad.top + plotH - (v / maxY) * plotH;
+
+  const path = (data) => data.length
+    ? 'M ' + data.map(p => `${x(p[0]).toFixed(1)} ${y(p[1]).toFixed(1)}`).join(' L ')
+    : '';
+  const area = (data) => {
+    if (!data.length) return '';
+    const first = x(data[0][0]).toFixed(1);
+    const last  = x(data[data.length - 1][0]).toFixed(1);
+    const baseY = (pad.top + plotH).toFixed(1);
+    return `M ${first} ${baseY} L ` +
+      data.map(p => `${x(p[0]).toFixed(1)} ${y(p[1]).toFixed(1)}`).join(' L ') +
+      ` L ${last} ${baseY} Z`;
+  };
+
+  const yTicks = [0, 0.25, 0.5, 0.75, 1].map(f => f * maxY);
+  const yTickSvg = yTicks.map(v => {
+    const ty = y(v).toFixed(1);
+    return `<line x1="${pad.left}" y1="${ty}" x2="${W - pad.right}" y2="${ty}" stroke="rgba(25,25,26,0.08)" stroke-width="1" />
+            <text x="${pad.left - 10}" y="${ty}" text-anchor="end" dominant-baseline="middle" class="chart-axis">${yFormat(v)}</text>`;
+  }).join('');
+
+  const fmtDate = (t) => {
+    const d = new Date(t * 1000);
+    return `${d.getMonth() + 1}/${d.getDate()}`;
+  };
+  const xTicks = [0, 0.25, 0.5, 0.75, 1].map(f => minT + f * (maxT - minT));
+  const xTickSvg = xTicks.map(t => {
+    const tx = x(t).toFixed(1);
+    return `<text x="${tx}" y="${H - 10}" text-anchor="middle" class="chart-axis">${fmtDate(t)}</text>`;
+  }).join('');
+
+  // `pointer-events="none"` on every painted element so the capture rect always
+  // wins the hover hit-test — otherwise the colored lines steal the events.
+  wrap.innerHTML = `
+    <svg viewBox="0 0 ${W} ${H}" width="${W}" height="${H}" class="chart-svg" xmlns="http://www.w3.org/2000/svg">
+      <g pointer-events="none">
+        ${yTickSvg}
+        ${xTickSvg}
+        <path d="${area(mega)}"  fill="rgba(109, 208, 169, 0.18)" stroke="none" />
+        <path d="${area(monad)}" fill="rgba(131, 110, 249, 0.16)" stroke="none" />
+        <path class="line mega"  d="${path(mega)}"  fill="none" stroke="#2e9a57" stroke-width="2" />
+        <path class="line monad" d="${path(monad)}" fill="none" stroke="#6B5AE8" stroke-width="2" />
+        <line class="hover-line" x1="0" y1="${pad.top}" x2="0" y2="${pad.top + plotH}" stroke="rgba(25,25,26,0.25)" stroke-width="1" style="display:none" />
+        <circle class="hover-dot mega"  r="4" fill="#2e9a57" stroke="#fff" stroke-width="2" style="display:none" />
+        <circle class="hover-dot monad" r="4" fill="#6B5AE8" stroke="#fff" stroke-width="2" style="display:none" />
+      </g>
+      <rect class="hover-capture" x="${pad.left}" y="${pad.top}" width="${plotW}" height="${plotH}" fill="transparent" />
+    </svg>
+    <div class="chart-tooltip"></div>`;
+
+  // Hover tooltip — find nearest point on each series and reflect it in the tooltip.
+  const svg       = wrap.querySelector('svg');
+  const capture   = wrap.querySelector('.hover-capture');
+  const tooltip   = wrap.querySelector('.chart-tooltip');
+  const hoverLine = wrap.querySelector('.hover-line');
+  const dotMega   = wrap.querySelector('.hover-dot.mega');
+  const dotMonad  = wrap.querySelector('.hover-dot.monad');
+
+  const nearestAt = (data, t) => {
+    if (!data.length) return null;
+    let best = data[0], bestDist = Math.abs(data[0][0] - t);
+    for (let i = 1; i < data.length; i++) {
+      const d = Math.abs(data[i][0] - t);
+      if (d < bestDist) { best = data[i]; bestDist = d; }
+    }
+    return best;
+  };
+  const dateStr = (sec) => {
+    const d = new Date(sec * 1000);
+    return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+  };
+
+  const onMove = (e) => {
+    const rect = svg.getBoundingClientRect();
+    // Convert client coords → viewBox coords in BOTH axes.
+    const vbX = (e.clientX - rect.left) * (W / rect.width);
+    const vbY = (e.clientY - rect.top)  * (H / rect.height);
+    if (vbX < pad.left || vbX > pad.left + plotW) { onLeave(); return; }
+    const t = minT + ((vbX - pad.left) / plotW) * (maxT - minT);
+    const m = nearestAt(mega, t);
+    const n = nearestAt(monad, t);
+    const tRef = (m && n) ? (Math.abs(m[0] - t) < Math.abs(n[0] - t) ? m[0] : n[0]) : (m?.[0] ?? n?.[0]);
+    const lineX = x(tRef).toFixed(1);
+    hoverLine.setAttribute('x1', lineX);
+    hoverLine.setAttribute('x2', lineX);
+    hoverLine.style.display = '';
+
+    // Pick the closer series VERTICALLY at the hover position — that's the one the cursor is "near".
+    let active = null;
+    if (m && n) {
+      active = Math.abs(y(m[1]) - vbY) < Math.abs(y(n[1]) - vbY) ? 'mega' : 'monad';
+    } else if (m) active = 'mega';
+    else if (n) active = 'monad';
+
+    if (m) {
+      dotMega.setAttribute('cx', x(m[0]).toFixed(1));
+      dotMega.setAttribute('cy', y(m[1]).toFixed(1));
+      dotMega.setAttribute('r', active === 'mega' ? 6 : 4);
+      dotMega.style.display = '';
+    } else dotMega.style.display = 'none';
+    if (n) {
+      dotMonad.setAttribute('cx', x(n[0]).toFixed(1));
+      dotMonad.setAttribute('cy', y(n[1]).toFixed(1));
+      dotMonad.setAttribute('r', active === 'monad' ? 6 : 4);
+      dotMonad.style.display = '';
+    } else dotMonad.style.display = 'none';
+
+    tooltip.innerHTML = `
+      <div class="tt-date">${dateStr(tRef)}</div>
+      <div class="tt-row mega ${active === 'mega' ? 'active' : 'dim'}">
+        <span class="tt-label"><span class="tt-dot"></span>MegaETH</span>
+        <span class="tt-val">${m ? yFormat(m[1]) : '—'}</span>
+      </div>
+      <div class="tt-row monad ${active === 'monad' ? 'active' : 'dim'}">
+        <span class="tt-label"><span class="tt-dot"></span>Monad</span>
+        <span class="tt-val">${n ? yFormat(n[1]) : '—'}</span>
+      </div>`;
+    const pxX = (parseFloat(lineX) / W) * rect.width;
+    tooltip.style.left = `${pxX}px`;
+    tooltip.style.top  = `${(pad.top / H) * rect.height}px`;
+    tooltip.classList.add('show');
+  };
+  const onLeave = () => {
+    tooltip.classList.remove('show');
+    hoverLine.style.display = 'none';
+    dotMega.style.display   = 'none';
+    dotMonad.style.display  = 'none';
+  };
+  capture.addEventListener('mousemove', onMove);
+  capture.addEventListener('mouseleave', onLeave);
+}
+
+// Re-render charts when the window resizes so the SVG width follows the container.
+let __chartResizeRaf = null;
+window.addEventListener('resize', () => {
+  if (__chartResizeRaf) cancelAnimationFrame(__chartResizeRaf);
+  __chartResizeRaf = requestAnimationFrame(() => {
+    if (LAST_DATA) renderAll(LAST_DATA);
+  });
+});
+
+// ---------- static: performance ----------
+function renderPerformance() {
+  const rows = [
+    ['Target TPS', 100000, 10000, '100,000', '10,000'],
+    ['Block Time', 10, 400, '10 ms', '400 ms', true],
+    ['Throughput', 1700, 300, '1,700 MGas/s', '300 MGas/s'],
+    ['Avg Tx Cost', 0.0002, 0.0055, '~$0.0002', '$0.004–$0.007', true],
+  ];
+  const html = rows.map(([label, m, mo, md, mod, low]) =>
+    renderRow(label, m, mo, md, mod, low || false, 'mega')
+  ).join('');
+  renderTable('perf-table', html);
+}
+
+// ---------- API fetching ----------
+async function safeJson(url) {
+  try {
+    const r = await fetch(url);
+    if (!r.ok) throw new Error(`${r.status}`);
+    return await r.json();
+  } catch (e) {
+    console.warn('fetch failed', url, e);
+    return null;
+  }
+}
+
+async function loadAll() {
+  // Keep the per-protocol breakdown excluded (huge payload) but DO include the
+  // totalDataChart — that's the historical series we graph.
+  const OVR = 'excludeTotalDataChartBreakdown=true';
+  // `let` here so the perps fields can be re-assigned from the snapshot below.
+  let [
+    chains, dexMega, dexMonad,
+    feesMega, feesMonad,
+    revMega, revMonad,
+    incMega, incMonad,
+    perpsMega, perpsMonad,
+    chainFeesMega, chainFeesMonad,
+    chainRevMega, chainRevMonad,
+    stables, protocols, monPrice,
+    histTvlMega, histTvlMonad,
+    perpsSnapshot,
+  ] = await Promise.all([
+    safeJson('https://api.llama.fi/v2/chains'),
+    safeJson(`https://api.llama.fi/overview/dexs/MegaETH?${OVR}`),
+    safeJson(`https://api.llama.fi/overview/dexs/Monad?${OVR}`),
+    safeJson(`https://api.llama.fi/overview/fees/MegaETH?${OVR}&dataType=dailyFees`),
+    safeJson(`https://api.llama.fi/overview/fees/Monad?${OVR}&dataType=dailyFees`),
+    safeJson(`https://api.llama.fi/overview/fees/MegaETH?${OVR}&dataType=dailyRevenue`),
+    safeJson(`https://api.llama.fi/overview/fees/Monad?${OVR}&dataType=dailyRevenue`),
+    safeJson(`https://api.llama.fi/overview/fees/MegaETH?${OVR}&dataType=dailyBribesRevenue`),
+    safeJson(`https://api.llama.fi/overview/fees/Monad?${OVR}&dataType=dailyBribesRevenue`),
+    // Derivatives API is paywalled — we fill perpsMega/perpsMonad from the
+    // scraped snapshot after Promise.all resolves, so just push nulls here.
+    Promise.resolve(null),
+    Promise.resolve(null),
+    // Chain-level fees/revenue — try multiple slug variants for MegaETH.
+    (async () => {
+      const slugs = ['megaeth', 'mega-eth', 'megaeth-chain', 'megaeth-l2', 'megaeth-network', 'megaeth-mainnet'];
+      for (const s of slugs) {
+        const r = await safeJson(`https://api.llama.fi/summary/fees/${s}?dataType=dailyFees`);
+        if (r && (r.total24h != null || r.total7d != null)) return r;
+      }
+      return null;
+    })(),
+    safeJson('https://api.llama.fi/summary/fees/monad?dataType=dailyFees'),
+    (async () => {
+      const slugs = ['megaeth', 'mega-eth', 'megaeth-chain', 'megaeth-l2', 'megaeth-network', 'megaeth-mainnet'];
+      for (const s of slugs) {
+        const r = await safeJson(`https://api.llama.fi/summary/fees/${s}?dataType=dailyRevenue`);
+        if (r && (r.total24h != null || r.total7d != null)) return r;
+      }
+      return null;
+    })(),
+    safeJson('https://api.llama.fi/summary/fees/monad?dataType=dailyRevenue'),
+    safeJson('https://stablecoins.llama.fi/stablecoins?includePrices=true'),
+    safeJson('https://api.llama.fi/protocols'),
+    safeJson('https://api.coingecko.com/api/v3/simple/price?ids=monad&vs_currencies=usd&include_market_cap=true&include_24hr_vol=true'),
+    // Historical TVL per chain — for the 30-day TVL chart.
+    safeJson('https://api.llama.fi/v2/historicalChainTvl/MegaETH'),
+    safeJson('https://api.llama.fi/v2/historicalChainTvl/Monad'),
+    // Perps snapshot — refreshed daily by .github/workflows/scrape-perps.yml
+    // (DefiLlama's derivatives API is paywalled, so we scrape the free UI.)
+    safeJson('public/data/perps.json'),
+  ]);
+
+  // Pull live MEGA pre-market price from Hyperliquid; if it returns, update the FDV.
+  const megaLivePrice = await fetchMegaHyperliquidPrice();
+  if (megaLivePrice) {
+    MEGA_PRICE = megaLivePrice;
+    MEGA_FDV_ESTIMATE = megaLivePrice * MEGA_SUPPLY;
+  }
+
+  // --- TVL ---
+  const findChain = (name) => chains?.find(c => c.name?.toLowerCase() === name.toLowerCase());
+  const megaChain = findChain('MegaETH');
+  const monadChain = findChain('Monad');
+  const megaTVL = megaChain?.tvl ?? null;
+  const monadTVL = monadChain?.tvl ?? null;
+
+  // --- Protocols (with native detection) ---
+  let megaProtos = [], monadProtos = [];
+  if (Array.isArray(protocols)) {
+    for (const p of protocols) {
+      const onMega = p.chains?.some(c => c.toLowerCase() === 'megaeth');
+      const onMonad = p.chains?.some(c => c.toLowerCase() === 'monad');
+      if (onMega) megaProtos.push(p);
+      if (onMonad) monadProtos.push(p);
+    }
+  }
+  const megaProtoCount = megaProtos.length;
+  const monadProtoCount = monadProtos.length;
+  const megaProtoCountNative = megaProtos.filter(p => isNative('mega', p.name)).length;
+  const monadProtoCountNative = monadProtos.filter(p => isNative('monad', p.name)).length;
+
+  // --- Per-chain TVL from native protocols (summed from chainTvls where possible) ---
+  const sumChainTvl = (protos, chainKey) => {
+    let s = 0;
+    for (const p of protos) {
+      const ct = p.chainTvls?.[chainKey] ?? (p.chains?.length === 1 ? p.tvl : null);
+      if (typeof ct === 'number') s += ct;
+    }
+    return s;
+  };
+  const megaTVLNative = sumChainTvl(megaProtos.filter(p => isNative('mega', p.name)), 'MegaETH');
+  const monadTVLNative = sumChainTvl(monadProtos.filter(p => isNative('monad', p.name)), 'Monad');
+
+  // --- Stablecoins ---
+  let megaStable = 0, monadStable = 0;
+  const megaStablesBreak = [], monadStablesBreak = [];
+  if (stables?.peggedAssets) {
+    for (const a of stables.peggedAssets) {
+      const cc = a.chainCirculating || {};
+      // names on DeFiLlama can be "MegaETH" / "Monad" or with odd casing
+      const mk = Object.keys(cc).find(k => k.toLowerCase() === 'megaeth');
+      const mnk = Object.keys(cc).find(k => k.toLowerCase() === 'monad');
+      const mv = mk ? cc[mk]?.current?.peggedUSD : 0;
+      const mnv = mnk ? cc[mnk]?.current?.peggedUSD : 0;
+      if (mv) { megaStable += mv; megaStablesBreak.push({ name: a.symbol || a.name, v: mv }); }
+      if (mnv) { monadStable += mnv; monadStablesBreak.push({ name: a.symbol || a.name, v: mnv }); }
+    }
+  }
+
+  // --- Monad FDV ---
+  // Sticky values — if the CoinGecko call intermittently fails/returns empty,
+  // reuse the last known good value instead of flashing "—".
+  const newPrice = monPrice?.monad?.usd;
+  const newMcap  = monPrice?.monad?.usd_market_cap;
+  if (typeof newPrice === 'number' && newPrice > 0) LAST_GOOD.monPriceUSD = newPrice;
+  if (typeof newMcap  === 'number' && newMcap  > 0) LAST_GOOD.monadMarketCap = newMcap;
+  const monPriceUSD = LAST_GOOD.monPriceUSD;
+  const monadFDV = monPriceUSD ? monPriceUSD * MONAD_SUPPLY : null;
+  if (monadFDV) LAST_GOOD.monadFDV = monadFDV;
+
+  // --- Granular chain-level fees + revenue (4 time buckets each) ---
+  const pick = (obj) => obj ? {
+    t24: obj.total24h ?? null,
+    t7d: obj.total7d ?? null,
+    t30d: obj.total30d ?? null,
+    tAll: obj.totalAllTime ?? null,
+  } : { t24: null, t7d: null, t30d: null, tAll: null };
+
+  // Fallback: when /summary/fees/<slug> is empty, look for the chain-as-protocol entry.
+  const findChainEntry = (overview, chainName) => {
+    if (!overview?.protocols) return null;
+    const n = normName(chainName);
+    const variants = new Set([
+      n, n + 'chain', n + 'l2', n + 'network', n + 'mainnet', n + 'labs', n + 'l1',
+    ]);
+    // Exact normalized match
+    let hit = overview.protocols.find(p => variants.has(normName(p.name)));
+    if (hit) return hit;
+    // Category-scoped substring match (DeFiLlama tags chains as "Chain")
+    hit = overview.protocols.find(p => {
+      const pn = normName(p.name);
+      const cat = (p.category || '').toLowerCase();
+      return pn.startsWith(n) && (cat === 'chain' || cat === '' || cat === 'cefi');
+    });
+    if (hit) return hit;
+    // Last resort: any protocol whose normalized name contains the chain name.
+    return overview.protocols.find(p => normName(p.name).includes(n)) || null;
+  };
+
+  const megaChainFeesData  = chainFeesMega  || findChainEntry(feesMega,  'MegaETH');
+  const megaChainRevData   = chainRevMega   || findChainEntry(revMega,   'MegaETH');
+  const monadChainFeesData = chainFeesMonad || findChainEntry(feesMonad, 'Monad');
+  const monadChainRevData  = chainRevMonad  || findChainEntry(revMonad,  'Monad');
+
+  // Build perps overview objects from the scraped snapshot so renderActivity /
+  // renderProtocols keep the same shape they'd get from DefiLlama's overview API.
+  const snapshotForChain = (chainName) => {
+    if (!perpsSnapshot) return null;
+    const protocols = (perpsSnapshot.protocols || [])
+      .filter(p => p.chain === chainName && p.volume24h != null)
+      .map(p => ({ name: p.name, total24h: p.volume24h, category: 'Derivatives' }));
+    const total24h = perpsSnapshot.chains?.[chainName]?.perpsVolume24h
+      ?? protocols.reduce((a, p) => a + (p.total24h || 0), 0) || null;
+    return { total24h, protocols };
+  };
+  perpsMega  = perpsMega  || snapshotForChain('MegaETH');
+  perpsMonad = perpsMonad || snapshotForChain('Monad');
+
+  const gran = {
+    megaChainFees: pick(megaChainFeesData),
+    monadChainFees: pick(monadChainFeesData),
+    megaChainRev: pick(megaChainRevData),
+    monadChainRev: pick(monadChainRevData),
+    monadMarketCap: LAST_GOOD.monadMarketCap,
+  };
+
+  // Normalize all historical series into `[[unixSeconds, value], …]`
+  const normHistChain = (arr) => Array.isArray(arr)
+    ? arr.map(p => [p.date, p.tvl]).filter(p => p[0] && p[1] != null)
+    : [];
+  const normOverviewChart = (chart) => Array.isArray(chart)
+    ? chart.map(p => [Number(p[0]), Number(p[1])]).filter(p => isFinite(p[0]) && isFinite(p[1]))
+    : [];
+
+  const charts = {
+    tvlMega:  normHistChain(histTvlMega),
+    tvlMonad: normHistChain(histTvlMonad),
+    dexMega:  normOverviewChart(dexMega?.totalDataChart),
+    dexMonad: normOverviewChart(dexMonad?.totalDataChart),
+    perpsMega:  normOverviewChart(perpsMega?.totalDataChart),
+    perpsMonad: normOverviewChart(perpsMonad?.totalDataChart),
+    appFeesMega:  normOverviewChart(feesMega?.totalDataChart),
+    appFeesMonad: normOverviewChart(feesMonad?.totalDataChart),
+    appRevMega:   normOverviewChart(revMega?.totalDataChart),
+    appRevMonad:  normOverviewChart(revMonad?.totalDataChart),
+    chainFeesMega:  normOverviewChart(chainFeesMega?.totalDataChart),
+    chainFeesMonad: normOverviewChart(chainFeesMonad?.totalDataChart),
+    chainRevMega:   normOverviewChart(chainRevMega?.totalDataChart),
+    chainRevMonad:  normOverviewChart(chainRevMonad?.totalDataChart),
+  };
+
+  return {
+    megaTVL, monadTVL,
+    megaTVLNative, monadTVLNative,
+    megaProtoCount, monadProtoCount,
+    megaProtoCountNative, monadProtoCountNative,
+    dexMega, dexMonad,
+    perpsMega, perpsMonad,
+    feesMega, feesMonad,
+    revMega, revMonad,
+    megaStable, monadStable,
+    megaStablesBreak, monadStablesBreak,
+    monPriceUSD, monadFDV,
+    megaProtosAll: megaProtos,
+    monadProtosAll: monadProtos,
+    charts,
+    ...gran,
+  };
+}
+
+// Given a DeFiLlama overview payload ({total24h, total7d, total30d, totalAllTime, protocols:[...]}),
+// return a filtered version whose aggregates sum only the native-matching protocols.
+function filterOverviewToNative(payload, chainKey) {
+  if (!payload || !Array.isArray(payload.protocols)) return payload;
+  const natives = payload.protocols.filter(p => isNative(chainKey, p.name));
+  const sum = (field) => natives.reduce((a, p) => a + (p[field] || 0), 0);
+  return {
+    ...payload,
+    total24h: sum('total24h'),
+    total7d: sum('total7d'),
+    total30d: sum('total30d'),
+    totalAllTime: sum('totalAllTime'),
+    change_1d: null,  // weighted average not meaningful for a filtered subset
+    protocols: natives,
+  };
+}
+
+// Returns a view where TVL/DEX/protocol-count fields are scoped to native apps (if requested).
+function scopedTvlView(raw, scope) {
+  if (scope === 'all') return raw;
+  return {
+    ...raw,
+    megaTVL: raw.megaTVLNative || 0,
+    monadTVL: raw.monadTVLNative || 0,
+    megaProtoCount: raw.megaProtoCountNative,
+    monadProtoCount: raw.monadProtoCountNative,
+    dexMega: filterOverviewToNative(raw.dexMega, 'mega'),
+    dexMonad: filterOverviewToNative(raw.dexMonad, 'monad'),
+  };
+}
+
+// Returns a view where fees + revenue aggregates are scoped to native apps (if requested).
+function scopedFeesView(raw, scope) {
+  if (scope === 'all') return raw;
+  return {
+    ...raw,
+    feesMega: filterOverviewToNative(raw.feesMega, 'mega'),
+    feesMonad: filterOverviewToNative(raw.feesMonad, 'monad'),
+    revMega: filterOverviewToNative(raw.revMega, 'mega'),
+    revMonad: filterOverviewToNative(raw.revMonad, 'monad'),
+  };
+}
+
+// ---------- renderers ----------
+function renderSummary(d) {
+  const fdvRatio = d.monadFDV ? (d.monadFDV / MEGA_FDV_ESTIMATE).toFixed(2) + 'x' : '—';
+  const feeRatio = fmtRatio(d.feesMega?.total24h, d.feesMonad?.total24h);
+  const tvlRatio = fmtRatio(d.megaTVL, d.monadTVL);
+  const megaFdvFmt = fmtUSD(MEGA_FDV_ESTIMATE);
+  const monadFdvFmt = d.monadFDV ? fmtUSD(d.monadFDV) : '—';
+  const monPriceFmt = d.monPriceUSD ? `$${d.monPriceUSD.toFixed(4)}` : '—';
+  const megaPriceFmt = `$${MEGA_PRICE.toFixed(4)}`;
+  document.getElementById('summary').innerHTML = `
+    <div class="summary-card">
+      <div class="label">MegaETH FDV</div>
+      <div class="value">${megaFdvFmt}</div>
+      <div class="sub">${megaPriceFmt} · Hyperliquid pre-market</div>
+    </div>
+    <div class="summary-card">
+      <div class="label">Monad FDV</div>
+      <div class="value">${monadFdvFmt}</div>
+      <div class="sub">${monPriceFmt} · CoinGecko spot</div>
+    </div>
+    <div class="summary-card">
+      <div class="label">FDV Multiple</div>
+      <div class="value">${fdvRatio}</div>
+      <div class="sub">Monad premium over MegaETH</div>
+    </div>
+    <div class="summary-card">
+      <div class="label">TVL Ratio</div>
+      <div class="value">${tvlRatio}</div>
+      <div class="sub">MegaETH vs Monad TVL</div>
+    </div>
+    <div class="summary-card">
+      <div class="label">Fee Ratio</div>
+      <div class="value">${feeRatio}</div>
+      <div class="sub">24h fee generation</div>
+    </div>`;
+}
+
+function renderActivity(d) {
+  const dm = d.dexMega || {},   dn = d.dexMonad || {};
+  const pm = d.perpsMega || {}, pn = d.perpsMonad || {};
+  const rows = [
+    renderRow('TVL', d.megaTVL, d.monadTVL, fmtUSD(d.megaTVL), fmtUSD(d.monadTVL)),
+    renderRow('DEX Volume 24h (Spot)', dm.total24h, dn.total24h, fmtUSD(dm.total24h), fmtUSD(dn.total24h)),
+    renderRow('DEX Volume 30d (Spot)', dm.total30d, dn.total30d, fmtUSD(dm.total30d), fmtUSD(dn.total30d)),
+    renderRow('DEX Volume All-Time (Spot)', dm.totalAllTime, dn.totalAllTime, fmtUSD(dm.totalAllTime), fmtUSD(dn.totalAllTime)),
+    renderRow('Perps Volume 24h', pm.total24h, pn.total24h, fmtUSD(pm.total24h), fmtUSD(pn.total24h)),
+    renderRow('Protocol Count', d.megaProtoCount, d.monadProtoCount, fmtNum(d.megaProtoCount), fmtNum(d.monadProtoCount)),
+  ].join('');
+  renderTable('activity-table', rows);
+
+  const c = d.charts || {};
+  renderLineChart('chart-tvl',   c.tvlMega,   c.tvlMonad,   { title: 'TVL — last 30 days' });
+  renderLineChart('chart-dex',   c.dexMega,   c.dexMonad,   { title: 'DEX Volume (Spot) — last 30 days' });
+  // Perps chart disabled while DefiLlama's derivatives API is paywalled — the
+  // scraped snapshot only carries a single 24h value, not a 30-day series.
+  const pchart = document.getElementById('chart-perps');
+  if (pchart) pchart.innerHTML = '';
+}
+
+// Descriptions paraphrased from DeFiLlama's tooltip text.
+const FEES_DEFS = {
+  fees: {
+    chain: 'Chain Fees — total fees paid on the chain itself (gas / base fees / MEV paid to validators or sequencer). Does not include fees paid to individual apps.',
+    app:   'App Fees — sum of fees paid by users to every protocol / dApp deployed on the chain (DEX swap fees, lending interest, perps fees, etc.).',
+    heading: 'Fees',
+    sub: 'Total value of fees paid by users — split by what goes to the chain vs what goes to apps.',
+    rowLabelChain: 'Chain Fees',
+    rowLabelApp: 'App Fees',
+  },
+  revenue: {
+    chain: 'Chain Revenue — the subset of chain fees kept by the chain (e.g. gas net of burn, sequencer revenue, MEV captured).',
+    app:   'App Revenue — the subset of app fees captured by each protocol as its own revenue (treasury, token holders, stakers). Excludes fees paid out to LPs or suppliers.',
+    heading: 'Revenue',
+    sub: 'Share of fees retained by the chain and by apps — not the fees going to LPs, suppliers, or users.',
+    rowLabelChain: 'Chain Revenue',
+    rowLabelApp: 'App Revenue',
+  },
+};
+
+function renderFees(d) {
+  const metric = STATE.feesMetric;       // 'fees' | 'revenue'
+  const defs = FEES_DEFS[metric];
+
+  // App-level aggregate (from /overview/fees/<chain> with dataType=dailyFees|dailyRevenue)
+  const appMega  = metric === 'fees' ? d.feesMega  : d.revMega;
+  const appMonad = metric === 'fees' ? d.feesMonad : d.revMonad;
+
+  // Chain-level (from /summary/fees/<chain-slug> — the chain as its own protocol entry)
+  const chainMega  = metric === 'fees' ? d.megaChainFees  : d.megaChainRev;
+  const chainMonad = metric === 'fees' ? d.monadChainFees : d.monadChainRev;
+
+  const bucket = (mv, nv, label) =>
+    renderRow(label, mv, nv, fmtUSD(mv), fmtUSD(nv));
+
+  const rows = [
+    `<tr class="group-row"><td colspan="5">
+       <div class="group-title">${defs.rowLabelChain}</div>
+       <div class="group-desc">${defs.chain}</div>
+     </td></tr>`,
+    bucket(chainMega?.t24,  chainMonad?.t24,  `${defs.rowLabelChain} (24h)`),
+    bucket(chainMega?.t7d,  chainMonad?.t7d,  `${defs.rowLabelChain} (7d)`),
+    bucket(chainMega?.t30d, chainMonad?.t30d, `${defs.rowLabelChain} (30d)`),
+    bucket(chainMega?.tAll, chainMonad?.tAll, `${defs.rowLabelChain} (All-Time)`),
+    `<tr class="group-row"><td colspan="5">
+       <div class="group-title">${defs.rowLabelApp}</div>
+       <div class="group-desc">${defs.app}</div>
+     </td></tr>`,
+    bucket(appMega?.total24h,     appMonad?.total24h,     `${defs.rowLabelApp} (24h)`),
+    bucket(appMega?.total7d,      appMonad?.total7d,      `${defs.rowLabelApp} (7d)`),
+    bucket(appMega?.total30d,     appMonad?.total30d,     `${defs.rowLabelApp} (30d)`),
+    bucket(appMega?.totalAllTime, appMonad?.totalAllTime, `${defs.rowLabelApp} (All-Time)`),
+  ].join('');
+  renderTable('fees-table', rows);
+
+  const hdr = document.getElementById('fees-heading');
+  const sub = document.getElementById('fees-sub');
+  if (hdr) hdr.textContent = defs.heading;
+  if (sub) sub.textContent = defs.sub;
+
+  // Chart selection follows the current metric tab.
+  const c = d.charts || {};
+  if (metric === 'fees') {
+    renderLineChart('chart-fees-chain', c.chainFeesMega, c.chainFeesMonad, { title: 'Chain Fees — last 30 days' });
+    renderLineChart('chart-fees-app',   c.appFeesMega,   c.appFeesMonad,   { title: 'App Fees — last 30 days' });
+  } else {
+    renderLineChart('chart-fees-chain', c.chainRevMega, c.chainRevMonad, { title: 'Chain Revenue — last 30 days' });
+    renderLineChart('chart-fees-app',   c.appRevMega,   c.appRevMonad,   { title: 'App Revenue — last 30 days' });
+  }
+}
+
+function renderStables(d) {
+  const mr = d.megaTVL ? d.megaStable / d.megaTVL : null;
+  const nr = d.monadTVL ? d.monadStable / d.monadTVL : null;
+  const fmtR = (v) => v == null ? '—' : `${(v * 100).toFixed(1)}%`;
+  const rows = [
+    renderRow('Total Stablecoin Supply', d.megaStable, d.monadStable, fmtUSD(d.megaStable), fmtUSD(d.monadStable)),
+    renderRow('Stablecoin / TVL Ratio', mr, nr, fmtR(mr), fmtR(nr), true),
+  ].join('');
+  renderTable('stable-table', rows);
+
+  const topN = (arr) => arr.sort((a, b) => b.v - a.v).slice(0, 6)
+    .map(x => `<span class="stable-chip">${x.name} ${fmtUSD(x.v)}</span>`).join('');
+  document.getElementById('stable-breakdown').innerHTML = `
+    <div style="margin-top: 16px;">
+      <div style="color: #666; font-size: 11px; letter-spacing: 0.8px; text-transform: uppercase; margin-bottom: 8px;">MegaETH stables</div>
+      <div class="stable-list">${topN(d.megaStablesBreak) || '<span class="stable-chip">None</span>'}</div>
+      <div style="color: #666; font-size: 11px; letter-spacing: 0.8px; text-transform: uppercase; margin: 14px 0 8px;">Monad stables</div>
+      <div class="stable-list">${topN(d.monadStablesBreak) || '<span class="stable-chip">None</span>'}</div>
+    </div>`;
+}
+
+function renderDerived(d) {
+  const fm = d.feesMega || {}, fn = d.feesMonad || {};
+  const megaAnnual = fm.total30d ? fm.total30d * 12 : null;
+  const monadAnnual = fn.total30d ? fn.total30d * 12 : null;
+  const megaFdvTvl = d.megaTVL ? MEGA_FDV_ESTIMATE / d.megaTVL : null;
+  const monadFdvTvl = (d.monadFDV && d.monadTVL) ? d.monadFDV / d.monadTVL : null;
+  const megaFdvFees = megaAnnual ? MEGA_FDV_ESTIMATE / megaAnnual : null;
+  const monadFdvFees = (d.monadFDV && monadAnnual) ? d.monadFDV / monadAnnual : null;
+  const fmtX = (v) => v == null || !isFinite(v) ? '—' : `${v.toFixed(1)}x`;
+  const rows = [
+    renderRow('FDV / TVL', megaFdvTvl, monadFdvTvl, fmtX(megaFdvTvl), fmtX(monadFdvTvl), true),
+    renderRow('FDV / Annualized Fees', megaFdvFees, monadFdvFees, fmtX(megaFdvFees), fmtX(monadFdvFees), true),
+  ].join('');
+  renderTable('derived-table', rows);
+}
+
+function renderProtocols(d) {
+  const focus = STATE.protoMetric;    // 'tvl' | 'fees' | 'volspot' | 'volperps'
+  const scope = STATE.protoScope;     // 'all' | 'native'
+
+  // Filter the chain itself out — DeFiLlama sometimes lists the chain's own gas fees as a protocol.
+  const isChainEntry = (name, chain) => {
+    const n = normName(name);
+    if (chain === 'mega') return n === 'megaeth' || n === 'megaethchain';
+    return n === 'monad' || n === 'monadchain';
+  };
+
+  const sumVol = (p, chainKey) => {
+    if (p.breakdown24h && typeof p.breakdown24h === 'object') {
+      const bd = p.breakdown24h[chainKey];
+      if (typeof bd === 'number') return bd;
+      if (bd && typeof bd === 'object') {
+        const s = Object.values(bd).reduce((a, v) => a + (typeof v === 'number' ? v : 0), 0);
+        if (s > 0) return s;
+      }
+    }
+    return p.total24h ?? null;
+  };
+
+  // Extract chain-specific fee value: prefer breakdown24h[chainKey], else fall back to total24h.
+  const chainFeeValue = (p, chainKey) => {
+    if (p.breakdown24h && typeof p.breakdown24h === 'object') {
+      const bd = p.breakdown24h[chainKey];
+      if (typeof bd === 'number') return bd;
+      // breakdown24h may be keyed by chain then by sub-protocol name: { Monad: { ... } }
+      if (bd && typeof bd === 'object') {
+        const sum = Object.values(bd).reduce((a, v) => a + (typeof v === 'number' ? v : 0), 0);
+        if (sum > 0) return sum;
+      }
+    }
+    return p.total24h ?? null;
+  };
+
+  const pickList = (chain) => {
+    const chainKey = chain === 'mega' ? 'MegaETH' : 'Monad';
+    const overviewPick = (pool) => {
+      let arr = (pool?.protocols || [])
+        .filter(p => !isChainEntry(p.name, chain))
+        .map(p => ({ ...p, _val: sumVol(p, chainKey) }))
+        .filter(p => p._val != null && p._val > 0);
+      if (scope === 'native') arr = arr.filter(p => isNative(chain, p.name));
+      return arr.sort((a, b) => b._val - a._val)
+        .map(p => ({ name: p.name, val: p._val, logo: p.logo, slug: p.slug || p.defillamaId, category: p.category }));
+    };
+
+    if (focus === 'fees') {
+      const pool = chain === 'mega' ? d.feesMega : d.feesMonad;
+      let arr = (pool?.protocols || [])
+        .filter(p => !isChainEntry(p.name, chain))
+        .map(p => ({ ...p, _val: chainFeeValue(p, chainKey) }))
+        .filter(p => p._val != null && p._val > 0);
+      if (scope === 'native') arr = arr.filter(p => isNative(chain, p.name));
+      return arr.sort((a, b) => b._val - a._val)
+        .map(p => ({ name: p.name, val: p._val, logo: p.logo, slug: p.slug || p.defillamaId, category: p.category }));
+    }
+    if (focus === 'volspot') {
+      return overviewPick(chain === 'mega' ? d.dexMega : d.dexMonad);
+    }
+    if (focus === 'volperps') {
+      // 1) Start with what /overview/derivatives/{chain} already returned —
+      //    that endpoint is pre-filtered by category=Derivatives and chain.
+      const pool = chain === 'mega' ? d.perpsMega : d.perpsMonad;
+      const baseList = overviewPick(pool);
+
+      // 2) Augment with ANY protocol whose category === "Derivatives" that operates
+      //    on this chain, in case the overview endpoint missed it. Dedupe by name.
+      const fromAll = chain === 'mega' ? d.megaProtosAll : d.monadProtosAll;
+      const seen = new Set(baseList.map(p => normName(p.name)));
+      const extras = (fromAll || [])
+        .filter(p => {
+          const cat = (p.category || '').toLowerCase();
+          return (cat === 'derivatives' || cat === 'derivative') && !isChainEntry(p.name, chain);
+        })
+        .filter(p => !seen.has(normName(p.name)))
+        .map(p => ({
+          name: p.name,
+          val: null,         // no 24h volume in /protocols — list but unsorted
+          logo: p.logo,
+          slug: p.slug || p.defillamaId,
+          category: p.category,
+        }));
+
+      let merged = baseList.concat(extras);
+      if (scope === 'native') merged = merged.filter(p => isNative(chain, p.name));
+      return merged.sort((a, b) => (b.val || 0) - (a.val || 0));
+    }
+    // focus === 'tvl'
+    let pool = chain === 'mega' ? d.megaProtosAll : d.monadProtosAll;
+    if (!pool) return [];
+    let arr = pool
+      .filter(p => !isChainEntry(p.name, chain))
+      .slice();
+    if (scope === 'native') arr = arr.filter(p => isNative(chain, p.name));
+    return arr
+      .map(p => ({
+        name: p.name,
+        val: (p.chainTvls?.[chainKey]) ?? p.tvl,
+        logo: p.logo,
+        slug: p.slug || p.defillamaId,
+        category: p.category,
+      }))
+      .filter(x => x.val != null && x.val > 0)
+      .sort((a, b) => b.val - a.val);
+  };
+
+  const renderLogo = (proto) => {
+    const l = logoFor(proto);
+    const first = l.api || l.local;
+    const second = l.api ? l.local : l.remote;
+    const third = l.api ? l.remote : null;
+    const onError = third
+      ? `this.onerror=function(){this.onerror=function(){this.style.display='none';};this.src='${third}';};this.src='${second}';`
+      : `this.onerror=function(){this.style.display='none';};this.src='${second}';`;
+    return `<img class="proto-logo" src="${first}" alt="" onerror="${onError}" />`;
+  };
+  const renderList = (arr) => {
+    const items = arr.slice(0, 30);
+    if (!items.length) return '<li><span class="pname">No data</span><span class="pval">—</span></li>';
+    return items.map((p, i) => `
+      <li>
+        <span class="pname"><span class="prank">${i + 1}</span>${renderLogo(p)}${p.name}</span>
+        <span class="pval">${fmtUSD(p.val)}</span>
+      </li>`).join('');
+  };
+  document.getElementById('proto-mega').innerHTML = renderList(pickList('mega'));
+  document.getElementById('proto-monad').innerHTML = renderList(pickList('monad'));
+
+  const titleMap = {
+    tvl: 'Top Protocols by TVL',
+    fees: 'Top Fee-Generating Protocols (24h)',
+    volspot: 'Top Protocols by Spot Volume (24h)',
+    volperps: 'Top Protocols by Perps Volume (24h)',
+  };
+  const scopeLabel = scope === 'native' ? 'native apps only' : 'all apps';
+  const hdr = document.getElementById('proto-heading');
+  if (hdr) hdr.textContent = `${titleMap[focus] || 'Top Protocols'} · ${scopeLabel}`;
+}
+
+// ---------- tick ----------
+let lastLoad = null;
+
+function renderAll(raw) {
+  renderSummary(raw);
+  renderActivity(scopedTvlView(raw, STATE.tvlScope));
+  renderFees(scopedFeesView(raw, STATE.feesScope));
+  renderStables(raw);
+  renderDerived(raw);
+  renderProtocols(raw);
+}
+
+async function refresh() {
+  document.querySelectorAll('.card, .summary').forEach(el => el.classList.add('loading'));
+  try {
+    const raw = await loadAll();
+    LAST_DATA = raw;
+    renderAll(raw);
+    lastLoad = new Date();
+    document.getElementById('error-box').innerHTML = '';
+  } catch (e) {
+    console.error(e);
+    document.getElementById('error-box').innerHTML = `<div class="error">Failed to load some data. Retrying shortly.</div>`;
+  } finally {
+    document.querySelectorAll('.card, .summary').forEach(el => el.classList.remove('loading'));
+    updateTimestamp();
+  }
+}
+
+function updateTimestamp() {
+  if (!lastLoad) {
+    document.getElementById('updated-text').textContent = 'Loading…';
+    return;
+  }
+  const secs = Math.floor((Date.now() - lastLoad.getTime()) / 1000);
+  const txt = secs < 5 ? 'just now' : `${secs}s ago`;
+  document.getElementById('updated-text').textContent = `Last updated: ${txt}`;
+}
+
+renderPerformance();
+wireScopeToggles();
+refresh();
+setInterval(refresh, 60_000);
+setInterval(updateTimestamp, 1000);
+</script>
+</body>
+</html>
