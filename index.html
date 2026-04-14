@@ -981,6 +981,53 @@ function persistLastGood() {
   try { localStorage.setItem(LAST_GOOD_KEY, JSON.stringify(LAST_GOOD)); } catch {}
 }
 
+// Stale-while-revalidate cache for the full loadAll() result. On page load
+// we hydrate from this immediately, so repeat visits paint in ~50ms instead
+// of waiting 3-5s for every DefiLlama + CoinGecko request to resolve.
+const RESULT_CACHE_KEY = 'mega-vs-monad:last-result:v3';
+const RESULT_CACHE_MAX_AGE_MS = 24 * 60 * 60 * 1000; // discard after 24h
+
+function persistResult(d) {
+  try {
+    // Slim the protocols arrays to only fields we actually render, so the
+    // serialized blob fits comfortably under localStorage quotas (~5MB).
+    const slimProto = (p) => ({
+      name: p.name, slug: p.slug, category: p.category,
+      tvl: p.tvl, chains: p.chains, chainTvls: p.chainTvls,
+      logo: p.logo,
+    });
+    const slimOverview = (o) => o ? {
+      total24h: o.total24h, total7d: o.total7d, total30d: o.total30d, totalAllTime: o.totalAllTime,
+      change_1d: o.change_1d, totalDataChart: o.totalDataChart,
+      protocols: (o.protocols || []).map(p => ({
+        name: p.name, slug: p.slug, logo: p.logo, category: p.category,
+        total24h: p.total24h, total7d: p.total7d, total30d: p.total30d,
+        breakdown24h: p.breakdown24h, breakdown7d: p.breakdown7d, breakdown30d: p.breakdown30d,
+      })),
+    } : null;
+    const lean = {
+      ...d,
+      megaProtosAll:  (d.megaProtosAll  || []).map(slimProto),
+      monadProtosAll: (d.monadProtosAll || []).map(slimProto),
+      dexMega:  slimOverview(d.dexMega),  dexMonad: slimOverview(d.dexMonad),
+      feesMega: slimOverview(d.feesMega), feesMonad: slimOverview(d.feesMonad),
+      revMega:  slimOverview(d.revMega),  revMonad: slimOverview(d.revMonad),
+      perpsMega: slimOverview(d.perpsMega), perpsMonad: slimOverview(d.perpsMonad),
+    };
+    localStorage.setItem(RESULT_CACHE_KEY, JSON.stringify({ ts: Date.now(), d: lean }));
+  } catch (e) { /* quota exceeded or SecurityError — silently skip */ }
+}
+
+function getCachedResult() {
+  try {
+    const raw = localStorage.getItem(RESULT_CACHE_KEY);
+    if (!raw) return null;
+    const { ts, d } = JSON.parse(raw);
+    if (!ts || Date.now() - ts > RESULT_CACHE_MAX_AGE_MS) return null;
+    return { ts, d };
+  } catch { return null; }
+}
+
 // Per-card toggles — each card owns its own scope.
 const STATE = {
   tvlScope: 'all',      // TVL & Activity card
@@ -2373,6 +2420,7 @@ async function refresh() {
     const raw = await loadAll();
     LAST_DATA = raw;
     renderAll(raw);
+    persistResult(raw);
     lastLoad = new Date();
     document.getElementById('error-box').innerHTML = '';
   } catch (e) {
@@ -2396,6 +2444,17 @@ function updateTimestamp() {
 
 renderPerformance();
 wireScopeToggles();
+
+// Stale-while-revalidate: paint cached result immediately so the page is
+// usable within ~50ms, then kick off the fresh fetch cycle in the background.
+const __cached = getCachedResult();
+if (__cached) {
+  LAST_DATA = __cached.d;
+  try { renderAll(__cached.d); } catch (e) { console.warn('cache render failed', e); }
+  lastLoad = new Date(__cached.ts);
+  updateTimestamp();
+}
+
 refresh();
 setInterval(refresh, 60_000);
 setInterval(updateTimestamp, 1000);
