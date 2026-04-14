@@ -91,13 +91,17 @@
     justify-content: center;
     align-items: center;
     gap: clamp(20px, 3vw, 48px);
+    flex-wrap: wrap;       /* let logos drop below VS if the row can't fit */
+    min-width: 0;
   }
   .hero-logo {
     display: block;
-    height: clamp(40px, 5.4vw, 70px);
+    height: auto;
+    max-height: clamp(40px, 5.4vw, 70px);
     width: auto;
-    max-width: 100%;
+    max-width: 46%;        /* never exceed half the row, leaves room for VS */
     object-fit: contain;
+    flex-shrink: 1;
   }
   .hero-logo.monad { filter: brightness(0) invert(1); }
   .hero-vs {
@@ -183,26 +187,36 @@
   /* ---------- Summary bar ---------- */
   .summary {
     display: grid;
-    grid-template-columns: repeat(5, minmax(0, 1fr));
+    /* auto-fit lets the 5 cards reflow into fewer rows at narrow / zoomed
+       desktops instead of being crushed side-by-side. Each card claims at
+       least ~160px; at 1440px we get all 5 in a row, at 1100-1200px we get
+       3-4 per row, at 860px we drop to single column via the @media below. */
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
     gap: 0;
+    row-gap: 4px;
     width: 100%;
     background: var(--full-moon);
     color: var(--night-sky);
     border-radius: 14px;
-    padding: 24px 0;
+    padding: 16px 0;
     margin-bottom: 40px;
     box-sizing: border-box;
+    overflow: hidden;
   }
   .summary-card {
-    padding: 4px 20px;
+    padding: 10px 20px;
     text-align: left;
     border-right: 1px solid rgba(25, 25, 26, 0.15);
     display: flex;
     flex-direction: column;
     justify-content: center;
     min-width: 0;
+    box-sizing: border-box;
   }
   .summary-card:last-child { border-right: none; }
+  /* Value text wraps cleanly when a card is narrow due to zoom. */
+  .summary-card .value { overflow-wrap: anywhere; }
+  .summary-card .sub   { overflow-wrap: anywhere; white-space: normal; }
   .summary-card .label {
     font-size: 11px;
     font-weight: 700;
@@ -254,6 +268,8 @@
     border: 1px solid rgba(25, 25, 26, 0.08);
     border-radius: 12px;
     padding: 22px;
+    min-width: 0;      /* grid cell safeguard — never force track wider */
+    overflow: hidden;  /* nothing inside the card escapes the rounded border */
   }
   .card.full { grid-column: 1 / -1; }
   .card h2 {
@@ -287,7 +303,12 @@
     align-items: flex-end;
     gap: 6px;
     justify-self: end;
+    max-width: 100%;
+    flex-wrap: wrap;
   }
+  /* The scope-toggle itself can wrap its buttons when a zoom makes the
+     combined label ("All Apps Native Combined") wider than the toggle group. */
+  .scope-toggle { flex-wrap: wrap; max-width: 100%; }
   @media (max-width: 860px) {
     .card-header { grid-template-columns: 1fr; }
     .card-header-toggles { justify-self: start; align-items: flex-start; flex-direction: row; flex-wrap: wrap; }
