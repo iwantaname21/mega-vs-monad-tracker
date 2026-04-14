@@ -1,5 +1,5 @@
 window.__PERPS_SNAPSHOT__ = {
-  "updatedAt": "2026-04-14T20:52:37.216Z",
+  "updatedAt": "2026-04-14T22:43:31.899Z",
   "source": "https://defillama.com",
   "protocols": [
     {
@@ -7,7 +7,7 @@ window.__PERPS_SNAPSHOT__ = {
       "chain": "MegaETH",
       "name": "World Markets",
       "aliases": [],
-      "volume24h": 18360000,
+      "volume24h": 20040000,
       "volume7d": 9310000,
       "volume30d": 19840000,
       "volumeAllTime": 77240000,
@@ -45,31 +45,31 @@ window.__PERPS_SNAPSHOT__ = {
       "volume24h": 13370000,
       "volume7d": 86010000,
       "volume30d": 325810000,
-      "volumeAllTime": null,
+      "volumeAllTime": 2234000000,
       "chainFiltered": true
     }
   ],
   "chains": {
     "MegaETH": {
-      "perpsVolume24h": 20140000,
-      "raw": "$20.14m"
+      "perpsVolume24h": 16600000.000000002,
+      "raw": "$16.6m"
     },
     "Monad": {
-      "perpsVolume24h": 16960000,
-      "raw": "$16.96m"
+      "perpsVolume24h": 16870000,
+      "raw": "$16.87m"
     }
   },
   "history": {
     "MegaETH": [
       {
         "date": "2026-04-14",
-        "value": 20140000
+        "value": 16600000.000000002
       }
     ],
     "Monad": [
       {
         "date": "2026-04-14",
-        "value": 16960000
+        "value": 16870000
       }
     ]
   }
