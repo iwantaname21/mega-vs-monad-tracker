@@ -4,17 +4,24 @@
 //
 // Runs inside .github/workflows/scrape-perps.yml — see that file for the cron.
 
-import { chromium } from 'playwright';
+import { chromium as rawChromium } from 'playwright-extra';
+import stealth from 'puppeteer-extra-plugin-stealth';
 import fs from 'node:fs/promises';
 import path from 'node:path';
 
+rawChromium.use(stealth());
+const chromium = rawChromium;
+
 // Protocols to snapshot — matches what DefiLlama lists for each chain's perps.
 // If you add a new native perps app, just append it here.
+// `aliases` are alternate display names DefiLlama uses for the protocol on
+// its chain-filtered pages — e.g. "GMX V2 Perps" on the protocol page is
+// rendered as just "GMX" on the MegaETH chain page.
 const PROTOCOLS = [
-  { slug: 'world-markets',  chain: 'MegaETH', name: 'World Markets' },
-  { slug: 'gmx-v2-perps',   chain: 'MegaETH', name: 'GMX V2 Perps'  },
-  { slug: 'perpl',          chain: 'Monad',   name: 'Perpl'         },
-  { slug: 'leverup',        chain: 'Monad',   name: 'LeverUp'       },
+  { slug: 'world-markets', chain: 'MegaETH', name: 'World Markets', aliases: [] },
+  { slug: 'gmx-v2-perps',  chain: 'MegaETH', name: 'GMX V2 Perps',  aliases: ['GMX'] },
+  { slug: 'perpl',         chain: 'Monad',   name: 'Perpl',         aliases: [] },
+  { slug: 'leverup',       chain: 'Monad',   name: 'LeverUp',       aliases: [] },
 ];
 const CHAINS = ['MegaETH', 'Monad'];
 
@@ -31,73 +38,131 @@ function parseUsd(raw) {
   return n * mult;
 }
 
-// Waits for the page to hydrate past the Cloudflare interstitial.
+// Waits for the page to hydrate past the Cloudflare interstitial. Polls up to
+// ~45s for a "$" value to appear in the body (real content). Retries up to three
+// times if Cloudflare's "security verification" shell is still sitting there.
 async function waitForHydration(page) {
   await page.waitForLoadState('domcontentloaded').catch(() => {});
-  // The real content has $ values; the Cloudflare wall doesn't.
-  await page.waitForFunction(
-    () => /\$[\d,.]+[BbMmKk]?/.test(document.body.innerText || ''),
-    null,
-    { timeout: 45_000 }
-  ).catch(() => {});
-  await page.waitForTimeout(1500); // settle any lazy chunks
+  for (let attempt = 0; attempt < 3; attempt++) {
+    const ok = await page.waitForFunction(
+      () => /\$[\d,.]+[BbMmKk]?/.test(document.body.innerText || ''),
+      null,
+      { timeout: 45_000 }
+    ).then(() => true).catch(() => false);
+    if (ok) break;
+    const text = await page.evaluate(() => (document.body.innerText || '').slice(0, 200));
+    if (!/security verification|Just a moment|performing.*check/i.test(text)) break;
+    await page.waitForTimeout(6000);
+  }
+  await page.waitForTimeout(1500);
 }
 
-// Scrape one DefiLlama protocol page → returns its 24h perps volume.
+// Given the page's body text, find the first $ value that comes after a line
+// matching `labelRe`. DefiLlama always puts the label on one line and the value
+// on the next line, so we do a line-based walk instead of fragile DOM selectors.
+async function extractLabeledValues(page, labelRegexes) {
+  return await page.evaluate((labelPatterns) => {
+    const text = (document.body.innerText || '');
+    const lines = text.split('\n').map(s => s.trim()).filter(Boolean);
+    const valRe = /\$\s*[\d,]+(?:\.\d+)?\s*[BbMmKk]?/;
+    const out = {};
+    for (const { key, pattern } of labelPatterns) {
+      const re = new RegExp(pattern, 'i');
+      for (let i = 0; i < lines.length; i++) {
+        if (!re.test(lines[i])) continue;
+        // If the label line itself contains a $ value, use it.
+        let m = lines[i].match(valRe);
+        if (!m) {
+          // Otherwise scan the next handful of lines for the first $ value.
+          for (let j = i + 1; j < Math.min(i + 4, lines.length); j++) {
+            m = lines[j].match(valRe);
+            if (m) break;
+          }
+        }
+        if (m) { out[key] = m[0]; break; }
+      }
+    }
+    return out;
+  }, labelRegexes);
+}
+
 async function scrapeProtocol(page, slug) {
   const url = `https://defillama.com/protocol/perps/${slug}`;
   console.log('→ protocol:', url);
   await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 60_000 });
   await waitForHydration(page);
-
-  // Find "24h volume" label and grab the adjacent $ value.
-  const raw = await page.evaluate(() => {
-    const labelRe = /24h\s*volume/i;
-    const valRe   = /\$\s*[\d,]+(?:\.\d+)?\s*[BbMmKk]?/;
-    const all = Array.from(document.querySelectorAll('*'));
-    for (const el of all) {
-      const txt = (el.innerText || '').trim();
-      if (!labelRe.test(txt) || txt.length > 400) continue;
-      // Same element often contains "24h Volume $1.23m"
-      const same = txt.match(valRe);
-      if (same) return same[0];
-      // Otherwise scan the nearest parent's text.
-      const parent = el.parentElement;
-      if (parent) {
-        const pm = (parent.innerText || '').match(valRe);
-        if (pm) return pm[0];
-      }
-    }
-    return null;
-  });
-  return { slug, value: parseUsd(raw), raw };
+  const raws = await extractLabeledValues(page, [
+    { key: 'v24h', pattern: '^Perp\\s*Volume\\s*24h$' },
+    { key: 'v7d',  pattern: '^Perp\\s*Volume\\s*7d$'  },
+    { key: 'v30d', pattern: '^Perp\\s*Volume\\s*30d$' },
+    { key: 'vAll', pattern: '^Cumulative\\s*Perp\\s*Volume$' },
+  ]);
+  return {
+    slug,
+    v24h: parseUsd(raws.v24h), v7d: parseUsd(raws.v7d),
+    v30d: parseUsd(raws.v30d), vAll: parseUsd(raws.vAll),
+    raw: raws,
+  };
 }
 
-// Scrape one chain page → returns that chain's aggregate 24h perps volume.
 async function scrapeChain(page, chain) {
   const url = `https://defillama.com/chain/${chain}`;
   console.log('→ chain:   ', url);
   await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 60_000 });
   await waitForHydration(page);
+  const raws = await extractLabeledValues(page, [
+    { key: 'v24h', pattern: '^Perps?\\s*Volume\\s*\\(24h\\)$' },
+  ]);
+  return { chain, value: parseUsd(raws.v24h), raw: raws.v24h };
+}
 
-  const raw = await page.evaluate(() => {
-    const labelRe = /perps?\s*volume\s*\(24h\)/i;
-    const valRe   = /\$\s*[\d,]+(?:\.\d+)?\s*[BbMmKk]?/;
-    const all = Array.from(document.querySelectorAll('*'));
-    for (const el of all) {
-      const txt = (el.innerText || '').trim();
-      if (!labelRe.test(txt) || txt.length > 400) continue;
-      const m = txt.match(valRe);
-      if (m) return m[0];
-      const parent = el.parentElement;
-      if (parent) {
-        const pm = (parent.innerText || '').match(valRe);
-        if (pm) return pm[0];
-      }
+// Scrape DefiLlama's dedicated /perps/chain/{chain} view — returns a map of
+// { protocolName: {v24h, v7d, v30d} } with numbers already filtered to that chain.
+//
+// DefiLlama's row layout is variable:
+//   3 $ values → [24h, 7d, 30d]             (protocol reports only one metric)
+//   4 $ values → [24h_norm, 24h_reported, 7d, 30d]  (protocol reports both;
+//                we prefer the normalized number because it's what the protocol
+//                detail page shows and what the user sees in the UI).
+//   2 $ values → [24h_or_7d, ...]          (dead/zero protocols)
+async function scrapePerpsByChain(page, chain) {
+  const url = `https://defillama.com/perps/chain/${chain}`;
+  console.log('→ perps/chain:', url);
+  await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 60_000 });
+  await waitForHydration(page);
+
+  return await page.evaluate(() => {
+    const valRe     = /^\$\s*[\d,]+(?:\.\d+)?\s*[BbMmKk]?$/;
+    const nChainRe  = /^\d+\s+chains?$/i;
+    const text      = document.body.innerText || '';
+    const lines     = text.split('\n').map(s => s.trim()).filter(Boolean);
+    let start = 0;
+    for (let i = 0; i < lines.length; i++) {
+      if (/^Name$/i.test(lines[i])) { start = i + 1; break; }
     }
-    return null;
+    // Skip past any remaining header rows.
+    while (start < lines.length && !nChainRe.test(lines[start + 1] || '')) start++;
+
+    const out = {};
+    let i = start;
+    while (i < lines.length) {
+      const name = lines[i];
+      if (!name || name.length > 80) { i++; continue; }
+      if (!nChainRe.test(lines[i + 1] || '')) { i++; continue; }
+      // Collect consecutive $ values after "N chains".
+      const vals = [];
+      let j = i + 2;
+      while (j < lines.length && valRe.test(lines[j])) { vals.push(lines[j]); j++; }
+      if (vals.length >= 3) {
+        const [v24h, v7d, v30d] = vals.length === 4
+          ? [vals[0], vals[2], vals[3]]    // [norm24h, rep24h, 7d, 30d]
+          : [vals[0], vals[1], vals[2]];   // [24h, 7d, 30d]
+        out[name] = { v24h, v7d, v30d };
+      }
+      i = j; // advance past this row
+    }
+    return out;
   });
-  return { chain, value: parseUsd(raw), raw };
 }
 
 async function main() {
@@ -118,18 +183,75 @@ async function main() {
     chains: {},
   };
 
+  // 1) Per-protocol TOTALS from the protocol page (includes all-time).
+  //    Multi-chain protocols like GMX will be overwritten per-chain below.
+  const protoTotals = {};
   for (const p of PROTOCOLS) {
+    await page.waitForTimeout(2000);
     try {
       const r = await scrapeProtocol(page, p.slug);
-      snapshot.protocols.push({ ...p, volume24h: r.value, raw: r.raw });
-      console.log(`  ${p.name} (${p.slug}) = ${r.value} (raw: ${r.raw})`);
+      protoTotals[p.slug] = r;
+      console.log(`  ${p.name} (${p.slug}) totals: 24h=${r.v24h}  7d=${r.v7d}  30d=${r.v30d}  all=${r.vAll}`);
     } catch (e) {
       console.warn(`  FAILED ${p.slug}:`, e.message);
-      snapshot.protocols.push({ ...p, volume24h: null, raw: null, error: e.message });
     }
   }
 
+  // 2) Chain-filtered per-protocol volumes from /perps/chain/{chain}.
+  //    This is what lets us see GMX's MegaETH-only $10K/day instead of its
+  //    $216M cross-chain total.
+  const perpsByChain = {};
   for (const chain of CHAINS) {
+    await page.waitForTimeout(2000);
+    try {
+      perpsByChain[chain] = await scrapePerpsByChain(page, chain);
+      console.log(`  /perps/chain/${chain}:`, Object.keys(perpsByChain[chain]).length, 'protocols');
+    } catch (e) {
+      console.warn(`  FAILED perps/chain/${chain}:`, e.message);
+      perpsByChain[chain] = {};
+    }
+  }
+
+  // 3) Merge — prefer the chain-filtered values for 24h/7d/30d; keep
+  //    all-time from the protocol page (there's no chain-filtered all-time).
+  for (const p of PROTOCOLS) {
+    const totals = protoTotals[p.slug] || {};
+    const byName = perpsByChain[p.chain] || {};
+    const rowKeys = Object.keys(byName);
+    const candidates = [p.name, ...(p.aliases || [])];
+    let hit = null;
+    for (const c of candidates) {
+      hit = byName[c]
+        ?? byName[rowKeys.find(k => k.toLowerCase() === c.toLowerCase())]
+        ?? byName[rowKeys.find(k => k.toLowerCase().startsWith(c.toLowerCase()))]
+        ?? null;
+      if (hit) break;
+    }
+    const chainFiltered = hit ? {
+      v24h: parseUsd(hit.v24h),
+      v7d:  parseUsd(hit.v7d),
+      v30d: parseUsd(hit.v30d),
+    } : {};
+    snapshot.protocols.push({
+      ...p,
+      volume24h:     chainFiltered.v24h ?? totals.v24h ?? null,
+      volume7d:      chainFiltered.v7d  ?? totals.v7d  ?? null,
+      volume30d:     chainFiltered.v30d ?? totals.v30d ?? null,
+      volumeAllTime: totals.vAll ?? null,
+      chainFiltered: !!hit,
+    });
+    console.log(
+      `  → ${p.name} on ${p.chain}:`,
+      (chainFiltered.v24h ?? totals.v24h), '/',
+      (chainFiltered.v7d ?? totals.v7d), '/',
+      (chainFiltered.v30d ?? totals.v30d),
+      hit ? '(chain-filtered)' : '(cross-chain total)',
+    );
+  }
+
+  // 4) Chain-level perps total (from the chain overview page).
+  for (const chain of CHAINS) {
+    await page.waitForTimeout(2000);
     try {
       const r = await scrapeChain(page, chain);
       snapshot.chains[chain] = { perpsVolume24h: r.value, raw: r.raw };
@@ -142,10 +264,31 @@ async function main() {
 
   await browser.close();
 
+  // --- Accumulate per-day chain totals so the dashboard can draw a real time-series ---
   const outPath = path.resolve('public/data/perps.json');
+  let prev = {};
+  try { prev = JSON.parse(await fs.readFile(outPath, 'utf8')); } catch {}
+  const history = prev.history || {};
+  const today = new Date().toISOString().slice(0, 10); // yyyy-mm-dd, UTC
+  for (const chain of CHAINS) {
+    const v = snapshot.chains[chain]?.perpsVolume24h;
+    if (v == null) continue;
+    const arr = history[chain] || [];
+    const existing = arr.find(e => e.date === today);
+    if (existing) existing.value = v;
+    else arr.push({ date: today, value: v });
+    arr.sort((a, b) => a.date.localeCompare(b.date));
+    history[chain] = arr.slice(-60); // keep last 60 days
+  }
+  snapshot.history = history;
+
   await fs.mkdir(path.dirname(outPath), { recursive: true });
   await fs.writeFile(outPath, JSON.stringify(snapshot, null, 2) + '\n');
-  console.log('wrote', outPath);
+  // Also emit a JS file that sets a global, so the dashboard can load it via
+  // <script src="..."> and bypass file:// CORS restrictions on fetch().
+  const jsPath = path.resolve('public/data/perps.js');
+  await fs.writeFile(jsPath, 'window.__PERPS_SNAPSHOT__ = ' + JSON.stringify(snapshot, null, 2) + ';\n');
+  console.log('wrote', outPath, 'and', jsPath);
 }
 
 main().catch(err => {

@@ -272,16 +272,24 @@
     font-weight: 500;
   }
   .card-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: flex-start;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: start;
     gap: 16px;
     margin-bottom: 4px;
-    flex-wrap: wrap;
   }
+  .card-header > :first-child { min-width: 0; }   /* allow title to shrink, not push */
   .card-header .card-sub { margin-bottom: 16px; }
   .card-header-toggles {
-    display: flex; gap: 8px; flex-wrap: wrap;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 6px;
+    justify-self: end;
+  }
+  @media (max-width: 860px) {
+    .card-header { grid-template-columns: 1fr; }
+    .card-header-toggles { justify-self: start; align-items: flex-start; flex-direction: row; flex-wrap: wrap; }
   }
   .scope-toggle {
     display: inline-flex;
@@ -631,6 +639,9 @@
     .proto-cols { grid-template-columns: 1fr; }
   }
 </style>
+<!-- Scraped perps snapshot — refreshed daily by .github/workflows/scrape-perps.yml.
+     Loaded as a script (not fetch) so it works when opened via file:// too. -->
+<script src="public/data/perps.js" onerror="console.warn('perps snapshot not loaded')"></script>
 </head>
 <body>
 <div class="container">
@@ -719,6 +730,27 @@
       <div id="derived-table"></div>
     </div>
 
+    <!-- Ecosystem Value Capture -->
+    <div class="card full">
+      <div class="card-header">
+        <div>
+          <h2>Ecosystem Value Capture</h2>
+          <div class="card-sub" id="eco-sub">
+            Chain fees + app fees + (MegaETH only) implied USDM yield at the US T-Bill rate — internalized economic value
+          </div>
+        </div>
+        <div class="card-header-toggles">
+          <div class="scope-toggle" data-card="eco-window">
+            <button class="scope-btn active" data-window="24h">24h</button>
+            <button class="scope-btn" data-window="7d">7d</button>
+            <button class="scope-btn" data-window="30d">30d</button>
+            <button class="scope-btn" data-window="annual">Annualized</button>
+          </div>
+        </div>
+      </div>
+      <div id="ecosystem-table"></div>
+    </div>
+
     <!-- Section 6: Top protocols -->
     <div class="card full">
       <div class="card-header">
@@ -732,6 +764,11 @@
             <button class="scope-btn" data-metric="fees">By Fees</button>
             <button class="scope-btn" data-metric="volspot">Volume · Spot</button>
             <button class="scope-btn" data-metric="volperps">Volume · Perps</button>
+          </div>
+          <div class="scope-toggle" data-card="proto-window">
+            <button class="scope-btn active" data-window="24h">24h</button>
+            <button class="scope-btn" data-window="7d">7d</button>
+            <button class="scope-btn" data-window="30d">30d</button>
           </div>
           <div class="scope-toggle" data-card="proto-scope">
             <button class="scope-btn active" data-scope="all">All Apps</button>
@@ -844,6 +881,8 @@ const LAST_GOOD = {
   monPriceUSD: null,
   monadFDV: null,
   monadMarketCap: null,
+  tbillRate: null,
+  megaUSDM: null,
 };
 
 // Per-card toggles — each card owns its own scope.
@@ -853,6 +892,8 @@ const STATE = {
   feesMetric: 'fees',   // Fees card — fees vs revenue
   protoMetric: 'tvl',   // Top Protocols card — ranking axis
   protoScope: 'all',    // Top Protocols card — all vs native
+  protoWindow: '24h',   // Top Protocols card — time window for Fees / Vol-Spot / Vol-Perps
+  ecoWindow: '24h',     // Ecosystem Value Capture card
 };
 let LAST_DATA = null;
 
@@ -868,6 +909,8 @@ function wireScopeToggles() {
         else if (card === 'fees-metric') STATE.feesMetric = btn.dataset.metric;
         else if (card === 'proto-metric') STATE.protoMetric = btn.dataset.metric;
         else if (card === 'proto-scope') STATE.protoScope = btn.dataset.scope;
+        else if (card === 'proto-window') STATE.protoWindow = btn.dataset.window;
+        else if (card === 'eco-window') STATE.ecoWindow = btn.dataset.window;
         if (LAST_DATA) renderAll(LAST_DATA);
       });
     });
@@ -1158,6 +1201,269 @@ window.addEventListener('resize', () => {
   });
 });
 
+// Renders N named series as individual lines on one chart. Each series:
+//   { name, color, points: [[unixSec, value], …] }
+// Used for the combined MegaETH + Monad perps-per-protocol view.
+function renderMultiLineChart(containerId, series, opts = {}) {
+  const el = document.getElementById(containerId);
+  if (!el) return;
+  const { title = '', yFormat = fmtUSD, height = 260 } = opts;
+
+  series = (series || []).filter(s => s && s.points && s.points.length);
+  if (!series.length) {
+    el.innerHTML = `<div class="chart-title">${title}</div>
+      <div class="chart-empty">No historical data</div>`;
+    return;
+  }
+
+  el.innerHTML = `
+    <div class="chart-header">
+      <div class="chart-title">${title}</div>
+      <div class="chart-legend">
+        ${series.map(s => {
+          const last = s.points[s.points.length - 1][1];
+          return `<span class="chart-key"><span class="dot" style="background:${s.color}"></span>${s.name}${last != null ? ' · ' + yFormat(last) + '/d' : ''}</span>`;
+        }).join('')}
+      </div>
+    </div>
+    <div class="chart-svg-wrap"></div>`;
+  const wrap = el.querySelector('.chart-svg-wrap');
+
+  const W = Math.max(320, Math.floor(wrap.clientWidth || el.clientWidth || 720));
+  const H = height;
+  const pad = { top: 16, right: 18, bottom: 32, left: 72 };
+  const plotW = W - pad.left - pad.right;
+  const plotH = H - pad.top - pad.bottom;
+
+  const allVals = series.flatMap(s => s.points.map(p => p[1])).filter(v => v != null && isFinite(v));
+  const maxY = Math.max(1, ...allVals);
+  const allTimes = series.flatMap(s => s.points.map(p => p[0]));
+  const minT = Math.min(...allTimes), maxT = Math.max(...allTimes);
+  const x = (t) => pad.left + ((t - minT) / Math.max(1, maxT - minT)) * plotW;
+  const y = (v) => pad.top + plotH - (v / maxY) * plotH;
+
+  const pathOf = (data) => data.length
+    ? 'M ' + data.map(p => `${x(p[0]).toFixed(1)} ${y(p[1]).toFixed(1)}`).join(' L ')
+    : '';
+
+  const yTicks = [0, 0.25, 0.5, 0.75, 1].map(f => f * maxY);
+  const yTickSvg = yTicks.map(v => {
+    const ty = y(v).toFixed(1);
+    return `<line x1="${pad.left}" y1="${ty}" x2="${W - pad.right}" y2="${ty}" stroke="rgba(25,25,26,0.08)" />
+            <text x="${pad.left - 10}" y="${ty}" text-anchor="end" dominant-baseline="middle" class="chart-axis">${yFormat(v)}</text>`;
+  }).join('');
+  const fmtDate = (t) => {
+    const d = new Date(t * 1000);
+    return `${d.getMonth() + 1}/${d.getDate()}`;
+  };
+  const xTickStep = [0, 0.25, 0.5, 0.75, 1].map(f => minT + f * (maxT - minT));
+  const xTickSvg = xTickStep.map(t =>
+    `<text x="${x(t).toFixed(1)}" y="${H - 10}" text-anchor="middle" class="chart-axis">${fmtDate(t)}</text>`
+  ).join('');
+
+  // Totals (isTotal: true) are drawn last so they paint on top of the per-protocol
+  // lines, and get thicker strokes + full opacity. Regular lines are dimmed to
+  // 70% so the cumulative lines read clearly.
+  const ordered = [...series].sort((a, b) => (a.isTotal ? 1 : 0) - (b.isTotal ? 1 : 0));
+  const lineSvg = ordered.map(s => {
+    const w = s.isTotal ? 3.6 : 2.2;
+    const op = s.isTotal ? 1 : 0.75;
+    return `<path d="${pathOf(s.points)}" fill="none" stroke="${s.color}" stroke-width="${w}" stroke-opacity="${op}" />`;
+  }).join('');
+
+  const dotSvg = ordered.map((s, k) =>
+    s.points.map(p => {
+      const r = s.isTotal ? 4.5 : 3.5;
+      return `<circle class="hover-dot s${k}" data-s="${k}" cx="${x(p[0]).toFixed(1)}" cy="${y(p[1]).toFixed(1)}" r="${r}" fill="${s.color}" stroke="#fff" stroke-width="1.5" />`;
+    }).join('')
+  ).join('');
+
+  wrap.innerHTML = `
+    <svg viewBox="0 0 ${W} ${H}" width="${W}" height="${H}" class="chart-svg" xmlns="http://www.w3.org/2000/svg">
+      <g pointer-events="none">
+        ${yTickSvg}
+        ${xTickSvg}
+        ${lineSvg}
+        <line class="hover-line" x1="0" y1="${pad.top}" x2="0" y2="${pad.top + plotH}" stroke="rgba(25,25,26,0.25)" stroke-width="1" style="display:none" />
+        ${dotSvg}
+      </g>
+      <rect class="hover-capture" x="${pad.left}" y="${pad.top}" width="${plotW}" height="${plotH}" fill="transparent" />
+    </svg>
+    <div class="chart-tooltip"></div>`;
+
+  const svg       = wrap.querySelector('svg');
+  const capture   = wrap.querySelector('.hover-capture');
+  const tooltip   = wrap.querySelector('.chart-tooltip');
+  const hoverLine = wrap.querySelector('.hover-line');
+
+  const nearestAt = (pts, t) => {
+    if (!pts.length) return null;
+    let best = pts[0], d = Math.abs(pts[0][0] - t);
+    for (let i = 1; i < pts.length; i++) {
+      const dd = Math.abs(pts[i][0] - t);
+      if (dd < d) { best = pts[i]; d = dd; }
+    }
+    return best;
+  };
+  const dateStr = (sec) =>
+    new Date(sec * 1000).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+
+  const onMove = (e) => {
+    const rect = svg.getBoundingClientRect();
+    const vbX = (e.clientX - rect.left) * (W / rect.width);
+    if (vbX < pad.left || vbX > pad.left + plotW) { onLeave(); return; }
+    const t = minT + ((vbX - pad.left) / plotW) * (maxT - minT);
+    const nearest = series.map(s => nearestAt(s.points, t));
+    const tRef = nearest.reduce((best, p) =>
+      (p && (best == null || Math.abs(p[0] - t) < Math.abs(best - t))) ? p[0] : best, null);
+    const lineX = x(tRef).toFixed(1);
+    hoverLine.setAttribute('x1', lineX);
+    hoverLine.setAttribute('x2', lineX);
+    hoverLine.style.display = '';
+    tooltip.innerHTML = `
+      <div class="tt-date">${dateStr(tRef)}</div>
+      ${series.map((s, k) => {
+        const p = nearest[k];
+        return `<div class="tt-row" style="--c:${s.color}">
+          <span class="tt-label"><span class="tt-dot" style="background:${s.color}"></span>${s.name}</span>
+          <span class="tt-val">${p ? yFormat(p[1]) : '—'}</span>
+        </div>`;
+      }).join('')}`;
+    const pxX = (parseFloat(lineX) / W) * rect.width;
+    tooltip.style.left = `${pxX}px`;
+    tooltip.style.top  = `${(pad.top / H) * rect.height}px`;
+    tooltip.classList.add('show');
+  };
+  const onLeave = () => {
+    tooltip.classList.remove('show');
+    hoverLine.style.display = 'none';
+  };
+  capture.addEventListener('mousemove', onMove);
+  capture.addEventListener('mouseleave', onLeave);
+}
+
+// Renders a stacked-area chart of multiple named series into #containerId.
+// Used for the per-protocol perps breakdown. `series` is an ordered array of
+// { name, color, points: [[unixSec, value], …] } where all series share the
+// same x-values so we can stack them cleanly.
+function renderStackedArea(containerId, series, opts = {}) {
+  const el = document.getElementById(containerId);
+  if (!el) return;
+  const { title = '', yFormat = fmtUSD, height = 260 } = opts;
+
+  series = (series || []).filter(s => s && s.points && s.points.length);
+  if (!series.length) {
+    el.innerHTML = `<div class="chart-title">${title}</div>
+      <div class="chart-empty">No protocol volume data yet</div>`;
+    return;
+  }
+
+  const xs = series[0].points.map(p => p[0]);
+  const totalAt = (i) => series.reduce((a, s) => a + (s.points[i]?.[1] || 0), 0);
+  const maxY = Math.max(1, ...xs.map((_, i) => totalAt(i)));
+  const latestTotal = totalAt(xs.length - 1);
+
+  // Build header first so we can measure container width.
+  el.innerHTML = `
+    <div class="chart-header">
+      <div class="chart-title">${title}</div>
+      <div class="chart-legend">
+        ${series.map(s => `<span class="chart-key" style="--k:${s.color}">
+          <span class="dot" style="background:${s.color}"></span>${s.name}
+          · ${yFormat(s.points[s.points.length - 1][1])}/day
+        </span>`).join('')}
+        <span class="chart-key"><strong>Total ${yFormat(latestTotal)}/day</strong></span>
+      </div>
+    </div>
+    <div class="chart-svg-wrap"></div>`;
+  const wrap = el.querySelector('.chart-svg-wrap');
+
+  const W = Math.max(320, Math.floor(wrap.clientWidth || el.clientWidth || 720));
+  const H = height;
+  const pad = { top: 16, right: 18, bottom: 32, left: 72 };
+  const plotW = W - pad.left - pad.right;
+  const plotH = H - pad.top - pad.bottom;
+  const minT = Math.min(...xs), maxT = Math.max(...xs);
+  const x = (t) => pad.left + ((t - minT) / Math.max(1, maxT - minT)) * plotW;
+  const y = (v) => pad.top + plotH - (v / maxY) * plotH;
+
+  // Compute stacked cumulative values: cum[i][k] = sum of series[0..k] at xs[i]
+  const cum = xs.map((_, i) => {
+    const arr = [0];
+    for (let k = 0; k < series.length; k++) arr.push(arr[k] + (series[k].points[i]?.[1] || 0));
+    return arr;
+  });
+
+  // Each protocol's band is a polygon from cum[i][k] (bottom) to cum[i][k+1] (top).
+  const bandPath = (k) => {
+    const top = xs.map((t, i) => `${x(t).toFixed(1)} ${y(cum[i][k + 1]).toFixed(1)}`);
+    const bot = xs.map((t, i) => `${x(t).toFixed(1)} ${y(cum[i][k]).toFixed(1)}`).reverse();
+    return `M ${top.join(' L ')} L ${bot.join(' L ')} Z`;
+  };
+
+  // Axis gridlines / labels
+  const yTicks = [0, 0.25, 0.5, 0.75, 1].map(f => f * maxY);
+  const yTickSvg = yTicks.map(v => {
+    const ty = y(v).toFixed(1);
+    return `<line x1="${pad.left}" y1="${ty}" x2="${W - pad.right}" y2="${ty}" stroke="rgba(25,25,26,0.08)" />
+            <text x="${pad.left - 10}" y="${ty}" text-anchor="end" dominant-baseline="middle" class="chart-axis">${yFormat(v)}</text>`;
+  }).join('');
+  const fmtDate = (t) => {
+    const d = new Date(t * 1000);
+    return `${d.getMonth() + 1}/${d.getDate()}`;
+  };
+  const xTickSvg = xs.map(t =>
+    `<text x="${x(t).toFixed(1)}" y="${H - 10}" text-anchor="middle" class="chart-axis">${fmtDate(t)}</text>`
+  ).join('');
+
+  wrap.innerHTML = `
+    <svg viewBox="0 0 ${W} ${H}" width="${W}" height="${H}" class="chart-svg" xmlns="http://www.w3.org/2000/svg">
+      <g pointer-events="none">
+        ${yTickSvg}
+        ${xTickSvg}
+        ${series.map((s, k) => `<path d="${bandPath(k)}" fill="${s.color}" fill-opacity="0.85" stroke="#fff" stroke-width="0.6" />`).join('')}
+      </g>
+    </svg>`;
+}
+
+// From the scraped snapshot + a chain name, build a list of per-protocol daily-rate
+// series ready for renderStackedArea. Three anchor points per protocol:
+//   t-30d = avg daily over days -30..-8   = (total30d - total7d) / 23
+//   t-7d  = avg daily over days -7..-1    = (total7d - total24h) / 6
+//   t0    = latest 24h value
+function buildPerpsStack(chainName, snapshot) {
+  if (!snapshot) return [];
+  const todaySec = Math.floor(Date.now() / 1000);
+  const d = 86400;
+  const palette = {
+    // MegaETH
+    worldmarkets: '#6DD0A9',
+    gmxv2perps:   '#2e9a57',
+    // Monad
+    perpl:        '#A594FF',
+    leverup:      '#836EF9',
+  };
+  return (snapshot.protocols || [])
+    .filter(p => p.chain === chainName)
+    .map(p => {
+      const t24 = p.volume24h, t7 = p.volume7d, t30 = p.volume30d;
+      if (t24 == null && t7 == null && t30 == null) return null;
+      const rToday = t24 || 0;
+      const rMid   = (t7 != null && t24 != null) ? Math.max(0, (t7 - t24) / 6) : (t7 || 0) / 7;
+      const rOld   = (t30 != null && t7 != null) ? Math.max(0, (t30 - t7) / 23) : (t30 || 0) / 30;
+      return {
+        name: p.name,
+        color: palette[normName(p.name)] || '#7EAAD4',
+        points: [
+          [todaySec - 30 * d, rOld],
+          [todaySec - 7  * d, rMid],
+          [todaySec,           rToday],
+        ],
+      };
+    })
+    .filter(Boolean);
+}
+
 // ---------- static: performance ----------
 function renderPerformance() {
   const rows = [
@@ -1200,6 +1506,7 @@ async function loadAll() {
     stables, protocols, monPrice,
     histTvlMega, histTvlMonad,
     perpsSnapshot,
+    tbillData,
   ] = await Promise.all([
     safeJson('https://api.llama.fi/v2/chains'),
     safeJson(`https://api.llama.fi/overview/dexs/MegaETH?${OVR}`),
@@ -1239,9 +1546,13 @@ async function loadAll() {
     // Historical TVL per chain — for the 30-day TVL chart.
     safeJson('https://api.llama.fi/v2/historicalChainTvl/MegaETH'),
     safeJson('https://api.llama.fi/v2/historicalChainTvl/Monad'),
-    // Perps snapshot — refreshed daily by .github/workflows/scrape-perps.yml
-    // (DefiLlama's derivatives API is paywalled, so we scrape the free UI.)
-    safeJson('public/data/perps.json'),
+    // Perps snapshot comes from window.__PERPS_SNAPSHOT__ (loaded via <script>
+    // in the <head>). Using a script instead of fetch() so it works from file://.
+    Promise.resolve(typeof window !== 'undefined' ? window.__PERPS_SNAPSHOT__ || null : null),
+    // US Treasury Bills aggregate average interest rate — risk-free rate for
+    // MegaETH's USDM yield calculation. CORS-open, no auth. Using URL-encoded
+    // brackets so the fetch() call doesn't get rejected by the API gateway.
+    safeJson('https://api.fiscaldata.treasury.gov/services/api/fiscal_service/v2/accounting/od/avg_interest_rates?filter=security_desc:eq:Treasury%20Bills&sort=-record_date&page%5Bsize%5D=1'),
   ]);
 
   // Pull live MEGA pre-market price from Hyperliquid; if it returns, update the FDV.
@@ -1350,15 +1661,48 @@ async function loadAll() {
   // renderProtocols keep the same shape they'd get from DefiLlama's overview API.
   const snapshotForChain = (chainName) => {
     if (!perpsSnapshot) return null;
-    const protocols = (perpsSnapshot.protocols || [])
-      .filter(p => p.chain === chainName && p.volume24h != null)
-      .map(p => ({ name: p.name, total24h: p.volume24h, category: 'Derivatives' }));
-    const total24h = perpsSnapshot.chains?.[chainName]?.perpsVolume24h
-      ?? protocols.reduce((a, p) => a + (p.total24h || 0), 0) || null;
-    return { total24h, protocols };
+    const chainProtos = (perpsSnapshot.protocols || [])
+      .filter(p => p.chain === chainName);
+    const protocols = chainProtos
+      .filter(p => p.volume24h != null)
+      .map(p => ({
+        name: p.name,
+        total24h: p.volume24h,
+        total7d: p.volume7d,
+        total30d: p.volume30d,
+        totalAllTime: p.volumeAllTime,
+        category: 'Derivatives',
+      }));
+    const reported = perpsSnapshot.chains?.[chainName]?.perpsVolume24h;
+    const sum = (field) => chainProtos.reduce((a, p) => a + (p[field] || 0), 0);
+    const total24h = reported ?? (sum('volume24h') || null);
+    return {
+      total24h,
+      total7d:  sum('volume7d')  || null,
+      total30d: sum('volume30d') || null,
+      totalAllTime: sum('volumeAllTime') || null,
+      protocols,
+    };
   };
   perpsMega  = perpsMega  || snapshotForChain('MegaETH');
   perpsMonad = perpsMonad || snapshotForChain('Monad');
+
+  // --- Risk-free rate (US T-Bill aggregate) ---
+  const tbillPct = parseFloat(tbillData?.data?.[0]?.avg_interest_rate_amt);
+  const tbillRate = isFinite(tbillPct) && tbillPct > 0 ? tbillPct / 100 : null;
+  const tbillAsOf = tbillData?.data?.[0]?.record_date || null;
+  if (tbillRate) LAST_GOOD.tbillRate = tbillRate;
+
+  // --- USDM supply on MegaETH (sum any stablecoin whose symbol or name is USDM) ---
+  let megaUSDM = 0;
+  for (const a of stables?.peggedAssets || []) {
+    const sym = (a.symbol || '').toUpperCase();
+    const nm  = (a.name || '').toLowerCase();
+    if (sym === 'USDM' || /\busdm\b/.test(nm)) {
+      megaUSDM += a.chainCirculating?.MegaETH?.current?.peggedUSD || 0;
+    }
+  }
+  if (megaUSDM > 0) LAST_GOOD.megaUSDM = megaUSDM;
 
   const gran = {
     megaChainFees: pick(megaChainFeesData),
@@ -1366,7 +1710,34 @@ async function loadAll() {
     megaChainRev: pick(megaChainRevData),
     monadChainRev: pick(monadChainRevData),
     monadMarketCap: LAST_GOOD.monadMarketCap,
+    tbillRate: LAST_GOOD.tbillRate ?? tbillRate,
+    tbillAsOf,
+    megaUSDM: LAST_GOOD.megaUSDM ?? megaUSDM,
   };
+
+  // Build a [[unixSec, daily24hVolume], …] series for a perps chain.
+  // Prefer the accumulated daily history[]; if that's < 3 points, also
+  // interpolate anchors at t-30d and t-7d from the 7d/30d totals so the
+  // chart isn't a single dot on the day the scraper first runs.
+  function buildPerpsSeries(chainName, overview, snapshot) {
+    const out = [];
+    const dayMs = 86400_000;
+    const todaySec = Math.floor(Date.now() / 1000);
+    const hist = snapshot?.history?.[chainName] || [];
+    for (const { date, value } of hist) {
+      const ts = Math.floor(new Date(date + 'T12:00:00Z').getTime() / 1000);
+      if (isFinite(ts) && typeof value === 'number') out.push([ts, value]);
+    }
+    // Synthesize anchor points ONLY if we don't already have them.
+    const total30d = overview?.total30d;
+    const total7d  = overview?.total7d;
+    const total24h = overview?.total24h;
+    const has = (offsetDays) => out.some(([t]) => Math.abs(t - (todaySec - offsetDays * 86400)) < 86400);
+    if (total30d && !has(30)) out.push([todaySec - 30 * 86400, total30d / 30]);
+    if (total7d  && !has(7))  out.push([todaySec - 7  * 86400, total7d  / 7]);
+    if (total24h && !has(0))  out.push([todaySec,               total24h]);
+    return out.sort((a, b) => a[0] - b[0]);
+  }
 
   // Normalize all historical series into `[[unixSeconds, value], …]`
   const normHistChain = (arr) => Array.isArray(arr)
@@ -1381,8 +1752,7 @@ async function loadAll() {
     tvlMonad: normHistChain(histTvlMonad),
     dexMega:  normOverviewChart(dexMega?.totalDataChart),
     dexMonad: normOverviewChart(dexMonad?.totalDataChart),
-    perpsMega:  normOverviewChart(perpsMega?.totalDataChart),
-    perpsMonad: normOverviewChart(perpsMonad?.totalDataChart),
+    // Perps now rendered as stacked-area per-chain — see renderActivity.
     appFeesMega:  normOverviewChart(feesMega?.totalDataChart),
     appFeesMonad: normOverviewChart(feesMonad?.totalDataChart),
     appRevMega:   normOverviewChart(revMega?.totalDataChart),
@@ -1407,6 +1777,7 @@ async function loadAll() {
     monPriceUSD, monadFDV,
     megaProtosAll: megaProtos,
     monadProtosAll: monadProtos,
+    perpsSnapshot,
     charts,
     ...gran,
   };
@@ -1500,7 +1871,10 @@ function renderActivity(d) {
     renderRow('DEX Volume 24h (Spot)', dm.total24h, dn.total24h, fmtUSD(dm.total24h), fmtUSD(dn.total24h)),
     renderRow('DEX Volume 30d (Spot)', dm.total30d, dn.total30d, fmtUSD(dm.total30d), fmtUSD(dn.total30d)),
     renderRow('DEX Volume All-Time (Spot)', dm.totalAllTime, dn.totalAllTime, fmtUSD(dm.totalAllTime), fmtUSD(dn.totalAllTime)),
-    renderRow('Perps Volume 24h', pm.total24h, pn.total24h, fmtUSD(pm.total24h), fmtUSD(pn.total24h)),
+    renderRow('Perps Volume 24h',      pm.total24h,    pn.total24h,    fmtUSD(pm.total24h),    fmtUSD(pn.total24h)),
+    renderRow('Perps Volume 7d',       pm.total7d,     pn.total7d,     fmtUSD(pm.total7d),     fmtUSD(pn.total7d)),
+    renderRow('Perps Volume 30d',      pm.total30d,    pn.total30d,    fmtUSD(pm.total30d),    fmtUSD(pn.total30d)),
+    renderRow('Perps Volume All-Time', pm.totalAllTime, pn.totalAllTime, fmtUSD(pm.totalAllTime), fmtUSD(pn.totalAllTime)),
     renderRow('Protocol Count', d.megaProtoCount, d.monadProtoCount, fmtNum(d.megaProtoCount), fmtNum(d.monadProtoCount)),
   ].join('');
   renderTable('activity-table', rows);
@@ -1508,10 +1882,24 @@ function renderActivity(d) {
   const c = d.charts || {};
   renderLineChart('chart-tvl',   c.tvlMega,   c.tvlMonad,   { title: 'TVL — last 30 days' });
   renderLineChart('chart-dex',   c.dexMega,   c.dexMonad,   { title: 'DEX Volume (Spot) — last 30 days' });
-  // Perps chart disabled while DefiLlama's derivatives API is paywalled — the
-  // scraped snapshot only carries a single 24h value, not a 30-day series.
-  const pchart = document.getElementById('chart-perps');
-  if (pchart) pchart.innerHTML = '';
+  // Perps: per-protocol lines + one highlighted cumulative line per chain.
+  const perpsMega  = buildPerpsStack('MegaETH', d.perpsSnapshot);
+  const perpsMonad = buildPerpsStack('Monad',   d.perpsSnapshot);
+  const cumulative = (group, name, color) => {
+    if (!group.length) return null;
+    const xs = group[0].points.map(p => p[0]);
+    return {
+      name, color, isTotal: true,
+      points: xs.map((t, i) => [t, group.reduce((sum, s) => sum + (s.points[i]?.[1] || 0), 0)]),
+    };
+  };
+  const perpsLines = [
+    ...perpsMega,
+    ...perpsMonad,
+    cumulative(perpsMega,  'MegaETH total', '#2e9a57'),
+    cumulative(perpsMonad, 'Monad total',   '#6B5AE8'),
+  ].filter(Boolean);
+  renderMultiLineChart('chart-perps', perpsLines, { title: 'Perps Volume by protocol — last 30 days (daily avg)' });
 }
 
 // Descriptions paraphrased from DeFiLlama's tooltip text.
@@ -1623,8 +2011,13 @@ function renderDerived(d) {
 }
 
 function renderProtocols(d) {
-  const focus = STATE.protoMetric;    // 'tvl' | 'fees' | 'volspot' | 'volperps'
-  const scope = STATE.protoScope;     // 'all' | 'native'
+  const focus  = STATE.protoMetric;    // 'tvl' | 'fees' | 'volspot' | 'volperps'
+  const scope  = STATE.protoScope;     // 'all' | 'native'
+  const window = STATE.protoWindow;    // '24h' | '7d' | '30d' (ignored for 'tvl')
+
+  // Field lookup for a given time window on an overview protocol entry.
+  const totalField = window === '7d' ? 'total7d' : window === '30d' ? 'total30d' : 'total24h';
+  const bdField    = window === '7d' ? 'breakdown7d' : window === '30d' ? 'breakdown30d' : 'breakdown24h';
 
   // Filter the chain itself out — DeFiLlama sometimes lists the chain's own gas fees as a protocol.
   const isChainEntry = (name, chain) => {
@@ -1633,30 +2026,34 @@ function renderProtocols(d) {
     return n === 'monad' || n === 'monadchain';
   };
 
+  // Per-chain volume for the currently-selected time window. Prefer the
+  // chain-specific breakdown when DefiLlama provides one, else fall back to the
+  // cross-chain total — same logic as before, just parameterised by window.
   const sumVol = (p, chainKey) => {
-    if (p.breakdown24h && typeof p.breakdown24h === 'object') {
-      const bd = p.breakdown24h[chainKey];
-      if (typeof bd === 'number') return bd;
-      if (bd && typeof bd === 'object') {
-        const s = Object.values(bd).reduce((a, v) => a + (typeof v === 'number' ? v : 0), 0);
+    const bd = p[bdField];
+    if (bd && typeof bd === 'object') {
+      const slice = bd[chainKey];
+      if (typeof slice === 'number') return slice;
+      if (slice && typeof slice === 'object') {
+        const s = Object.values(slice).reduce((a, v) => a + (typeof v === 'number' ? v : 0), 0);
         if (s > 0) return s;
       }
     }
-    return p.total24h ?? null;
+    return p[totalField] ?? null;
   };
 
-  // Extract chain-specific fee value: prefer breakdown24h[chainKey], else fall back to total24h.
+  // Extract chain-specific fee value at the selected window.
   const chainFeeValue = (p, chainKey) => {
-    if (p.breakdown24h && typeof p.breakdown24h === 'object') {
-      const bd = p.breakdown24h[chainKey];
-      if (typeof bd === 'number') return bd;
-      // breakdown24h may be keyed by chain then by sub-protocol name: { Monad: { ... } }
-      if (bd && typeof bd === 'object') {
-        const sum = Object.values(bd).reduce((a, v) => a + (typeof v === 'number' ? v : 0), 0);
+    const bd = p[bdField];
+    if (bd && typeof bd === 'object') {
+      const slice = bd[chainKey];
+      if (typeof slice === 'number') return slice;
+      if (slice && typeof slice === 'object') {
+        const sum = Object.values(slice).reduce((a, v) => a + (typeof v === 'number' ? v : 0), 0);
         if (sum > 0) return sum;
       }
     }
-    return p.total24h ?? null;
+    return p[totalField] ?? null;
   };
 
   const pickList = (chain) => {
@@ -1685,10 +2082,16 @@ function renderProtocols(d) {
       return overviewPick(chain === 'mega' ? d.dexMega : d.dexMonad);
     }
     if (focus === 'volperps') {
-      // 1) Start with what /overview/derivatives/{chain} already returned —
-      //    that endpoint is pre-filtered by category=Derivatives and chain.
+      // 1) Start with the synthesized perps overview (from the scraped snapshot).
+      //    We re-map it so the currently-selected window drives `total24h`, which
+      //    overviewPick() expects — keeps the ranking logic uniform across metrics.
+      const snapWindowField = window === '7d' ? 'total7d' : window === '30d' ? 'total30d' : 'total24h';
       const pool = chain === 'mega' ? d.perpsMega : d.perpsMonad;
-      const baseList = overviewPick(pool);
+      const windowed = pool ? {
+        ...pool,
+        protocols: (pool.protocols || []).map(p => ({ ...p, total24h: p[snapWindowField] ?? p.total24h })),
+      } : null;
+      const baseList = overviewPick(windowed);
 
       // 2) Augment with ANY protocol whose category === "Derivatives" that operates
       //    on this chain, in case the overview endpoint missed it. Dedupe by name.
@@ -1753,11 +2156,16 @@ function renderProtocols(d) {
   document.getElementById('proto-mega').innerHTML = renderList(pickList('mega'));
   document.getElementById('proto-monad').innerHTML = renderList(pickList('monad'));
 
+  // TVL is a point-in-time metric — hide the 24h/7d/30d slider when it's active.
+  const winGroup = document.querySelector('.scope-toggle[data-card="proto-window"]');
+  if (winGroup) winGroup.style.display = focus === 'tvl' ? 'none' : '';
+
+  const w = focus === 'tvl' ? '' : ` (${window})`;
   const titleMap = {
-    tvl: 'Top Protocols by TVL',
-    fees: 'Top Fee-Generating Protocols (24h)',
-    volspot: 'Top Protocols by Spot Volume (24h)',
-    volperps: 'Top Protocols by Perps Volume (24h)',
+    tvl:      'Top Protocols by TVL',
+    fees:     `Top Fee-Generating Protocols${w}`,
+    volspot:  `Top Protocols by Spot Volume${w}`,
+    volperps: `Top Protocols by Perps Volume${w}`,
   };
   const scopeLabel = scope === 'native' ? 'native apps only' : 'all apps';
   const hdr = document.getElementById('proto-heading');
@@ -1773,7 +2181,60 @@ function renderAll(raw) {
   renderFees(scopedFeesView(raw, STATE.feesScope));
   renderStables(raw);
   renderDerived(raw);
+  renderEcosystem(raw);
   renderProtocols(raw);
+}
+
+function renderEcosystem(d) {
+  const w = STATE.ecoWindow;                         // '24h' | '7d' | '30d' | 'annual'
+  const chainKey = w === '24h' ? 't24' : w === '7d' ? 't7d' : 't30d';
+  const appKey   = w === '24h' ? 'total24h' : w === '7d' ? 'total7d' : 'total30d';
+  // Yield scaling factor: fraction of a year covered by the window.
+  const yieldFactor = w === '24h' ? (1 / 365) : w === '7d' ? (7 / 365) : w === '30d' ? (30 / 365) : 1;
+  // Annualization factor for fees (derived from 30d numbers).
+  const annualize = (v) => v == null ? null : v * (365 / 30);
+
+  let megaChain  = d.megaChainFees?.[chainKey];
+  let monadChain = d.monadChainFees?.[chainKey];
+  let megaApp    = d.feesMega?.[appKey];
+  let monadApp   = d.feesMonad?.[appKey];
+  if (w === 'annual') {
+    megaChain  = annualize(d.megaChainFees?.t30d);
+    monadChain = annualize(d.monadChainFees?.t30d);
+    megaApp    = annualize(d.feesMega?.total30d);
+    monadApp   = annualize(d.feesMonad?.total30d);
+  }
+
+  const megaYield = (d.megaUSDM && d.tbillRate)
+    ? d.megaUSDM * d.tbillRate * yieldFactor
+    : null;
+
+  const sumVals = (vals) => {
+    const defined = vals.filter(v => v != null && isFinite(v));
+    return defined.length ? defined.reduce((a, b) => a + b, 0) : null;
+  };
+  const megaTotal  = sumVals([megaChain,  megaApp,  megaYield]);
+  const monadTotal = sumVals([monadChain, monadApp]);
+
+  const pct = d.tbillRate ? (d.tbillRate * 100).toFixed(2) : '—';
+  const usdmFmt = d.megaUSDM ? fmtUSD(d.megaUSDM) : '—';
+  const asOf = d.tbillAsOf ? ` (as of ${d.tbillAsOf})` : '';
+  const sub = document.getElementById('eco-sub');
+  if (sub) sub.textContent =
+    `Chain fees + app fees + (MegaETH only) implied USDM yield — ` +
+    `rate ${pct}% T-Bill${asOf} · USDM supply ${usdmFmt}`;
+
+  const rows = [
+    renderRow('Chain Fees', megaChain, monadChain, fmtUSD(megaChain), fmtUSD(monadChain)),
+    renderRow('App Fees',   megaApp,   monadApp,   fmtUSD(megaApp),   fmtUSD(monadApp)),
+    renderRow('USDM Yield (implied)', megaYield, 0,
+              fmtUSD(megaYield),
+              'n/a',
+              false, 'mega'),
+    renderRow('Ecosystem Capture Total', megaTotal, monadTotal,
+              fmtUSD(megaTotal), fmtUSD(monadTotal)),
+  ].join('');
+  renderTable('ecosystem-table', rows);
 }
 
 async function refresh() {

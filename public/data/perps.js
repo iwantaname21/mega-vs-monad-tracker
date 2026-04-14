@@ -1,4 +1,4 @@
-{
+window.__PERPS_SNAPSHOT__ = {
   "updatedAt": "2026-04-14T04:50:49.793Z",
   "source": "https://defillama.com",
   "protocols": [
@@ -73,4 +73,4 @@
       }
     ]
   }
-}
+};
