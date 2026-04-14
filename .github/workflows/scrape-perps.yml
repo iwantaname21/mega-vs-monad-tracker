@@ -2,8 +2,12 @@ name: Scrape DefiLlama Perps
 
 on:
   schedule:
-    # Runs every day at 07:00 UTC. Adjust with https://crontab.guru
-    - cron: '0 7 * * *'
+    # Runs daily at 12:01 AM PST (covers PDT too — GitHub Actions uses UTC
+    # and doesn't honor DST, so we fire at both 07:01 UTC and 08:01 UTC).
+    # DefiLlama rolls over its daily totals at 00:00 PST, so waiting a minute
+    # picks up the fresh numbers. The no-op commit check prevents dupes when
+    # the second run sees unchanged data.
+    - cron: '1 7,8 * * *'
   workflow_dispatch: {}
 
 permissions: write-all
