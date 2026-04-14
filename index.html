@@ -1871,10 +1871,9 @@ function renderActivity(d) {
     renderRow('DEX Volume 24h (Spot)', dm.total24h, dn.total24h, fmtUSD(dm.total24h), fmtUSD(dn.total24h)),
     renderRow('DEX Volume 30d (Spot)', dm.total30d, dn.total30d, fmtUSD(dm.total30d), fmtUSD(dn.total30d)),
     renderRow('DEX Volume All-Time (Spot)', dm.totalAllTime, dn.totalAllTime, fmtUSD(dm.totalAllTime), fmtUSD(dn.totalAllTime)),
-    renderRow('Perps Volume 24h',      pm.total24h,    pn.total24h,    fmtUSD(pm.total24h),    fmtUSD(pn.total24h)),
-    renderRow('Perps Volume 7d',       pm.total7d,     pn.total7d,     fmtUSD(pm.total7d),     fmtUSD(pn.total7d)),
-    renderRow('Perps Volume 30d',      pm.total30d,    pn.total30d,    fmtUSD(pm.total30d),    fmtUSD(pn.total30d)),
-    renderRow('Perps Volume All-Time', pm.totalAllTime, pn.totalAllTime, fmtUSD(pm.totalAllTime), fmtUSD(pn.totalAllTime)),
+    renderRow('Perps Volume 24h', pm.total24h, pn.total24h, fmtUSD(pm.total24h), fmtUSD(pn.total24h)),
+    renderRow('Perps Volume 7d',  pm.total7d,  pn.total7d,  fmtUSD(pm.total7d),  fmtUSD(pn.total7d)),
+    renderRow('Perps Volume 30d', pm.total30d, pn.total30d, fmtUSD(pm.total30d), fmtUSD(pn.total30d)),
     renderRow('Protocol Count', d.megaProtoCount, d.monadProtoCount, fmtNum(d.megaProtoCount), fmtNum(d.monadProtoCount)),
   ].join('');
   renderTable('activity-table', rows);
