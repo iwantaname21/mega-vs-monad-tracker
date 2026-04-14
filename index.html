@@ -2379,11 +2379,11 @@ function renderEcosystem(d) {
     const defined = vals.filter(v => v != null && isFinite(v));
     return defined.length ? defined.reduce((a, b) => a + b, 0) : null;
   };
-  // Foundation value capture = just what the L1/foundation directly monetizes:
+  // Foundation value capture = what the L1/foundation directly monetizes:
   //   MegaETH → chain fees + internalized USDM yield
-  //   Monad   → chain fees (no native yield-bearing stablecoin)
-  const megaFoundation  = sumVals([megaChain,  megaYield]);
-  const monadFoundation = sumVals([monadChain]);
+  //   Monad   → 0 (validator-captured fees do not accrue to the foundation)
+  const megaFoundation  = sumVals([megaChain, megaYield]);
+  const monadFoundation = 0;
   // Ecosystem total adds the app-layer fees on top.
   const megaTotal  = sumVals([megaChain,  megaApp,  megaYield]);
   const monadTotal = sumVals([monadChain, monadApp]);
