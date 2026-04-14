@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-04-14T17:31:57.946Z",
+  "updatedAt": "2026-04-14T19:13:22.287Z",
   "source": "https://defillama.com",
   "protocols": [
     {
@@ -10,7 +10,7 @@
       "volume24h": 18360000,
       "volume7d": 9310000,
       "volume30d": 19840000,
-      "volumeAllTime": 73420000,
+      "volumeAllTime": 77240000,
       "chainFiltered": true
     },
     {
@@ -31,10 +31,10 @@
       "chain": "Monad",
       "name": "Perpl",
       "aliases": [],
-      "volume24h": 1010000,
+      "volume24h": 1030000,
       "volume7d": 7070000,
       "volume30d": 21140000,
-      "volumeAllTime": 33259999.999999996,
+      "volumeAllTime": 33180000,
       "chainFiltered": true
     },
     {
@@ -42,10 +42,10 @@
       "chain": "Monad",
       "name": "LeverUp",
       "aliases": [],
-      "volume24h": 10730000,
+      "volume24h": 13370000,
       "volume7d": 86010000,
       "volume30d": 325810000,
-      "volumeAllTime": 2232000000,
+      "volumeAllTime": 2234000000,
       "chainFiltered": true
     }
   ],
