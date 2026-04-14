@@ -390,6 +390,18 @@
     padding: 18px 2px 8px;
     border: none;
   }
+  /* Black bar between a running row and a summed row (e.g. Foundation Value
+     Capture / Ecosystem Capture Total) in the Ecosystem card. */
+  table.cmp tr.sum-divider { background: transparent; }
+  table.cmp tr.sum-divider td {
+    padding: 10px 12px 2px;
+    border: none;
+  }
+  .sum-bar {
+    height: 3px;
+    background: var(--night-sky);
+    border-radius: 2px;
+  }
   .group-title {
     font-family: var(--display);
     font-size: 14px;
@@ -2289,6 +2301,12 @@ function renderEcosystem(d) {
     const defined = vals.filter(v => v != null && isFinite(v));
     return defined.length ? defined.reduce((a, b) => a + b, 0) : null;
   };
+  // Foundation value capture = just what the L1/foundation directly monetizes:
+  //   MegaETH → chain fees + internalized USDM yield
+  //   Monad   → chain fees (no native yield-bearing stablecoin)
+  const megaFoundation  = sumVals([megaChain,  megaYield]);
+  const monadFoundation = sumVals([monadChain]);
+  // Ecosystem total adds the app-layer fees on top.
   const megaTotal  = sumVals([megaChain,  megaApp,  megaYield]);
   const monadTotal = sumVals([monadChain, monadApp]);
 
@@ -2300,6 +2318,7 @@ function renderEcosystem(d) {
     `Chain fees + app fees + (MegaETH only) implied USDM yield — ` +
     `rate ${pct}% T-Bill${asOf} · USDM supply ${usdmFmt}`;
 
+  const sumDivider = '<tr class="sum-divider"><td colspan="5"><div class="sum-bar"></div></td></tr>';
   const rows = [
     renderRow('Chain Fees', megaChain, monadChain, fmtUSD(megaChain), fmtUSD(monadChain)),
     renderRow('App Fees',   megaApp,   monadApp,   fmtUSD(megaApp),   fmtUSD(monadApp)),
@@ -2307,6 +2326,10 @@ function renderEcosystem(d) {
               fmtUSD(megaYield),
               'n/a',
               false, 'mega'),
+    sumDivider,
+    renderRow('Foundation Value Capture', megaFoundation, monadFoundation,
+              fmtUSD(megaFoundation), fmtUSD(monadFoundation)),
+    sumDivider,
     renderRow('Ecosystem Capture Total', megaTotal, monadTotal,
               fmtUSD(megaTotal), fmtUSD(monadTotal)),
   ].join('');
