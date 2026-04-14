@@ -40,7 +40,19 @@ jobs:
           git add public/data/perps.json public/data/perps.js
           if git diff --staged --quiet; then
             echo "No changes to commit."
-          else
-            git commit -m "chore(data): refresh perps snapshot"
-            git push
+            exit 0
           fi
+          git commit -m "chore(data): refresh perps snapshot"
+          # Retry with rebase in case main advanced during the scrape (common
+          # when a human commit lands mid-run — the push would otherwise be
+          # rejected as non-fast-forward).
+          for attempt in 1 2 3; do
+            if git push; then
+              echo "Pushed on attempt $attempt."
+              exit 0
+            fi
+            echo "Push rejected on attempt $attempt, rebasing onto origin/main…"
+            git pull --rebase origin main
+          done
+          echo "All push attempts failed." >&2
+          exit 1
