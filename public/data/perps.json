@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-04-15T13:22:23.742Z",
+  "updatedAt": "2026-04-15T15:05:00.773Z",
   "source": "https://defillama.com",
   "protocols": [
     {
@@ -31,10 +31,10 @@
       "chain": "Monad",
       "name": "Perpl",
       "aliases": [],
-      "volume24h": 818845,
+      "volume24h": 911717,
       "volume7d": 7110000,
       "volume30d": 21270000,
-      "volumeAllTime": 33660000,
+      "volumeAllTime": 33760000,
       "chainFiltered": true
     },
     {
@@ -42,17 +42,17 @@
       "chain": "Monad",
       "name": "LeverUp",
       "aliases": [],
-      "volume24h": 11020000,
+      "volume24h": 12090000,
       "volume7d": 81380000,
       "volume30d": 337770000,
-      "volumeAllTime": 2244000000,
+      "volumeAllTime": 2245000000,
       "chainFiltered": true
     }
   ],
   "chains": {
     "MegaETH": {
-      "perpsVolume24h": 13170000,
-      "raw": "$13.17m"
+      "perpsVolume24h": 9250000,
+      "raw": "$9.25m"
     },
     "Monad": {
       "perpsVolume24h": 13360000,
@@ -67,7 +67,7 @@
       },
       {
         "date": "2026-04-15",
-        "value": 13170000
+        "value": 9250000
       }
     ],
     "Monad": [
