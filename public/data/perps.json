@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-04-15T02:25:05.065Z",
+  "updatedAt": "2026-04-15T05:59:47.689Z",
   "source": "https://defillama.com",
   "protocols": [
     {
@@ -7,10 +7,10 @@
       "chain": "MegaETH",
       "name": "World Markets",
       "aliases": [],
-      "volume24h": 16500000,
-      "volume7d": 9310000,
-      "volume30d": 19840000,
-      "volumeAllTime": 75460000,
+      "volume24h": 15500000,
+      "volume7d": 24010000,
+      "volume30d": 34520000,
+      "volumeAllTime": 73660000,
       "chainFiltered": true
     },
     {
@@ -20,10 +20,10 @@
       "aliases": [
         "GMX"
       ],
-      "volume24h": 10174,
-      "volume7d": 50476,
-      "volume30d": 50476,
-      "volumeAllTime": 176026000000,
+      "volume24h": 4905,
+      "volume7d": 55381,
+      "volume30d": 55381,
+      "volumeAllTime": 176313000000,
       "chainFiltered": true
     },
     {
@@ -31,10 +31,10 @@
       "chain": "Monad",
       "name": "Perpl",
       "aliases": [],
-      "volume24h": 947681,
-      "volume7d": 7070000,
-      "volume30d": 21140000,
-      "volumeAllTime": 33100000,
+      "volume24h": 690012,
+      "volume7d": 7110000,
+      "volume30d": 21270000,
+      "volumeAllTime": 32840000.000000004,
       "chainFiltered": true
     },
     {
@@ -42,21 +42,21 @@
       "chain": "Monad",
       "name": "LeverUp",
       "aliases": [],
-      "volume24h": 13360000,
-      "volume7d": 86010000,
-      "volume30d": 325810000,
-      "volumeAllTime": 2234000000,
+      "volume24h": 12250000,
+      "volume7d": 81380000,
+      "volume30d": 337770000,
+      "volumeAllTime": 2233000000,
       "chainFiltered": true
     }
   ],
   "chains": {
     "MegaETH": {
-      "perpsVolume24h": 16010000.000000002,
-      "raw": "$16.01m"
+      "perpsVolume24h": 16610000,
+      "raw": "$16.61m"
     },
     "Monad": {
-      "perpsVolume24h": 14460000,
-      "raw": "$14.46m"
+      "perpsVolume24h": 14250000,
+      "raw": "$14.25m"
     }
   },
   "history": {
@@ -67,7 +67,7 @@
       },
       {
         "date": "2026-04-15",
-        "value": 16010000.000000002
+        "value": 16610000
       }
     ],
     "Monad": [
@@ -77,7 +77,7 @@
       },
       {
         "date": "2026-04-15",
-        "value": 14460000
+        "value": 14250000
       }
     ]
   }
