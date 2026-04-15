@@ -1,5 +1,5 @@
 window.__PERPS_SNAPSHOT__ = {
-  "updatedAt": "2026-04-15T15:05:00.773Z",
+  "updatedAt": "2026-04-15T17:02:44.764Z",
   "source": "https://defillama.com",
   "protocols": [
     {
@@ -51,12 +51,12 @@ window.__PERPS_SNAPSHOT__ = {
   ],
   "chains": {
     "MegaETH": {
-      "perpsVolume24h": 9250000,
-      "raw": "$9.25m"
+      "perpsVolume24h": 8630000,
+      "raw": "$8.63m"
     },
     "Monad": {
-      "perpsVolume24h": 13360000,
-      "raw": "$13.36m"
+      "perpsVolume24h": 14520000,
+      "raw": "$14.52m"
     }
   },
   "history": {
@@ -67,7 +67,7 @@ window.__PERPS_SNAPSHOT__ = {
       },
       {
         "date": "2026-04-15",
-        "value": 9250000
+        "value": 8630000
       }
     ],
     "Monad": [
@@ -77,7 +77,7 @@ window.__PERPS_SNAPSHOT__ = {
       },
       {
         "date": "2026-04-15",
-        "value": 13360000
+        "value": 14520000
       }
     ]
   }
