@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-04-15T10:58:22.306Z",
+  "updatedAt": "2026-04-15T13:22:23.742Z",
   "source": "https://defillama.com",
   "protocols": [
     {
@@ -7,10 +7,10 @@
       "chain": "MegaETH",
       "name": "World Markets",
       "aliases": [],
-      "volume24h": 12660000,
+      "volume24h": 8740000,
       "volume7d": 24010000,
       "volume30d": 34520000,
-      "volumeAllTime": 85980000,
+      "volumeAllTime": 81450000,
       "chainFiltered": true
     },
     {
@@ -31,10 +31,10 @@
       "chain": "Monad",
       "name": "Perpl",
       "aliases": [],
-      "volume24h": 692006,
+      "volume24h": 818845,
       "volume7d": 7110000,
       "volume30d": 21270000,
-      "volumeAllTime": 33490000.000000004,
+      "volumeAllTime": 33660000,
       "chainFiltered": true
     },
     {
@@ -42,21 +42,21 @@
       "chain": "Monad",
       "name": "LeverUp",
       "aliases": [],
-      "volume24h": 11790000,
+      "volume24h": 11020000,
       "volume7d": 81380000,
       "volume30d": 337770000,
-      "volumeAllTime": 2245000000,
+      "volumeAllTime": 2244000000,
       "chainFiltered": true
     }
   ],
   "chains": {
     "MegaETH": {
-      "perpsVolume24h": 16309999.999999998,
-      "raw": "$16.31m"
+      "perpsVolume24h": 13170000,
+      "raw": "$13.17m"
     },
     "Monad": {
-      "perpsVolume24h": 14000000,
-      "raw": "$14m"
+      "perpsVolume24h": 13360000,
+      "raw": "$13.36m"
     }
   },
   "history": {
@@ -67,7 +67,7 @@
       },
       {
         "date": "2026-04-15",
-        "value": 16309999.999999998
+        "value": 13170000
       }
     ],
     "Monad": [
@@ -77,7 +77,7 @@
       },
       {
         "date": "2026-04-15",
-        "value": 14000000
+        "value": 13360000
       }
     ]
   }
