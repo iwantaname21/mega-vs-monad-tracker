@@ -1340,7 +1340,8 @@ function positionTooltip(tt, anchorX, anchorY) {
 // on mobile. Touch events use the first contact point and prevent scroll
 // only while the finger is inside the capture rect.
 function wireChartHover(capture, onMove, onLeave) {
-  wireChartHover(capture, onMove, onLeave);
+  capture.addEventListener('mousemove', onMove);
+  capture.addEventListener('mouseleave', onLeave);
   capture.addEventListener('touchstart', (e) => {
     if (e.touches.length === 1) { e.preventDefault(); onMove(e.touches[0]); }
   }, { passive: false });
