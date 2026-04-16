@@ -1434,6 +1434,8 @@ function renderSingleLineChart(containerId, points, opts = {}) {
         ${yTickSvg}
         ${xTickSvg}
         <path d="${areaPath}" fill="${hexToRgba(color, 0.14)}" stroke="none" />
+        ${(yMin < 1 && yMax > 1) ? `<line x1="${pad.left}" y1="${y(1).toFixed(1)}" x2="${W - pad.right}" y2="${y(1).toFixed(1)}" stroke="rgba(25,25,26,0.30)" stroke-width="1" stroke-dasharray="5 4" />
+        <text x="${W - pad.right + 4}" y="${y(1).toFixed(1)}" dominant-baseline="middle" style="font-size:10px;font-weight:700;fill:#888">1x</text>` : ''}
         <path d="${path}" fill="none" stroke="${color}" stroke-width="2.2" />
         ${msLinesSvg}
         <line class="hover-line" x1="0" y1="${pad.top}" x2="0" y2="${pad.top + plotH}" stroke="rgba(25,25,26,0.25)" stroke-width="1" style="display:none" />

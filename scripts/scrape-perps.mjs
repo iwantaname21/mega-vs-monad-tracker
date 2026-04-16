@@ -97,10 +97,33 @@ async function scrapeProtocol(page, slug) {
     { key: 'v30d', pattern: '^Perp\\s*Volume\\s*30d$' },
     { key: 'vAll', pattern: '^Cumulative\\s*Perp\\s*Volume$' },
   ]);
+  // Pull the daily volume series embedded in __NEXT_DATA__ (usually at
+  // `.props.pageProps.chart`, array of [timestampMs, volumeUSD] pairs).
+  // Fallback: walk the entire __NEXT_DATA__ tree for any matching shape.
+  const chart = await page.evaluate(() => {
+    const el = document.getElementById('__NEXT_DATA__');
+    if (!el) return null;
+    let data;
+    try { data = JSON.parse(el.textContent); } catch { return null; }
+    const direct = data?.props?.pageProps?.chart;
+    const isSeries = (v) =>
+      Array.isArray(v) && v.length >= 10 && Array.isArray(v[0]) && v[0].length === 2
+      && typeof v[0][0] === 'number' && v[0][0] > 1e9;
+    if (isSeries(direct)) return direct;
+    // Fallback: walk
+    let best = null;
+    const walk = (obj) => {
+      if (isSeries(obj) && (!best || obj.length > best.length)) best = obj;
+      if (obj && typeof obj === 'object') for (const k in obj) walk(obj[k]);
+    };
+    walk(data);
+    return best;
+  });
   return {
     slug,
     v24h: parseUsd(raws.v24h), v7d: parseUsd(raws.v7d),
     v30d: parseUsd(raws.v30d), vAll: parseUsd(raws.vAll),
+    dailyChart: chart, // [[tsMs, vol], …]
     raw: raws,
   };
 }
@@ -239,6 +262,11 @@ async function main() {
       volume30d:     chainFiltered.v30d ?? totals.v30d ?? null,
       volumeAllTime: totals.vAll ?? null,
       chainFiltered: !!hit,
+      // Daily series scraped from DefiLlama's __NEXT_DATA__ — [[tsMs, vol], …].
+      // Cross-chain (the protocol page's chart is protocol-wide, not chain-
+      // filtered) but still useful for MegaETH-native protocols like World
+      // Markets where the protocol == the chain's deployment.
+      dailyChart: totals.dailyChart || null,
     });
     console.log(
       `  → ${p.name} on ${p.chain}:`,
