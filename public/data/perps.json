@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-04-16T06:01:10.700Z",
+  "updatedAt": "2026-04-16T08:01:08.742Z",
   "source": "https://defillama.com",
   "protocols": [
     {
@@ -7,10 +7,10 @@
       "chain": "MegaETH",
       "name": "World Markets",
       "aliases": [],
-      "volume24h": 3460000,
-      "volume7d": 26780000,
-      "volume30d": 36120000,
-      "volumeAllTime": 76210000,
+      "volume24h": 2270000,
+      "volume7d": 26810000,
+      "volume30d": 36140000,
+      "volumeAllTime": 78350000,
       "chainFiltered": true,
       "dailyChart": [
         [
@@ -272,6 +272,10 @@
         [
           1776211200000,
           3490545
+        ],
+        [
+          1776297600000,
+          2158264
         ]
       ]
     },
@@ -4279,10 +4283,10 @@
       "chain": "Monad",
       "name": "Perpl",
       "aliases": [],
-      "volume24h": 1270000,
+      "volume24h": 1340000,
       "volume7d": 7710000,
       "volume30d": 22030000,
-      "volumeAllTime": 34120000,
+      "volumeAllTime": 35540000,
       "chainFiltered": true,
       "dailyChart": [
         [
@@ -4532,6 +4536,10 @@
         [
           1776211200000,
           1277303
+        ],
+        [
+          1776297600000,
+          1416168
         ]
       ]
     },
@@ -4540,10 +4548,10 @@
       "chain": "Monad",
       "name": "LeverUp",
       "aliases": [],
-      "volume24h": 13660000,
-      "volume7d": 81290000,
-      "volume30d": 347340000,
-      "volumeAllTime": 2247000000,
+      "volume24h": 13930000,
+      "volume7d": 81430000,
+      "volume30d": 347490000,
+      "volumeAllTime": 2261000000,
       "chainFiltered": true,
       "dailyChart": [
         [
@@ -5116,15 +5124,19 @@
         ],
         [
           1776211200000,
-          13657587
+          13798140
+        ],
+        [
+          1776297600000,
+          14203840
         ]
       ]
     }
   ],
   "chains": {
     "MegaETH": {
-      "perpsVolume24h": 3240000,
-      "raw": "$3.24m"
+      "perpsVolume24h": 3110000,
+      "raw": "$3.11m"
     },
     "Monad": {
       "perpsVolume24h": 16670000.000000002,
@@ -5139,7 +5151,7 @@
       },
       {
         "date": "2026-04-16",
-        "value": 3240000
+        "value": 3110000
       }
     ],
     "Monad": [
