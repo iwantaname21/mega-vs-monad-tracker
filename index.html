@@ -1438,23 +1438,15 @@ function renderSingleLineChart(containerId, points, opts = {}) {
     .filter(m => isFinite(m.t) && m.t >= minT && m.t <= maxT)
     .sort((a, b) => a.t - b.t);
   const dotR = 6;
-  const hitR = 28; // large invisible hit area for easy hovering
-  // Lines go inside the pointer-events:none group; dots go outside so they're hoverable.
+  // Dashed lines + green dots inside the pointer-events:none group.
+  // Milestone hover is handled by proximity detection in the main onMove handler.
   const msLinesSvg = milestones.map(m => {
     const mx = x(m.t).toFixed(1);
-    return `<line x1="${mx}" y1="${pad.top}" x2="${mx}" y2="${pad.top + plotH}"
-                  stroke="rgba(25,25,26,0.25)" stroke-width="1" stroke-dasharray="4 3" />`;
-  }).join('');
-  const msDotsSvg = milestones.map((m, i) => {
-    const mx = x(m.t).toFixed(1);
     const dotY = (pad.top + 2).toFixed(1);
-    // Invisible hit strip spans the full plot height so hovering the dashed line works too.
-    return `<rect class="ms-hit" data-ms="${i}"
-                  x="${(x(m.t) - hitR / 2).toFixed(1)}" y="${pad.top}"
-                  width="${hitR}" height="${plotH}"
-                  fill="transparent" style="cursor:pointer" />
-            <circle class="ms-dot" data-ms="${i}" cx="${mx}" cy="${dotY}" r="${dotR}"
-                    fill="#2e9a57" stroke="#fff" stroke-width="1.5" pointer-events="none" />`;
+    return `<line x1="${mx}" y1="${pad.top}" x2="${mx}" y2="${pad.top + plotH}"
+                  stroke="rgba(25,25,26,0.25)" stroke-width="1" stroke-dasharray="4 3" />
+            <circle cx="${mx}" cy="${dotY}" r="${dotR}"
+                    fill="#2e9a57" stroke="#fff" stroke-width="1.5" />`;
   }).join('');
 
   wrap.innerHTML = `
@@ -1470,7 +1462,6 @@ function renderSingleLineChart(containerId, points, opts = {}) {
         <line class="hover-line" x1="0" y1="${pad.top}" x2="0" y2="${pad.top + plotH}" stroke="rgba(25,25,26,0.25)" stroke-width="1" style="display:none" />
         <circle class="hover-dot" r="5" fill="${color}" stroke="#fff" stroke-width="2" style="display:none" />
       </g>
-      ${msDotsSvg}
       <rect class="hover-capture" x="${pad.left}" y="${pad.top}" width="${plotW}" height="${plotH}" fill="transparent" />
     </svg>
     <div class="chart-tooltip"></div>`;
@@ -1491,11 +1482,47 @@ function renderSingleLineChart(containerId, points, opts = {}) {
   const dateStr = (sec) =>
     new Date(sec * 1000).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
 
+  // Milestone proximity threshold in viewBox pixels.
+  const msThreshold = plotW * 0.015;
+  const msFmtDate = (sec) =>
+    new Date(sec * 1000).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric', timeZone: 'UTC' });
+
   const onMove = (e) => {
     const rect = svg.getBoundingClientRect();
     const vbX = (e.clientX - rect.left) * (W / rect.width);
     if (vbX < pad.left || vbX > pad.left + plotW) { onLeave(); return; }
     const t = minT + ((vbX - pad.left) / plotW) * (maxT - minT);
+
+    // Check if cursor is near a milestone — show green tooltip if so.
+    const nearMs = milestones.find(m => Math.abs(x(m.t) - vbX) < msThreshold);
+    if (nearMs) {
+      const p = nearestAt(data, nearMs.t);
+      const mx = x(nearMs.t).toFixed(1);
+      hoverLine.setAttribute('x1', mx); hoverLine.setAttribute('x2', mx);
+      hoverLine.style.display = '';
+      hoverDot.style.display = 'none';
+      tooltip.style.background = '#1a3d2a';
+      tooltip.style.borderLeft = '3px solid #2e9a57';
+      tooltip.innerHTML = `
+        <div class="tt-date" style="color:#6DD0A9">MILESTONE</div>
+        <div class="tt-row" style="--c:#2e9a57">
+          <span class="tt-label" style="font-weight:700;color:#fff">${nearMs.label}</span>
+        </div>
+        <div style="font-size:11px;color:rgba(255,255,255,0.6);margin-top:2px">${msFmtDate(nearMs.t)}</div>
+        <div class="tt-row" style="--c:${color};margin-top:4px;padding-top:4px;border-top:1px solid rgba(255,255,255,0.12)">
+          <span class="tt-label"><span class="tt-dot" style="background:${color}"></span>${legendLabel}</span>
+          <span class="tt-val">${p ? yFormat(p[1]) : '—'}</span>
+        </div>`;
+      const pxX = rect.left + (parseFloat(mx) / W) * rect.width;
+      const pxY = rect.top  + (pad.top / H) * rect.height;
+      positionTooltip(tooltip, pxX, pxY);
+      tooltip.classList.add('show');
+      return;
+    }
+
+    // Regular line hover.
+    tooltip.style.background = '';
+    tooltip.style.borderLeft = '';
     const p = nearestAt(data, t);
     const px = x(p[0]).toFixed(1), py = y(p[1]).toFixed(1);
     hoverLine.setAttribute('x1', px); hoverLine.setAttribute('x2', px);
@@ -1515,50 +1542,12 @@ function renderSingleLineChart(containerId, points, opts = {}) {
   };
   const onLeave = () => {
     tooltip.classList.remove('show');
+    tooltip.style.background = '';
+    tooltip.style.borderLeft = '';
     hoverLine.style.display = 'none';
     hoverDot.style.display = 'none';
   };
   wireChartHover(capture, onMove, onLeave);
-
-  // Milestone dot hover — show label + date in a green-tinted tooltip.
-  const msFmtDate = (sec) =>
-    new Date(sec * 1000).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric', timeZone: 'UTC' });
-  wrap.querySelectorAll('.ms-hit').forEach(hit => {
-    const showMs = () => {
-      const i = Number(hit.dataset.ms);
-      const m = milestones[i];
-      if (!m) return;
-      const p = nearestAt(data, m.t);
-      tooltip.style.background = '#1a3d2a';
-      tooltip.style.borderLeft = '3px solid #2e9a57';
-      tooltip.innerHTML = `
-        <div class="tt-date" style="color:#6DD0A9">MILESTONE</div>
-        <div class="tt-row" style="--c:#2e9a57">
-          <span class="tt-label" style="font-weight:700;color:#fff">${m.label}</span>
-        </div>
-        <div style="font-size:11px;color:rgba(255,255,255,0.6);margin-top:2px">${msFmtDate(m.t)}</div>
-        <div class="tt-row" style="--c:${color};margin-top:4px;padding-top:4px;border-top:1px solid rgba(255,255,255,0.12)">
-          <span class="tt-label"><span class="tt-dot" style="background:${color}"></span>${legendLabel}</span>
-          <span class="tt-val">${p ? yFormat(p[1]) : '—'}</span>
-        </div>`;
-      const rect = svg.getBoundingClientRect();
-      const hx = parseFloat(hit.getAttribute('x')) + hitR / 2;
-      const hy = pad.top;
-      const pxX = rect.left + (hx / W) * rect.width;
-      const pxY = rect.top  + (hy / H) * rect.height;
-      positionTooltip(tooltip, pxX, pxY);
-      tooltip.classList.add('show');
-    };
-    const hideMs = () => {
-      tooltip.classList.remove('show');
-      tooltip.style.background = '';
-      tooltip.style.borderLeft = '';
-    };
-    hit.addEventListener('mouseenter', showMs);
-    hit.addEventListener('mouseleave', hideMs);
-    hit.addEventListener('touchstart', (e) => { e.preventDefault(); showMs(); }, { passive: false });
-    hit.addEventListener('touchend', hideMs);
-  });
 }
 
 // Renders an SVG dual-line chart (Mega vs Monad) into the given element.
