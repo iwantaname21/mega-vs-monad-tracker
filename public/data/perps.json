@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-04-16T13:27:27.239Z",
+  "updatedAt": "2026-04-16T15:25:14.018Z",
   "source": "https://defillama.com",
   "protocols": [
     {
@@ -7,10 +7,10 @@
       "chain": "MegaETH",
       "name": "World Markets",
       "aliases": [],
-      "volume24h": 1990000,
+      "volume24h": 2029999.9999999998,
       "volume7d": 26810000,
       "volume30d": 36140000,
-      "volumeAllTime": 78180000,
+      "volumeAllTime": 78150000,
       "chainFiltered": true,
       "dailyChart": [
         [
@@ -275,7 +275,7 @@
         ],
         [
           1776297600000,
-          1987917
+          2060922
         ]
       ]
     },
@@ -4283,10 +4283,10 @@
       "chain": "Monad",
       "name": "Perpl",
       "aliases": [],
-      "volume24h": 1700000,
+      "volume24h": 1510000,
       "volume7d": 7710000,
       "volume30d": 22030000,
-      "volumeAllTime": 35810000,
+      "volumeAllTime": 35750000,
       "chainFiltered": true,
       "dailyChart": [
         [
@@ -4539,7 +4539,7 @@
         ],
         [
           1776297600000,
-          1700751
+          1626793
         ]
       ]
     },
@@ -4548,7 +4548,7 @@
       "chain": "Monad",
       "name": "LeverUp",
       "aliases": [],
-      "volume24h": 14110000,
+      "volume24h": 12490000,
       "volume7d": 81430000,
       "volume30d": 347490000,
       "volumeAllTime": 2261000000,
@@ -5128,19 +5128,19 @@
         ],
         [
           1776297600000,
-          14107243
+          14130263
         ]
       ]
     }
   ],
   "chains": {
     "MegaETH": {
-      "perpsVolume24h": 3060000,
-      "raw": "$3.06m"
+      "perpsVolume24h": 3000000,
+      "raw": "$3m"
     },
     "Monad": {
-      "perpsVolume24h": 17220000,
-      "raw": "$17.22m"
+      "perpsVolume24h": 17160000,
+      "raw": "$17.16m"
     }
   },
   "history": {
@@ -5151,7 +5151,7 @@
       },
       {
         "date": "2026-04-16",
-        "value": 3060000
+        "value": 3000000
       }
     ],
     "Monad": [
@@ -5161,7 +5161,7 @@
       },
       {
         "date": "2026-04-16",
-        "value": 17220000
+        "value": 17160000
       }
     ]
   }
