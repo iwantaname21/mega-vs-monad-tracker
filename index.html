@@ -798,8 +798,17 @@
 
     <!-- FDV Multiple — historical -->
     <div class="card full">
-      <h2>FDV Multiple · Historical</h2>
-      <div class="card-sub">Monad FDV ÷ MegaETH FDV over time — higher means Monad trades at a larger premium</div>
+      <div class="card-header">
+        <div>
+          <h2>FDV Multiple · Historical</h2>
+          <div class="card-sub">Monad FDV ÷ MegaETH FDV over time — higher means Monad trades at a larger premium</div>
+        </div>
+        <div class="scope-toggle" data-card="fdv-range">
+          <button class="scope-btn active" data-range="30">30d</button>
+          <button class="scope-btn" data-range="90">90d</button>
+          <button class="scope-btn" data-range="all">All</button>
+        </div>
+      </div>
       <div class="chart-block" id="chart-fdv-ratio" style="margin-top: 0;"></div>
     </div>
 
@@ -1170,6 +1179,8 @@ function getCachedResult() {
 }
 
 // Per-card toggles — each card owns its own scope.
+// Default FDV range to 30d on mobile, 90d on desktop.
+const _isMobile = window.matchMedia('(max-width: 860px)').matches;
 const STATE = {
   tvlScope: 'all',      // TVL & Activity card
   feesScope: 'all',     // Fees card
@@ -1178,6 +1189,7 @@ const STATE = {
   protoScope: 'all',    // Top Protocols card — all vs native
   protoWindow: '24h',   // Top Protocols card — time window for Fees / Vol-Spot / Vol-Perps
   ecoWindow: '24h',     // Ecosystem Value Capture card
+  fdvRange: _isMobile ? '30' : '90',  // FDV Multiple chart — '30' | '90' | 'all'
 };
 let LAST_DATA = null;
 
@@ -1195,6 +1207,7 @@ function wireScopeToggles() {
         else if (card === 'proto-scope') STATE.protoScope = btn.dataset.scope;
         else if (card === 'proto-window') STATE.protoWindow = btn.dataset.window;
         else if (card === 'eco-window') STATE.ecoWindow = btn.dataset.window;
+        else if (card === 'fdv-range') STATE.fdvRange = btn.dataset.range;
         if (LAST_DATA) renderAll(LAST_DATA);
       });
     });
@@ -1323,6 +1336,21 @@ function positionTooltip(tt, anchorX, anchorY) {
 }
 
 // ---------- chart rendering ----------
+// Wire both mouse and touch events on a chart capture area so tooltips work
+// on mobile. Touch events use the first contact point and prevent scroll
+// only while the finger is inside the capture rect.
+function wireChartHover(capture, onMove, onLeave) {
+  wireChartHover(capture, onMove, onLeave);
+  capture.addEventListener('touchstart', (e) => {
+    if (e.touches.length === 1) { e.preventDefault(); onMove(e.touches[0]); }
+  }, { passive: false });
+  capture.addEventListener('touchmove', (e) => {
+    if (e.touches.length === 1) { e.preventDefault(); onMove(e.touches[0]); }
+  }, { passive: false });
+  capture.addEventListener('touchend', onLeave);
+  capture.addEventListener('touchcancel', onLeave);
+}
+
 // Renders a single-series line chart (used for the FDV multiple history).
 // Points: [[unixSec, value], …]. yFormat defaults to a `Nx` ratio formatter.
 function renderSingleLineChart(containerId, points, opts = {}) {
@@ -1489,14 +1517,13 @@ function renderSingleLineChart(containerId, points, opts = {}) {
     hoverLine.style.display = 'none';
     hoverDot.style.display = 'none';
   };
-  capture.addEventListener('mousemove', onMove);
-  capture.addEventListener('mouseleave', onLeave);
+  wireChartHover(capture, onMove, onLeave);
 
   // Milestone dot hover — show label + date in a green-tinted tooltip.
   const msFmtDate = (sec) =>
     new Date(sec * 1000).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric', timeZone: 'UTC' });
   wrap.querySelectorAll('.ms-hit').forEach(hit => {
-    hit.addEventListener('mouseenter', () => {
+    const showMs = () => {
       const i = Number(hit.dataset.ms);
       const m = milestones[i];
       if (!m) return;
@@ -1520,12 +1547,16 @@ function renderSingleLineChart(containerId, points, opts = {}) {
       const pxY = rect.top  + (hy / H) * rect.height;
       positionTooltip(tooltip, pxX, pxY);
       tooltip.classList.add('show');
-    });
-    hit.addEventListener('mouseleave', () => {
+    };
+    const hideMs = () => {
       tooltip.classList.remove('show');
       tooltip.style.background = '';
       tooltip.style.borderLeft = '';
-    });
+    };
+    hit.addEventListener('mouseenter', showMs);
+    hit.addEventListener('mouseleave', hideMs);
+    hit.addEventListener('touchstart', (e) => { e.preventDefault(); showMs(); }, { passive: false });
+    hit.addEventListener('touchend', hideMs);
   });
 }
 
@@ -1708,8 +1739,7 @@ function renderLineChart(containerId, megaSeries, monadSeries, opts = {}) {
     dotMega.style.display   = 'none';
     dotMonad.style.display  = 'none';
   };
-  capture.addEventListener('mousemove', onMove);
-  capture.addEventListener('mouseleave', onLeave);
+  wireChartHover(capture, onMove, onLeave);
 }
 
 // Re-render charts when the window resizes so the SVG width follows the container.
@@ -1858,8 +1888,7 @@ function renderMultiLineChart(containerId, series, opts = {}) {
     tooltip.classList.remove('show');
     hoverLine.style.display = 'none';
   };
-  capture.addEventListener('mousemove', onMove);
-  capture.addEventListener('mouseleave', onLeave);
+  wireChartHover(capture, onMove, onLeave);
 }
 
 // Renders a stacked-area chart of multiple named series into #containerId.
@@ -2067,8 +2096,7 @@ function renderGroupedBarChart(containerId, series, opts = {}) {
     tooltip.classList.remove('show');
     highlight.style.display = 'none';
   };
-  capture.addEventListener('mousemove', onMove);
-  capture.addEventListener('mouseleave', onLeave);
+  wireChartHover(capture, onMove, onLeave);
 }
 
 // Renders per-day stacked bars. `series` is an ordered array of
@@ -2259,8 +2287,7 @@ function renderStackedBarChart(containerId, series, opts = {}) {
     tooltip.classList.remove('show');
     highlight.style.display = 'none';
   };
-  capture.addEventListener('mousemove', onMove);
-  capture.addEventListener('mouseleave', onLeave);
+  wireChartHover(capture, onMove, onLeave);
 }
 
 // From the scraped snapshot + a chain name, build a list of per-protocol daily-rate
@@ -3107,20 +3134,33 @@ function renderFdvRatio(d) {
     if (!last || Math.abs(last[0] - todaySec) > 43200) hist.push([todaySec, live]);
     else hist[hist.length - 1] = [todaySec, live];
   }
-  renderSingleLineChart('chart-fdv-ratio', hist, {
-    title: 'FDV Multiple — last 90 days',
+  // Clip to the selected range.
+  const range = STATE.fdvRange; // '30' | '90' | 'all'
+  let clipped = hist;
+  if (range !== 'all') {
+    const days = Number(range);
+    const cutoff = Math.floor(Date.now() / 1000) - days * 86400;
+    clipped = hist.filter(([t]) => t >= cutoff);
+  }
+  const titleLabel = range === 'all' ? 'FDV Multiple — all time'
+    : `FDV Multiple — last ${range} days`;
+
+  const allMilestones = [
+    { date: '2026-02-06', label: 'TGE KPI Announcement' },
+    { date: '2026-02-09', label: 'Mainnet Live' },
+    { date: '2026-03-30', label: 'GMX Deployment' },
+    { date: '2026-03-31', label: 'USDm 1:1 Bridge Launch' },
+    { date: '2026-04-12', label: 'Aave Cross Collateral' },
+    { date: '2026-04-13', label: 'Hit.One Mainnet Beta Live' },
+    { date: '2026-04-15', label: 'Brix Raise Announcement' },
+  ];
+
+  renderSingleLineChart('chart-fdv-ratio', clipped, {
+    title: titleLabel,
     color: '#6B5AE8',
     legendLabel: 'Monad FDV ÷ MegaETH FDV',
     height: 280,
-    milestones: [
-      { date: '2026-02-06', label: 'TGE KPI Announcement' },
-      { date: '2026-02-09', label: 'Mainnet Live' },
-      { date: '2026-03-30', label: 'GMX Deployment' },
-      { date: '2026-03-31', label: 'USDm 1:1 Bridge Launch' },
-      { date: '2026-04-12', label: 'Aave Cross Collateral' },
-      { date: '2026-04-13', label: 'Hit.One Mainnet Beta Live' },
-      { date: '2026-04-15', label: 'Brix Raise Announcement' },
-    ],
+    milestones: allMilestones,
   });
 }
 
@@ -3217,6 +3257,10 @@ function updateTimestamp() {
 
 renderPerformance();
 wireScopeToggles();
+// Sync the FDV range toggle's active button with the STATE default (mobile=30d, desktop=90d).
+document.querySelectorAll('[data-card="fdv-range"] .scope-btn').forEach(btn => {
+  btn.classList.toggle('active', btn.dataset.range === STATE.fdvRange);
+});
 
 // Stale-while-revalidate: paint cached result immediately so the page is
 // usable within ~50ms, then kick off the fresh fetch cycle in the background.
