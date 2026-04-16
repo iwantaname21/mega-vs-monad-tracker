@@ -348,7 +348,17 @@
     font-size: 14px;
     table-layout: fixed;
   }
-  table.cmp td { word-break: break-word; }
+  table.cmp td { word-break: normal; overflow-wrap: normal; hyphens: none; }
+  /* Label column wraps at word boundaries only (never mid-word). */
+  table.cmp tbody tr:not(.group-row):not(.sum-divider) td:first-child {
+    word-break: normal;
+    overflow-wrap: normal;
+    white-space: normal;
+  }
+  /* Numeric / badge columns never wrap so $90.4M stays on one line. */
+  table.cmp tbody tr:not(.group-row):not(.sum-divider) td:nth-child(n+2) {
+    white-space: nowrap;
+  }
   table.cmp th {
     text-align: left;
     font-weight: 700;
@@ -413,10 +423,11 @@
     border: none;
   }
   /* Black bar between a running row and a summed row (e.g. Foundation Value
-     Capture / Ecosystem Capture Total) in the Ecosystem card. */
+     Capture / Ecosystem Capture Total) in the Ecosystem card. Symmetric
+     top/bottom padding so the gap above and below the bar matches. */
   table.cmp tr.sum-divider { background: transparent; }
   table.cmp tr.sum-divider td {
-    padding: 10px 12px 2px;
+    padding: 2px 12px;
     border: none;
   }
   .sum-bar {
@@ -785,6 +796,13 @@
   <!-- Grid of cards -->
   <div class="grid">
 
+    <!-- FDV Multiple — historical -->
+    <div class="card full">
+      <h2>FDV Multiple · Historical</h2>
+      <div class="card-sub">Monad FDV ÷ MegaETH FDV over time — higher means Monad trades at a larger premium</div>
+      <div class="chart-block" id="chart-fdv-ratio" style="margin-top: 0;"></div>
+    </div>
+
     <!-- Section 1: Performance (static) -->
     <div class="card full">
       <h2>Performance &amp; Cost</h2>
@@ -944,6 +962,97 @@ async function fetchMegaHyperliquidPrice() {
     console.warn('Hyperliquid MEGA price fetch failed', e);
   }
   return null;
+}
+
+// Pull daily MEGA closes from Hyperliquid candleSnapshot. Returns array of
+// [unixSec (UTC midnight bucket), closePrice] sorted ascending, or [] on failure.
+async function fetchMegaHyperliquidHistory(days = 90) {
+  const nowMs = Date.now();
+  const startMs = nowMs - days * 86400 * 1000;
+  for (const coin of ['MEGA', 'kMEGA', 'MEGAETH', 'Mega']) {
+    try {
+      const r = await fetch('https://api.hyperliquid.xyz/info', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          type: 'candleSnapshot',
+          req: { coin, interval: '1d', startTime: startMs, endTime: nowMs },
+        }),
+      });
+      if (!r.ok) continue;
+      const data = await r.json();
+      if (!Array.isArray(data) || !data.length) continue;
+      const out = data.map(c => {
+        const ts = Math.floor(Number(c.t) / 1000);
+        const close = parseFloat(c.c);
+        return isFinite(ts) && isFinite(close) && close > 0 ? [ts, close] : null;
+      }).filter(Boolean);
+      if (out.length) return out.sort((a, b) => a[0] - b[0]);
+    } catch (e) { /* try next ticker */ }
+  }
+  return [];
+}
+
+// Build a daily [[unixSec, ratio], …] series of Monad FDV / MegaETH FDV.
+// Monad closes come from CoinGecko's market_chart; MegaETH closes from Hyperliquid.
+// Missing days on either side are forward-filled from the last known close so
+// the series stays continuous when one source skips a day.
+async function fetchFdvMultipleHistory(days = 90) {
+  // CoinGecko's /market_chart endpoint rate-limits aggressively when hit in
+  // parallel with other CoinGecko calls. Retry a few times with increasing
+  // backoff so the first page load eventually succeeds.
+  const fetchMonad = async () => {
+    const url = `https://api.coingecko.com/api/v3/coins/monad/market_chart?vs_currency=usd&days=${days}&interval=daily`;
+    for (const delay of [0, 1500, 3500, 6000]) {
+      if (delay) await new Promise(res => setTimeout(res, delay));
+      const r = await safeJson(url);
+      if (Array.isArray(r?.prices) && r.prices.length) return r.prices;
+    }
+    return [];
+  };
+  const [monadRaw, megaHist] = await Promise.all([
+    fetchMonad(),
+    fetchMegaHyperliquidHistory(days),
+  ]);
+  if (!monadRaw.length) {
+    // Final fallback: reuse the last successful fdv ratio history from localStorage.
+    try {
+      const cached = JSON.parse(localStorage.getItem('mega-vs-monad:fdv-ratio:v1') || 'null');
+      if (Array.isArray(cached) && cached.length) return cached;
+    } catch {}
+    return [];
+  }
+
+  const dayBucket = (sec) => Math.floor(sec / 86400) * 86400;
+  const monadByDay = new Map();
+  for (const [ms, p] of monadRaw) {
+    const day = dayBucket(Math.floor(ms / 1000));
+    if (isFinite(p) && p > 0) monadByDay.set(day, p);
+  }
+  const megaByDay = new Map();
+  for (const [sec, p] of megaHist) {
+    megaByDay.set(dayBucket(sec), p);
+  }
+
+  const allDays = [...new Set([...monadByDay.keys(), ...megaByDay.keys()])].sort((a, b) => a - b);
+  if (!allDays.length) return [];
+
+  const out = [];
+  let lastMega = megaHist.length ? megaHist[0][1] : MEGA_PRICE;
+  let lastMonad = monadByDay.get(allDays[0]) ?? null;
+  for (const day of allDays) {
+    if (megaByDay.has(day)) lastMega = megaByDay.get(day);
+    if (monadByDay.has(day)) lastMonad = monadByDay.get(day);
+    if (lastMega == null || lastMonad == null) continue;
+    const monadFdv = lastMonad * MONAD_SUPPLY;
+    const megaFdv  = lastMega  * MEGA_SUPPLY;
+    if (megaFdv > 0) out.push([day, monadFdv / megaFdv]);
+  }
+  // Persist on success so future loads survive CoinGecko rate-limit spikes.
+  if (out.length) {
+    try { localStorage.setItem('mega-vs-monad:fdv-ratio:v1', JSON.stringify(out)); } catch {}
+  }
+  return out;
 }
 
 // Native apps — projects built specifically for each chain.
@@ -1175,11 +1284,11 @@ function renderTable(containerId, rowsHtml) {
     <table class="cmp">
       <thead>
         <tr>
-          <th style="width: 22%">Metric</th>
-          <th style="width: 18%">${COL_HEAD_MEGA}</th>
-          <th style="width: 18%">${COL_HEAD_MONAD}</th>
-          <th style="width: 22%">Difference</th>
-          <th style="width: 20%">Winner</th>
+          <th style="width: 30%">Metric</th>
+          <th style="width: 16%">${COL_HEAD_MEGA}</th>
+          <th style="width: 16%">${COL_HEAD_MONAD}</th>
+          <th style="width: 20%">Difference</th>
+          <th style="width: 18%">Winner</th>
         </tr>
       </thead>
       <tbody>${rowsHtml}</tbody>
@@ -1214,6 +1323,210 @@ function positionTooltip(tt, anchorX, anchorY) {
 }
 
 // ---------- chart rendering ----------
+// Renders a single-series line chart (used for the FDV multiple history).
+// Points: [[unixSec, value], …]. yFormat defaults to a `Nx` ratio formatter.
+function renderSingleLineChart(containerId, points, opts = {}) {
+  const el = document.getElementById(containerId);
+  if (!el) return;
+  const {
+    title = '',
+    yFormat = (v) => (v != null && isFinite(v) ? v.toFixed(2) + 'x' : '—'),
+    height = 220,
+    color = '#6B5AE8',
+    legendLabel = 'FDV Multiple',
+  } = opts;
+
+  const data = (points || []).filter(p => Array.isArray(p) && isFinite(p[0]) && isFinite(p[1]))
+                             .sort((a, b) => a[0] - b[0]);
+  if (!data.length) {
+    el.innerHTML = `
+      <div class="chart-header"><div class="chart-title">${title}</div></div>
+      <div class="chart-empty">No historical data available</div>`;
+    return;
+  }
+  const latest = data[data.length - 1][1];
+  const first  = data[0][1];
+  const deltaPct = first > 0 ? ((latest - first) / first) * 100 : null;
+  const deltaStr = deltaPct == null ? '' :
+    ` · <span style="color:${deltaPct >= 0 ? '#2e9a57' : '#c7384a'}">${deltaPct >= 0 ? '+' : ''}${deltaPct.toFixed(1)}%</span>`;
+
+  el.innerHTML = `
+    <div class="chart-header">
+      <div class="chart-title">${title}</div>
+      <div class="chart-legend">
+        <span class="chart-key"><span class="dot" style="background:${color}"></span>${legendLabel} · ${yFormat(latest)}${deltaStr}</span>
+      </div>
+    </div>
+    <div class="chart-svg-wrap"></div>`;
+  const wrap = el.querySelector('.chart-svg-wrap');
+
+  const W = Math.max(320, Math.floor(wrap.clientWidth || el.clientWidth || 720));
+  const H = height;
+  const pad = { top: 16, right: 18, bottom: 32, left: 72 };
+  const plotW = W - pad.left - pad.right;
+  const plotH = H - pad.top - pad.bottom;
+
+  const vals = data.map(p => p[1]);
+  const minV = Math.min(...vals), maxV = Math.max(...vals);
+  // Leave a small visual margin above/below so the line doesn't touch axes.
+  const spread = Math.max(maxV - minV, maxV * 0.02, 0.01);
+  const yMin = Math.max(0, minV - spread * 0.15);
+  const yMax = maxV + spread * 0.2;
+  const minT = data[0][0], maxT = data[data.length - 1][0];
+  const x = (t) => pad.left + ((t - minT) / Math.max(1, maxT - minT)) * plotW;
+  const y = (v) => pad.top + plotH - ((v - yMin) / Math.max(1e-9, yMax - yMin)) * plotH;
+
+  const path = 'M ' + data.map(p => `${x(p[0]).toFixed(1)} ${y(p[1]).toFixed(1)}`).join(' L ');
+  const areaPath = `M ${x(data[0][0]).toFixed(1)} ${(pad.top + plotH).toFixed(1)} L ` +
+    data.map(p => `${x(p[0]).toFixed(1)} ${y(p[1]).toFixed(1)}`).join(' L ') +
+    ` L ${x(data[data.length - 1][0]).toFixed(1)} ${(pad.top + plotH).toFixed(1)} Z`;
+
+  const yTicks = [0, 0.25, 0.5, 0.75, 1].map(f => yMin + f * (yMax - yMin));
+  const yTickSvg = yTicks.map(v => {
+    const ty = y(v).toFixed(1);
+    return `<line x1="${pad.left}" y1="${ty}" x2="${W - pad.right}" y2="${ty}" stroke="rgba(25,25,26,0.08)" />
+            <text x="${pad.left - 10}" y="${ty}" text-anchor="end" dominant-baseline="middle" class="chart-axis">${yFormat(v)}</text>`;
+  }).join('');
+  const fmtDate = (t) => {
+    const d = new Date(t * 1000);
+    return `${d.getMonth() + 1}/${d.getDate()}`;
+  };
+  const xTicks = [0, 0.25, 0.5, 0.75, 1].map(f => minT + f * (maxT - minT));
+  const xTickSvg = xTicks.map(t =>
+    `<text x="${x(t).toFixed(1)}" y="${H - 10}" text-anchor="middle" class="chart-axis">${fmtDate(t)}</text>`
+  ).join('');
+
+  // Convert color to rgba for the area fill (works for hex only).
+  const hexToRgba = (hex, a) => {
+    const m = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+    return m ? `rgba(${parseInt(m[1],16)}, ${parseInt(m[2],16)}, ${parseInt(m[3],16)}, ${a})` : hex;
+  };
+
+  // Milestone markers — vertical dashed lines with a small circle at the top.
+  // Hover on the circle to see the label in a tooltip.
+  const milestones = (opts.milestones || [])
+    .map(m => ({ ...m, t: Math.floor(new Date(m.date + 'T12:00:00Z').getTime() / 1000) }))
+    .filter(m => isFinite(m.t) && m.t >= minT && m.t <= maxT)
+    .sort((a, b) => a.t - b.t);
+  const dotR = 6;
+  const hitR = 28; // large invisible hit area for easy hovering
+  // Lines go inside the pointer-events:none group; dots go outside so they're hoverable.
+  const msLinesSvg = milestones.map(m => {
+    const mx = x(m.t).toFixed(1);
+    return `<line x1="${mx}" y1="${pad.top}" x2="${mx}" y2="${pad.top + plotH}"
+                  stroke="rgba(25,25,26,0.25)" stroke-width="1" stroke-dasharray="4 3" />`;
+  }).join('');
+  const msDotsSvg = milestones.map((m, i) => {
+    const mx = x(m.t).toFixed(1);
+    const dotY = (pad.top + 2).toFixed(1);
+    // Invisible hit strip spans the full plot height so hovering the dashed line works too.
+    return `<rect class="ms-hit" data-ms="${i}"
+                  x="${(x(m.t) - hitR / 2).toFixed(1)}" y="${pad.top}"
+                  width="${hitR}" height="${plotH}"
+                  fill="transparent" style="cursor:pointer" />
+            <circle class="ms-dot" data-ms="${i}" cx="${mx}" cy="${dotY}" r="${dotR}"
+                    fill="#2e9a57" stroke="#fff" stroke-width="1.5" pointer-events="none" />`;
+  }).join('');
+
+  wrap.innerHTML = `
+    <svg viewBox="0 0 ${W} ${H}" width="${W}" height="${H}" class="chart-svg" xmlns="http://www.w3.org/2000/svg">
+      <g pointer-events="none">
+        ${yTickSvg}
+        ${xTickSvg}
+        <path d="${areaPath}" fill="${hexToRgba(color, 0.14)}" stroke="none" />
+        <path d="${path}" fill="none" stroke="${color}" stroke-width="2.2" />
+        ${msLinesSvg}
+        <line class="hover-line" x1="0" y1="${pad.top}" x2="0" y2="${pad.top + plotH}" stroke="rgba(25,25,26,0.25)" stroke-width="1" style="display:none" />
+        <circle class="hover-dot" r="5" fill="${color}" stroke="#fff" stroke-width="2" style="display:none" />
+      </g>
+      ${msDotsSvg}
+      <rect class="hover-capture" x="${pad.left}" y="${pad.top}" width="${plotW}" height="${plotH}" fill="transparent" />
+    </svg>
+    <div class="chart-tooltip"></div>`;
+
+  const svg       = wrap.querySelector('svg');
+  const capture   = wrap.querySelector('.hover-capture');
+  const tooltip   = wrap.querySelector('.chart-tooltip');
+  const hoverLine = wrap.querySelector('.hover-line');
+  const hoverDot  = wrap.querySelector('.hover-dot');
+  const nearestAt = (pts, t) => {
+    let best = pts[0], d = Math.abs(pts[0][0] - t);
+    for (let i = 1; i < pts.length; i++) {
+      const dd = Math.abs(pts[i][0] - t);
+      if (dd < d) { best = pts[i]; d = dd; }
+    }
+    return best;
+  };
+  const dateStr = (sec) =>
+    new Date(sec * 1000).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+
+  const onMove = (e) => {
+    const rect = svg.getBoundingClientRect();
+    const vbX = (e.clientX - rect.left) * (W / rect.width);
+    if (vbX < pad.left || vbX > pad.left + plotW) { onLeave(); return; }
+    const t = minT + ((vbX - pad.left) / plotW) * (maxT - minT);
+    const p = nearestAt(data, t);
+    const px = x(p[0]).toFixed(1), py = y(p[1]).toFixed(1);
+    hoverLine.setAttribute('x1', px); hoverLine.setAttribute('x2', px);
+    hoverLine.style.display = '';
+    hoverDot.setAttribute('cx', px); hoverDot.setAttribute('cy', py);
+    hoverDot.style.display = '';
+    tooltip.innerHTML = `
+      <div class="tt-date">${dateStr(p[0])}</div>
+      <div class="tt-row" style="--c:${color}">
+        <span class="tt-label"><span class="tt-dot" style="background:${color}"></span>${legendLabel}</span>
+        <span class="tt-val">${yFormat(p[1])}</span>
+      </div>`;
+    const pxX = rect.left + (parseFloat(px) / W) * rect.width;
+    const pxY = rect.top  + (pad.top / H) * rect.height;
+    positionTooltip(tooltip, pxX, pxY);
+    tooltip.classList.add('show');
+  };
+  const onLeave = () => {
+    tooltip.classList.remove('show');
+    hoverLine.style.display = 'none';
+    hoverDot.style.display = 'none';
+  };
+  capture.addEventListener('mousemove', onMove);
+  capture.addEventListener('mouseleave', onLeave);
+
+  // Milestone dot hover — show label + date in a green-tinted tooltip.
+  const msFmtDate = (sec) =>
+    new Date(sec * 1000).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric', timeZone: 'UTC' });
+  wrap.querySelectorAll('.ms-hit').forEach(hit => {
+    hit.addEventListener('mouseenter', () => {
+      const i = Number(hit.dataset.ms);
+      const m = milestones[i];
+      if (!m) return;
+      const p = nearestAt(data, m.t);
+      tooltip.style.background = '#1a3d2a';
+      tooltip.style.borderLeft = '3px solid #2e9a57';
+      tooltip.innerHTML = `
+        <div class="tt-date" style="color:#6DD0A9">MILESTONE</div>
+        <div class="tt-row" style="--c:#2e9a57">
+          <span class="tt-label" style="font-weight:700;color:#fff">${m.label}</span>
+        </div>
+        <div style="font-size:11px;color:rgba(255,255,255,0.6);margin-top:2px">${msFmtDate(m.t)}</div>
+        <div class="tt-row" style="--c:${color};margin-top:4px;padding-top:4px;border-top:1px solid rgba(255,255,255,0.12)">
+          <span class="tt-label"><span class="tt-dot" style="background:${color}"></span>${legendLabel}</span>
+          <span class="tt-val">${p ? yFormat(p[1]) : '—'}</span>
+        </div>`;
+      const rect = svg.getBoundingClientRect();
+      const hx = parseFloat(hit.getAttribute('x')) + hitR / 2;
+      const hy = pad.top;
+      const pxX = rect.left + (hx / W) * rect.width;
+      const pxY = rect.top  + (hy / H) * rect.height;
+      positionTooltip(tooltip, pxX, pxY);
+      tooltip.classList.add('show');
+    });
+    hit.addEventListener('mouseleave', () => {
+      tooltip.classList.remove('show');
+      tooltip.style.background = '';
+      tooltip.style.borderLeft = '';
+    });
+  });
+}
+
 // Renders an SVG dual-line chart (Mega vs Monad) into the given element.
 // Sizes the viewBox to the container's actual pixel width so axis labels
 // render at their true 12px size (no horizontal squish).
@@ -1631,6 +1944,323 @@ function renderStackedArea(containerId, series, opts = {}) {
     </svg>`;
 }
 
+// Renders grouped bars with a categorical x-axis (e.g. "30d avg", "7d avg",
+// "24h"). `series` is an array of { name, color, values: [v0, v1, …] }.
+// `opts.xLabels` gives the label for each position. Two bars per x-position
+// (one per series), side by side, with a shared y-axis.
+function renderGroupedBarChart(containerId, series, opts = {}) {
+  const el = document.getElementById(containerId);
+  if (!el) return;
+  const { title = '', xLabels = [], yFormat = fmtUSD, height = 260 } = opts;
+
+  series = (series || []).filter(s => s && s.values && s.values.some(v => v != null));
+  if (!series.length) {
+    el.innerHTML = `<div class="chart-title">${title}</div>
+      <div class="chart-empty">No perps volume data</div>`;
+    return;
+  }
+  const nGroups = xLabels.length || Math.max(...series.map(s => s.values.length));
+
+  // Latest values for legend.
+  const latestVals = series.map(s => {
+    for (let i = s.values.length - 1; i >= 0; i--) if (s.values[i] != null) return s.values[i];
+    return null;
+  });
+
+  el.innerHTML = `
+    <div class="chart-header">
+      <div class="chart-title">${title}</div>
+      <div class="chart-legend">
+        ${series.map((s, k) => `<span class="chart-key"><span class="dot" style="background:${s.color}"></span>${s.name} · ${yFormat(latestVals[k])}</span>`).join('')}
+      </div>
+    </div>
+    <div class="chart-svg-wrap"></div>`;
+  const wrap = el.querySelector('.chart-svg-wrap');
+
+  const W = Math.max(320, Math.floor(wrap.clientWidth || el.clientWidth || 720));
+  const H = height;
+  const pad = { top: 16, right: 18, bottom: 36, left: 72 };
+  const plotW = W - pad.left - pad.right;
+  const plotH = H - pad.top - pad.bottom;
+
+  const allVals = series.flatMap(s => s.values).filter(v => v != null && isFinite(v));
+  const maxY = Math.max(1, ...allVals);
+  const y = (v) => pad.top + plotH - (v / maxY) * plotH;
+
+  const groupW = plotW / nGroups;
+  const nBars = series.length;
+  const barGap = Math.max(2, groupW * 0.08);
+  const barW = Math.max(8, (groupW - barGap * (nBars + 1)) / nBars);
+
+  // Y-axis gridlines + labels
+  const yTicks = [0, 0.25, 0.5, 0.75, 1].map(f => f * maxY);
+  const yTickSvg = yTicks.map(v => {
+    const ty = y(v).toFixed(1);
+    return `<line x1="${pad.left}" y1="${ty}" x2="${W - pad.right}" y2="${ty}" stroke="rgba(25,25,26,0.08)" />
+            <text x="${pad.left - 10}" y="${ty}" text-anchor="end" dominant-baseline="middle" class="chart-axis">${yFormat(v)}</text>`;
+  }).join('');
+
+  // X-axis labels (category names)
+  const xTickSvg = xLabels.map((label, i) => {
+    const cx = pad.left + groupW * i + groupW / 2;
+    return `<text x="${cx.toFixed(1)}" y="${H - 10}" text-anchor="middle" class="chart-axis">${label}</text>`;
+  }).join('');
+
+  // Draw bars
+  const barsSvg = [];
+  for (let g = 0; g < nGroups; g++) {
+    const gx = pad.left + groupW * g;
+    for (let k = 0; k < nBars; k++) {
+      const v = series[k].values[g];
+      if (v == null || !isFinite(v) || v <= 0) continue;
+      const bx = gx + barGap + k * (barW + barGap);
+      const by = y(v);
+      const bh = pad.top + plotH - by;
+      barsSvg.push(`<rect x="${bx.toFixed(1)}" y="${by.toFixed(1)}" width="${barW.toFixed(1)}" height="${bh.toFixed(1)}" rx="3" fill="${series[k].color}" fill-opacity="0.85" />`);
+    }
+  }
+
+  wrap.innerHTML = `
+    <svg viewBox="0 0 ${W} ${H}" width="${W}" height="${H}" class="chart-svg" xmlns="http://www.w3.org/2000/svg">
+      <g pointer-events="none">
+        ${yTickSvg}
+        ${xTickSvg}
+        ${barsSvg.join('')}
+        <rect class="hover-highlight" x="0" y="${pad.top}" width="0" height="${plotH}" fill="rgba(25,25,26,0.05)" style="display:none" />
+      </g>
+      <rect class="hover-capture" x="${pad.left}" y="${pad.top}" width="${plotW}" height="${plotH}" fill="transparent" />
+    </svg>
+    <div class="chart-tooltip"></div>`;
+
+  // Hover tooltip
+  const svg       = wrap.querySelector('svg');
+  const capture   = wrap.querySelector('.hover-capture');
+  const tooltip   = wrap.querySelector('.chart-tooltip');
+  const highlight = wrap.querySelector('.hover-highlight');
+
+  const onMove = (e) => {
+    const rect = svg.getBoundingClientRect();
+    const vbX = (e.clientX - rect.left) * (W / rect.width);
+    if (vbX < pad.left || vbX > pad.left + plotW) { onLeave(); return; }
+    const g = Math.min(nGroups - 1, Math.max(0, Math.floor((vbX - pad.left) / groupW)));
+    const gx = pad.left + groupW * g;
+    highlight.setAttribute('x', gx.toFixed(1));
+    highlight.setAttribute('width', groupW.toFixed(1));
+    highlight.style.display = '';
+    tooltip.innerHTML = `
+      <div class="tt-date">${xLabels[g] || ''}</div>
+      ${series.map((s, k) => {
+        const v = s.values[g];
+        return `<div class="tt-row" style="--c:${s.color}">
+          <span class="tt-label"><span class="tt-dot" style="background:${s.color}"></span>${s.name}</span>
+          <span class="tt-val">${v != null ? yFormat(v) : '—'}</span>
+        </div>`;
+      }).join('')}`;
+    const pxX = rect.left + ((gx + groupW / 2) / W) * rect.width;
+    const pxY = rect.top  + (pad.top / H) * rect.height;
+    positionTooltip(tooltip, pxX, pxY);
+    tooltip.classList.add('show');
+  };
+  const onLeave = () => {
+    tooltip.classList.remove('show');
+    highlight.style.display = 'none';
+  };
+  capture.addEventListener('mousemove', onMove);
+  capture.addEventListener('mouseleave', onLeave);
+}
+
+// Renders per-day stacked bars. `series` is an ordered array of
+//   { name, color, chain, points: [[unixSec, value], …] }
+// All series need not share the same x-values — we union all days and treat
+// missing points as 0. Order = bottom-to-top stacking order.
+function renderStackedBarChart(containerId, series, opts = {}) {
+  const el = document.getElementById(containerId);
+  if (!el) return;
+  const { title = '', yFormat = fmtUSD, height = 280 } = opts;
+
+  series = (series || []).filter(s => s && s.points && s.points.length);
+  if (!series.length) {
+    el.innerHTML = `<div class="chart-title">${title}</div>
+      <div class="chart-empty">No protocol volume data yet</div>`;
+    return;
+  }
+
+  // Union of day-aligned x-values across all series.
+  const dayBucket = (sec) => Math.floor(sec / 86400) * 86400;
+  const valueByDayBySeries = series.map(s => {
+    const m = new Map();
+    for (const [t, v] of s.points) if (isFinite(v)) m.set(dayBucket(t), (m.get(dayBucket(t)) || 0) + v);
+    return m;
+  });
+  const daySet = new Set();
+  for (const m of valueByDayBySeries) for (const k of m.keys()) daySet.add(k);
+  const xs = [...daySet].sort((a, b) => a - b);
+  if (!xs.length) {
+    el.innerHTML = `<div class="chart-title">${title}</div>
+      <div class="chart-empty">No protocol volume data yet</div>`;
+    return;
+  }
+
+  // Totals per day and per chain (for legend + hover).
+  const totalPerDay = xs.map((_, i) => series.reduce((a, _s, k) =>
+    a + (valueByDayBySeries[k].get(xs[i]) || 0), 0));
+  const maxY = Math.max(1, ...totalPerDay);
+
+  // Legend shows each protocol's most-recent day value + per-chain totals.
+  const latestIdx = xs.length - 1;
+  const chainTotals = { MegaETH: 0, Monad: 0, Other: 0 };
+  for (let k = 0; k < series.length; k++) {
+    const v = valueByDayBySeries[k].get(xs[latestIdx]) || 0;
+    const bucket = chainTotals[series[k].chain] != null ? series[k].chain : 'Other';
+    chainTotals[bucket] += v;
+  }
+
+  // Group series by chain for a cleaner legend.
+  const byChain = { MegaETH: [], Monad: [] };
+  series.forEach((s, k) => {
+    const bucket = byChain[s.chain] ? s.chain : 'MegaETH';
+    byChain[bucket].push({ s, k });
+  });
+  const legendChain = (name, color, total, items) => {
+    if (!items.length) return '';
+    const keys = items.map(({ s, k }) => {
+      const v = valueByDayBySeries[k].get(xs[latestIdx]) || 0;
+      return `<span class="chart-key"><span class="dot" style="background:${s.color}"></span>${s.name} · ${yFormat(v)}</span>`;
+    }).join('');
+    return `<span class="chart-key"><strong style="color:${color}">${name} total ${yFormat(total)}/d</strong></span>${keys}`;
+  };
+
+  el.innerHTML = `
+    <div class="chart-header">
+      <div class="chart-title">${title}</div>
+      <div class="chart-legend">
+        ${legendChain('MegaETH', '#2e9a57', chainTotals.MegaETH, byChain.MegaETH)}
+        ${legendChain('Monad',   '#6B5AE8', chainTotals.Monad,   byChain.Monad)}
+      </div>
+    </div>
+    <div class="chart-svg-wrap"></div>`;
+  const wrap = el.querySelector('.chart-svg-wrap');
+
+  const W = Math.max(320, Math.floor(wrap.clientWidth || el.clientWidth || 720));
+  const H = height;
+  const pad = { top: 16, right: 18, bottom: 32, left: 72 };
+  const plotW = W - pad.left - pad.right;
+  const plotH = H - pad.top - pad.bottom;
+  const slot = plotW / xs.length;
+  const gap = Math.max(1, Math.min(3, slot * 0.18));
+  const barW = Math.max(2, slot - gap);
+  const y = (v) => pad.top + plotH - (v / maxY) * plotH;
+
+  // Axis + gridlines
+  const yTicks = [0, 0.25, 0.5, 0.75, 1].map(f => f * maxY);
+  const yTickSvg = yTicks.map(v => {
+    const ty = y(v).toFixed(1);
+    return `<line x1="${pad.left}" y1="${ty}" x2="${W - pad.right}" y2="${ty}" stroke="rgba(25,25,26,0.08)" />
+            <text x="${pad.left - 10}" y="${ty}" text-anchor="end" dominant-baseline="middle" class="chart-axis">${yFormat(v)}</text>`;
+  }).join('');
+  // Scraper stamps each day at UTC midnight of that day; format in UTC so the
+  // label matches the day the data represents (rather than drifting one day
+  // earlier in western timezones).
+  const fmtDate = (t) => {
+    const d = new Date(t * 1000);
+    return `${d.getUTCMonth() + 1}/${d.getUTCDate()}`;
+  };
+  // Always include the first and last day; fill the middle with ~3 evenly
+  // spaced indices, de-duped so the last tick is never overwritten by a near
+  // neighbor from the evenly-spaced set.
+  let tickIdx;
+  if (xs.length <= 6) {
+    tickIdx = xs.map((_, i) => i);
+  } else {
+    const last = xs.length - 1;
+    const interior = [0.25, 0.5, 0.75].map(f => Math.round(f * last));
+    tickIdx = [...new Set([0, ...interior.filter(i => i > 1 && i < last - 1), last])];
+  }
+  const xTickSvg = tickIdx.map(i => {
+    const cx = pad.left + slot * i + slot / 2;
+    return `<text x="${cx.toFixed(1)}" y="${H - 10}" text-anchor="middle" class="chart-axis">${fmtDate(xs[i])}</text>`;
+  }).join('');
+
+  // Stacked bar segments — each day builds a stack from bottom (k=0) up.
+  const barsSvg = xs.map((t, i) => {
+    const bx = pad.left + slot * i + (slot - barW) / 2;
+    let running = 0;
+    const segs = series.map((s, k) => {
+      const v = valueByDayBySeries[k].get(t) || 0;
+      if (v <= 0) return '';
+      const y0 = y(running);
+      const y1 = y(running + v);
+      running += v;
+      return `<rect x="${bx.toFixed(1)}" y="${y1.toFixed(1)}" width="${barW.toFixed(1)}" height="${(y0 - y1).toFixed(1)}" fill="${s.color}" stroke="#fff" stroke-width="0.6" />`;
+    }).join('');
+    return segs;
+  }).join('');
+
+  wrap.innerHTML = `
+    <svg viewBox="0 0 ${W} ${H}" width="${W}" height="${H}" class="chart-svg" xmlns="http://www.w3.org/2000/svg">
+      <g pointer-events="none">
+        ${yTickSvg}
+        ${xTickSvg}
+        ${barsSvg}
+        <rect class="hover-highlight" x="0" y="${pad.top}" width="0" height="${plotH}" fill="rgba(25,25,26,0.05)" style="display:none" />
+      </g>
+      <rect class="hover-capture" x="${pad.left}" y="${pad.top}" width="${plotW}" height="${plotH}" fill="transparent" />
+    </svg>
+    <div class="chart-tooltip"></div>`;
+
+  const svg       = wrap.querySelector('svg');
+  const capture   = wrap.querySelector('.hover-capture');
+  const tooltip   = wrap.querySelector('.chart-tooltip');
+  const highlight = wrap.querySelector('.hover-highlight');
+  const dateStr = (sec) =>
+    new Date(sec * 1000).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric', timeZone: 'UTC' });
+
+  const onMove = (e) => {
+    const rect = svg.getBoundingClientRect();
+    const vbX = (e.clientX - rect.left) * (W / rect.width);
+    if (vbX < pad.left || vbX > pad.left + plotW) { onLeave(); return; }
+    const i = Math.min(xs.length - 1, Math.max(0, Math.floor((vbX - pad.left) / slot)));
+    const bx = pad.left + slot * i;
+    highlight.setAttribute('x', bx.toFixed(1));
+    highlight.setAttribute('width', slot.toFixed(1));
+    highlight.style.display = '';
+
+    const perChainRows = { MegaETH: [], Monad: [] };
+    let megaSum = 0, monadSum = 0;
+    for (let k = 0; k < series.length; k++) {
+      const v = valueByDayBySeries[k].get(xs[i]) || 0;
+      if (v <= 0) continue;
+      const bucket = perChainRows[series[k].chain] ? series[k].chain : 'MegaETH';
+      perChainRows[bucket].push({ s: series[k], v });
+      if (bucket === 'MegaETH') megaSum += v; else monadSum += v;
+    }
+    const renderRows = (label, color, rows, total) => rows.length ? `
+      <div class="tt-row" style="--c:${color}">
+        <span class="tt-label"><span class="tt-dot" style="background:${color}"></span><strong>${label}</strong></span>
+        <span class="tt-val"><strong>${yFormat(total)}</strong></span>
+      </div>
+      ${rows.map(({ s, v }) => `
+        <div class="tt-row" style="--c:${s.color};opacity:0.85">
+          <span class="tt-label" style="padding-left:14px"><span class="tt-dot" style="background:${s.color}"></span>${s.name}</span>
+          <span class="tt-val">${yFormat(v)}</span>
+        </div>`).join('')}` : '';
+    tooltip.innerHTML = `
+      <div class="tt-date">${dateStr(xs[i])}</div>
+      ${renderRows('MegaETH', '#2e9a57', perChainRows.MegaETH, megaSum)}
+      ${renderRows('Monad',   '#6B5AE8', perChainRows.Monad,   monadSum)}`;
+    const pxX = rect.left + ((bx + slot / 2) / W) * rect.width;
+    const pxY = rect.top  + (pad.top / H) * rect.height;
+    positionTooltip(tooltip, pxX, pxY);
+    tooltip.classList.add('show');
+  };
+  const onLeave = () => {
+    tooltip.classList.remove('show');
+    highlight.style.display = 'none';
+  };
+  capture.addEventListener('mousemove', onMove);
+  capture.addEventListener('mouseleave', onLeave);
+}
+
 // From the scraped snapshot + a chain name, build a list of per-protocol daily-rate
 // series ready for renderStackedArea. Three anchor points per protocol:
 //   t-30d = avg daily over days -30..-8   = (total30d - total7d) / 23
@@ -1667,6 +2297,52 @@ function buildPerpsStack(chainName, snapshot) {
       };
     })
     .filter(Boolean);
+}
+
+// Build per-protocol daily series for the stacked bar chart. Uses each
+// protocol's real `dailyChart` ([ms, value]) clipped to the last `days` days.
+// IMPORTANT: dailyChart is cross-chain (protocol-wide) per scrape-perps.mjs,
+// whereas volume24h/7d/30d are already chain-filtered. For multi-chain
+// protocols like GMX the raw chart massively over-reports MegaETH's share,
+// so we scale the series so its 30-day sum matches the chain-filtered
+// `volume30d`. Single-chain protocols (World Markets, Perpl, LeverUp) scale
+// to ~1. Returns { name, color, chain, points: [[unixSec, value], …] }
+// ordered MegaETH-first so the green segments stack at the bottom of each bar.
+function buildPerpsDailyBars(snapshot, days = 30) {
+  if (!snapshot) return [];
+  const cutoffSec = Math.floor(Date.now() / 1000) - days * 86400;
+  const palette = {
+    worldmarkets: '#6DD0A9',
+    gmxv2perps:   '#2e9a57',
+    perpl:        '#A594FF',
+    leverup:      '#836EF9',
+  };
+  const chainOrder = { MegaETH: 0, Monad: 1 };
+  return (snapshot.protocols || [])
+    .filter(p => chainOrder[p.chain] != null && Array.isArray(p.dailyChart) && p.dailyChart.length)
+    .map(p => {
+      const raw = p.dailyChart
+        .map(([ms, v]) => [Math.floor(ms / 1000), Number(v)])
+        .filter(([t, v]) => isFinite(t) && isFinite(v) && v > 0 && t >= cutoffSec)
+        .sort((a, b) => a[0] - b[0]);
+      if (!raw.length) return null;
+      const rawSum = raw.reduce((a, [, v]) => a + v, 0);
+      const chainTotal = Number(p.volume30d) || 0;
+      // Scale only if we have a chain-filtered reference AND the raw chart
+      // clearly covers more than one chain's worth of volume.
+      const scale = (p.chainFiltered && chainTotal > 0 && rawSum > chainTotal * 1.05)
+        ? chainTotal / rawSum
+        : 1;
+      const points = raw.map(([t, v]) => [t, v * scale]);
+      return {
+        name: p.name,
+        chain: p.chain,
+        color: palette[normName(p.name)] || (p.chain === 'MegaETH' ? '#6DD0A9' : '#A594FF'),
+        points,
+      };
+    })
+    .filter(Boolean)
+    .sort((a, b) => chainOrder[a.chain] - chainOrder[b.chain]);
 }
 
 // ---------- static: performance ----------
@@ -1712,6 +2388,7 @@ async function loadAll() {
     histTvlMega, histTvlMonad,
     perpsSnapshot,
     tbillData,
+    fdvRatioHistory,
   ] = await Promise.all([
     safeJson('https://api.llama.fi/v2/chains'),
     safeJson(`https://api.llama.fi/overview/dexs/MegaETH?${OVR}`),
@@ -1758,6 +2435,9 @@ async function loadAll() {
     // MegaETH's USDM yield calculation. CORS-open, no auth. Using URL-encoded
     // brackets so the fetch() call doesn't get rejected by the API gateway.
     safeJson('https://api.fiscaldata.treasury.gov/services/api/fiscal_service/v2/accounting/od/avg_interest_rates?filter=security_desc:eq:Treasury%20Bills&sort=-record_date&page%5Bsize%5D=1'),
+    // Historical FDV multiple (Monad FDV / MegaETH FDV) — parallel with the
+    // other fetches so first-paint isn't delayed waiting on Hyperliquid candles.
+    fetchFdvMultipleHistory(90),
   ]);
 
   // Pull live MEGA pre-market price from Hyperliquid; if it returns, update the FDV.
@@ -1864,6 +2544,7 @@ async function loadAll() {
 
   // Build perps overview objects from the scraped snapshot so renderActivity /
   // renderProtocols keep the same shape they'd get from DefiLlama's overview API.
+  // Values come directly from /perps/chain/{chain} (chain-filtered 24h/7d/30d).
   const snapshotForChain = (chainName) => {
     if (!perpsSnapshot) return null;
     const chainProtos = (perpsSnapshot.protocols || [])
@@ -1985,6 +2666,7 @@ async function loadAll() {
     megaProtosAll: megaProtos,
     monadProtosAll: monadProtos,
     perpsSnapshot,
+    fdvRatioHistory,
     charts,
     ...gran,
   };
@@ -2088,24 +2770,25 @@ function renderActivity(d) {
   const c = d.charts || {};
   renderLineChart('chart-tvl',   c.tvlMega,   c.tvlMonad,   { title: 'TVL — last 30 days' });
   renderLineChart('chart-dex',   c.dexMega,   c.dexMonad,   { title: 'DEX Volume (Spot) — last 30 days' });
-  // Perps: per-protocol lines + one highlighted cumulative line per chain.
-  const perpsMega  = buildPerpsStack('MegaETH', d.perpsSnapshot);
-  const perpsMonad = buildPerpsStack('Monad',   d.perpsSnapshot);
-  const cumulative = (group, name, color) => {
-    if (!group.length) return null;
-    const xs = group[0].points.map(p => p[0]);
-    return {
-      name, color, isTotal: true,
-      points: xs.map((t, i) => [t, group.reduce((sum, s) => sum + (s.points[i]?.[1] || 0), 0)]),
-    };
-  };
-  const perpsLines = [
-    ...perpsMega,
-    ...perpsMonad,
-    cumulative(perpsMega,  'MegaETH total', '#2e9a57'),
-    cumulative(perpsMonad, 'Monad total',   '#6B5AE8'),
-  ].filter(Boolean);
-  renderMultiLineChart('chart-perps', perpsLines, { title: 'Perps Volume by protocol — last 30 days (daily avg)' });
+  // Perps: 3 time-window bars per chain. Numbers come directly from the
+  // chain-filtered /perps/chain/{chain} totals so they match what DefiLlama
+  // reports — no per-day synthesis from cross-chain protocol charts.
+  const perpsBars = [
+    {
+      name: 'MegaETH',
+      color: '#2e9a57',
+      values: [pm.total24h ?? null, pm.total7d ?? null, pm.total30d ?? null],
+    },
+    {
+      name: 'Monad',
+      color: '#6B5AE8',
+      values: [pn.total24h ?? null, pn.total7d ?? null, pn.total30d ?? null],
+    },
+  ];
+  renderGroupedBarChart('chart-perps', perpsBars, {
+    title: 'Perps Volume — chain totals',
+    xLabels: ['24h', '7d', '30d'],
+  });
 }
 
 // Descriptions paraphrased from DeFiLlama's tooltip text.
@@ -2403,12 +3086,40 @@ let lastLoad = null;
 
 function renderAll(raw) {
   renderSummary(raw);
+  renderFdvRatio(raw);
   renderActivity(scopedTvlView(raw, STATE.tvlScope));
   renderFees(scopedFeesView(raw, STATE.feesScope));
   renderStables(raw);
   renderDerived(raw);
   renderEcosystem(raw);
   renderProtocols(raw);
+}
+
+function renderFdvRatio(d) {
+  const live = (d.monadFDV && MEGA_FDV_ESTIMATE) ? d.monadFDV / MEGA_FDV_ESTIMATE : null;
+  const hist = Array.isArray(d.fdvRatioHistory) ? d.fdvRatioHistory.slice() : [];
+  // Append today's live ratio so the line hits the same number shown in the summary.
+  if (live != null && isFinite(live)) {
+    const todaySec = Math.floor(Date.now() / 1000);
+    const last = hist[hist.length - 1];
+    if (!last || Math.abs(last[0] - todaySec) > 43200) hist.push([todaySec, live]);
+    else hist[hist.length - 1] = [todaySec, live];
+  }
+  renderSingleLineChart('chart-fdv-ratio', hist, {
+    title: 'FDV Multiple — last 90 days',
+    color: '#6B5AE8',
+    legendLabel: 'Monad FDV ÷ MegaETH FDV',
+    height: 280,
+    milestones: [
+      { date: '2026-02-06', label: 'TGE KPI Announcement' },
+      { date: '2026-02-09', label: 'Mainnet Live' },
+      { date: '2026-03-30', label: 'GMX Deployment' },
+      { date: '2026-03-31', label: 'USDm 1:1 Bridge Launch' },
+      { date: '2026-04-12', label: 'Aave Cross Collateral' },
+      { date: '2026-04-13', label: 'Hit.One Mainnet Beta Live' },
+      { date: '2026-04-15', label: 'Brix Raise Announcement' },
+    ],
+  });
 }
 
 function renderEcosystem(d) {
