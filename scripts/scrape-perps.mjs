@@ -18,12 +18,22 @@ const chromium = rawChromium;
 // its chain-filtered pages — e.g. "GMX V2 Perps" on the protocol page is
 // rendered as just "GMX" on the MegaETH chain page.
 const PROTOCOLS = [
+  // MegaETH
   { slug: 'world-markets', chain: 'MegaETH', name: 'World Markets', aliases: [] },
   { slug: 'gmx-v2-perps',  chain: 'MegaETH', name: 'GMX V2 Perps',  aliases: ['GMX'] },
+  // Monad
   { slug: 'perpl',         chain: 'Monad',   name: 'Perpl',         aliases: [] },
   { slug: 'leverup',       chain: 'Monad',   name: 'LeverUp',       aliases: [] },
+  // BSC — top perps protocols on BNB Chain
+  { slug: 'aster-perp',    chain: 'BSC',     name: 'Aster Perp',    aliases: ['Aster', 'Aster DEX'] },
+  { slug: 'apollox-perp',  chain: 'BSC',     name: 'ApolloX',       aliases: ['ApolloX Perp'] },
+  { slug: 'level-finance', chain: 'BSC',     name: 'Level Finance', aliases: ['Level'] },
+  // Solana — top perps protocols on Solana
+  { slug: 'jupiter-perpetual-exchange', chain: 'Solana', name: 'Jupiter Perps', aliases: ['Jupiter'] },
+  { slug: 'drift-trade',   chain: 'Solana', name: 'Drift',          aliases: [] },
+  { slug: 'zeta',          chain: 'Solana', name: 'Zeta Markets',   aliases: ['Zeta'] },
 ];
-const CHAINS = ['MegaETH', 'Monad'];
+const CHAINS = ['MegaETH', 'Monad', 'BSC', 'Solana'];
 
 // "$1.23m" / "$4.5K" / "$1,234" → number of USD.
 function parseUsd(raw) {
