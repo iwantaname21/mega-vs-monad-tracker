@@ -3217,15 +3217,55 @@ function renderEcosystem(d) {
   renderTable('ecosystem-table', rows);
 }
 
+// Did the fresh fetch come back with anything useful? If not, we keep the
+// previous render instead of wiping to blanks.
+function isResultEmpty(d) {
+  if (!d) return true;
+  return d.megaTVL == null && d.monadTVL == null
+    && d.dexMega?.total24h == null && d.dexMonad?.total24h == null
+    && d.feesMega?.total24h == null && d.feesMonad?.total24h == null
+    && (!Array.isArray(d.megaProtosAll) || d.megaProtosAll.length === 0);
+}
+
+// Merge fresh result with last-good, keeping non-null fields from the cache
+// when the fresh value is null/empty. A single failed fetch no longer wipes
+// the card back to "—" placeholders.
+function mergeWithCache(fresh, cached) {
+  if (!cached || !fresh) return fresh || cached;
+  const merged = { ...cached, ...fresh };
+  for (const k of Object.keys(merged)) {
+    const fv = fresh[k], cv = cached[k];
+    if (fv == null && cv != null) merged[k] = cv;
+    else if (Array.isArray(fv) && fv.length === 0 && Array.isArray(cv) && cv.length > 0) merged[k] = cv;
+    else if (typeof fv === 'object' && fv !== null && typeof cv === 'object' && cv !== null) {
+      const nested = { ...cv, ...fv };
+      for (const nk of Object.keys(nested)) {
+        if (fv[nk] == null && cv[nk] != null) nested[nk] = cv[nk];
+      }
+      merged[k] = nested;
+    }
+  }
+  return merged;
+}
+
 async function refresh() {
   document.querySelectorAll('.card, .summary').forEach(el => el.classList.add('loading'));
   try {
     const raw = await loadAll();
-    LAST_DATA = raw;
-    renderAll(raw);
-    persistResult(raw);
+    const cached = getCachedResult()?.d;
+    const merged = mergeWithCache(raw, cached);
+    LAST_DATA = merged;
+    renderAll(merged);
+    // Only overwrite the persisted cache if fresh actually had something useful;
+    // otherwise keep the older (better) cache so next reload still paints right.
+    if (!isResultEmpty(raw)) persistResult(merged);
     lastLoad = new Date();
-    document.getElementById('error-box').innerHTML = '';
+    const box = document.getElementById('error-box');
+    if (box) {
+      box.innerHTML = isResultEmpty(raw) && cached
+        ? `<div class="error">Showing cached data — upstream API temporarily unavailable.</div>`
+        : '';
+    }
   } catch (e) {
     console.error(e);
     document.getElementById('error-box').innerHTML = `<div class="error">Failed to load some data. Retrying shortly.</div>`;
