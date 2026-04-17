@@ -2545,14 +2545,32 @@ function renderPerformance() {
 }
 
 // ---------- API fetching ----------
-async function safeJson(url) {
-  try {
-    const r = await fetch(url);
-    if (!r.ok) throw new Error(`${r.status}`);
-    return await r.json();
-  } catch (e) {
-    console.warn('fetch failed', url, e);
-    return null;
+async function safeJson(url, { retries = 2, retryDelayMs = 800 } = {}) {
+  // Retry transient network failures (CORS-flap, Cloudflare temporary rejection,
+  // rate-limit). We don't retry 4xx — those are intentional rejections.
+  for (let attempt = 0; attempt <= retries; attempt++) {
+    try {
+      const r = await fetch(url);
+      if (!r.ok) {
+        // 4xx errors are not worth retrying; 5xx and 429 are.
+        if (r.status >= 400 && r.status < 500 && r.status !== 429) {
+          throw new Error(`${r.status}`);
+        }
+        if (attempt < retries) {
+          await new Promise(res => setTimeout(res, retryDelayMs * (attempt + 1)));
+          continue;
+        }
+        throw new Error(`${r.status}`);
+      }
+      return await r.json();
+    } catch (e) {
+      if (attempt < retries) {
+        await new Promise(res => setTimeout(res, retryDelayMs * (attempt + 1)));
+        continue;
+      }
+      console.warn('fetch failed', url, e);
+      return null;
+    }
   }
 }
 
@@ -3397,15 +3415,58 @@ function renderEcosystem(d) {
   renderTable('ecosystem-table', rows);
 }
 
+// Merge the fresh result with the last-good cached result, keeping non-null
+// fields from the cache when the fresh fetch returned empty. This way a
+// DefiLlama rate-limit or transient outage doesn't wipe the dashboard back
+// to "—" placeholders; we keep showing the last successful values.
+function mergeWithCache(fresh, cached) {
+  if (!cached || !fresh) return fresh || cached;
+  const merged = { ...cached, ...fresh };
+  // Replace null/empty fields in fresh with cached values.
+  for (const k of Object.keys(merged)) {
+    const fv = fresh[k], cv = cached[k];
+    if (fv == null && cv != null) merged[k] = cv;
+    else if (Array.isArray(fv) && fv.length === 0 && Array.isArray(cv) && cv.length > 0) merged[k] = cv;
+    else if (typeof fv === 'object' && fv !== null && typeof cv === 'object' && cv !== null) {
+      // Shallow-merge nested objects (dexMega, feesMega, charts, etc.).
+      const nested = { ...cv, ...fv };
+      for (const nk of Object.keys(nested)) {
+        if (fv[nk] == null && cv[nk] != null) nested[nk] = cv[nk];
+      }
+      merged[k] = nested;
+    }
+  }
+  return merged;
+}
+
+// Is this loadAll result "useful" — i.e., did any of the critical DefiLlama
+// calls succeed? If everything is null, don't overwrite good cached state.
+function isResultEmpty(d) {
+  if (!d) return true;
+  return d.megaTVL == null && d.monadTVL == null
+    && d.dexMega?.total24h == null && d.dexMonad?.total24h == null
+    && d.feesMega?.total24h == null && d.feesMonad?.total24h == null
+    && (!Array.isArray(d.megaProtosAll) || d.megaProtosAll.length === 0);
+}
+
 async function refresh() {
   document.querySelectorAll('.card, .summary').forEach(el => el.classList.add('loading'));
   try {
     const raw = await loadAll();
-    LAST_DATA = raw;
-    renderAll(raw);
-    persistResult(raw);
+    const cached = getCachedResult()?.d;
+    const merged = isResultEmpty(raw) && cached ? mergeWithCache(raw, cached) : mergeWithCache(raw, cached);
+    LAST_DATA = merged;
+    renderAll(merged);
+    // Only persist if the fresh fetch actually contributed something useful,
+    // otherwise keep the older (better) cache intact.
+    if (!isResultEmpty(raw)) persistResult(merged);
     lastLoad = new Date();
-    document.getElementById('error-box').innerHTML = '';
+    const box = document.getElementById('error-box');
+    if (box) {
+      box.innerHTML = isResultEmpty(raw) && cached
+        ? `<div class="error">Showing cached data — upstream API temporarily unavailable.</div>`
+        : '';
+    }
   } catch (e) {
     console.error(e);
     document.getElementById('error-box').innerHTML = `<div class="error">Failed to load some data. Retrying shortly.</div>`;
