@@ -2588,20 +2588,22 @@ async function tryFetch(url) {
 
 async function safeJson(url, { retries = 2, retryDelayMs = 800 } = {}) {
   const proxyUrl = proxyUrlFor(url);
-  // Retry transient network failures (CORS-flap, Cloudflare temporary rejection,
-  // rate-limit). For each attempt try direct, then proxy. 4xx (except 429)
-  // are not worth retrying — intentional rejections.
+  // For each attempt try direct, then proxy. We deliberately try the proxy
+  // on ANY non-2xx direct response — Cloudflare returns 403 when it blocks a
+  // browser fingerprint, and that's exactly the case the proxy rescues
+  // (server-to-server bypasses the browser-side check). Only 404 is treated
+  // as terminal (the resource really doesn't exist upstream).
   for (let attempt = 0; attempt <= retries; attempt++) {
     const direct = await tryFetch(url);
     if (direct.ok) return direct.data;
-    if (direct.status && direct.status >= 400 && direct.status < 500 && direct.status !== 429) {
-      // Intentional rejection from upstream — don't bother with proxy.
-      console.warn('fetch rejected', url, direct.status);
+    if (direct.status === 404) {
+      console.warn('fetch 404', url);
       return null;
     }
     if (proxyUrl) {
       const viaProxy = await tryFetch(proxyUrl);
       if (viaProxy.ok) return viaProxy.data;
+      if (viaProxy.status === 404) return null;
     }
     if (attempt < retries) {
       await new Promise(res => setTimeout(res, retryDelayMs * (attempt + 1)));
