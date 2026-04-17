@@ -3,8 +3,18 @@
 //         /api/proxy?host=stablecoins&path=/stablecoins
 //         /api/proxy?host=coingecko&path=/api/v3/simple/price&q=ids%3Dmonad...
 //         /api/proxy?host=treasury&path=/services/...
-// Server-to-server fetch bypasses Cloudflare bot-checks and browser
-// extensions/firewalls that block api.llama.fi or api.coingecko.com.
+//
+// Runs on Vercel's Edge runtime — low-latency (V8 isolate, no cold-start
+// warmup) so user-facing latency is dominated by upstream fetch time, not
+// function boot. Server-to-server fetch also bypasses Cloudflare bot-checks
+// and browser extensions/firewalls that block api.llama.fi / api.coingecko.com.
+//
+// Edge cache: s-maxage=1800 means a 30-minute fresh window per URL on
+// Vercel's CDN — most requests short-circuit at the edge with no upstream
+// call. stale-while-revalidate=7200 means even after 30 min, users get the
+// cached payload instantly while a revalidation runs in the background.
+
+export const config = { runtime: 'edge' };
 
 const HOSTS = {
   llama: 'https://api.llama.fi',
@@ -13,12 +23,17 @@ const HOSTS = {
   treasury: 'https://api.fiscaldata.treasury.gov',
 };
 
-export default async function handler(req, res) {
-  const { host, path, q } = req.query || {};
+export default async function handler(req) {
+  const url = new URL(req.url);
+  const host = url.searchParams.get('host');
+  const path = url.searchParams.get('path');
+  const q = url.searchParams.get('q') || '';
   const base = HOSTS[host];
   if (!base || typeof path !== 'string' || !path.startsWith('/')) {
-    res.status(400).json({ error: 'bad request' });
-    return;
+    return new Response(JSON.stringify({ error: 'bad request' }), {
+      status: 400,
+      headers: { 'content-type': 'application/json' },
+    });
   }
   const target = base + path + (q ? (path.includes('?') ? '&' : '?') + q : '');
   try {
@@ -29,11 +44,16 @@ export default async function handler(req, res) {
       },
     });
     const body = await upstream.text();
-    res.setHeader('Access-Control-Allow-Origin', '*');
-    res.setHeader('Cache-Control', 'public, s-maxage=300, stale-while-revalidate=600');
-    res.setHeader('Content-Type', upstream.headers.get('content-type') || 'application/json');
-    res.status(upstream.status).send(body);
+    const headers = {
+      'access-control-allow-origin': '*',
+      'cache-control': 'public, s-maxage=1800, stale-while-revalidate=7200',
+      'content-type': upstream.headers.get('content-type') || 'application/json',
+    };
+    return new Response(body, { status: upstream.status, headers });
   } catch (e) {
-    res.status(502).json({ error: 'upstream fetch failed', detail: String(e) });
+    return new Response(JSON.stringify({ error: 'upstream fetch failed', detail: String(e) }), {
+      status: 502,
+      headers: { 'content-type': 'application/json' },
+    });
   }
 }
