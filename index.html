@@ -1118,15 +1118,20 @@ async function hyperliquidPost(body) {
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(body),
   };
-  try {
-    const r = await fetch(direct, init);
-    if (r.ok) return r;
-  } catch {}
-  if (proxy) {
+  const fetchWithTimeout = async (u, ms = 10000) => {
+    const ctl = typeof AbortController !== 'undefined' ? new AbortController() : null;
+    const timer = ctl ? setTimeout(() => ctl.abort(), ms) : null;
     try {
-      const r = await fetch(proxy, init);
-      if (r.ok) return r;
-    } catch {}
+      const r = await fetch(u, { ...init, signal: ctl?.signal });
+      return r.ok ? r : null;
+    } catch { return null; }
+    finally { if (timer) clearTimeout(timer); }
+  };
+  const r1 = await fetchWithTimeout(direct);
+  if (r1) return r1;
+  if (proxy) {
+    const r2 = await fetchWithTimeout(proxy);
+    if (r2) return r2;
   }
   return null;
 }
@@ -2592,15 +2597,22 @@ function proxyUrlFor(url) {
   }
 }
 
-// Single attempt — returns { ok, data, status, err }. No retries here.
-async function tryFetch(url) {
+// Single attempt with an enforced timeout — returns { ok, data, status, err }.
+// Timeout matters: when a browser is blocked by Cloudflare/firewall/DPI, the
+// connection often hangs instead of failing. Without a deadline, Promise.all
+// in loadAll() waits forever and no card ever renders.
+async function tryFetch(url, { timeoutMs = 10000, init } = {}) {
+  const ctl = typeof AbortController !== 'undefined' ? new AbortController() : null;
+  const timer = ctl ? setTimeout(() => ctl.abort(), timeoutMs) : null;
   try {
-    const r = await fetch(url);
+    const r = await fetch(url, { ...(init || {}), signal: ctl?.signal });
     if (!r.ok) return { ok: false, status: r.status };
     try { return { ok: true, data: await r.json() }; }
     catch (e) { return { ok: false, err: e }; }
   } catch (e) {
-    return { ok: false, err: e };
+    return { ok: false, err: e, aborted: ctl?.signal.aborted };
+  } finally {
+    if (timer) clearTimeout(timer);
   }
 }
 
@@ -3354,6 +3366,7 @@ function renderProtocols(d) {
 let lastLoad = null;
 
 function renderAll(raw) {
+  if (!raw || typeof raw !== 'object') raw = {};
   renderSummary(raw);
   renderFdvRatio(raw);
   renderActivity(scopedTvlView(raw, STATE.tvlScope));
@@ -3506,10 +3519,20 @@ function isResultEmpty(d) {
     && (!Array.isArray(d.megaProtosAll) || d.megaProtosAll.length === 0);
 }
 
+// Hard deadline for loadAll — if any upstream still hasn't resolved by this
+// point, give up on that request and render with whatever we have. Better to
+// show partial data than a permanently-blank dashboard.
+function withDeadline(promise, ms, fallback) {
+  return Promise.race([
+    promise,
+    new Promise(res => setTimeout(() => res(fallback), ms)),
+  ]);
+}
+
 async function refresh() {
   document.querySelectorAll('.card, .summary').forEach(el => el.classList.add('loading'));
   try {
-    const raw = await loadAll();
+    const raw = await withDeadline(loadAll(), 25000, null);
     const cached = getCachedResult()?.d;
     const merged = isResultEmpty(raw) && cached ? mergeWithCache(raw, cached) : mergeWithCache(raw, cached);
     LAST_DATA = merged;
