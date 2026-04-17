@@ -1,5 +1,5 @@
 window.__PERPS_SNAPSHOT__ = {
-  "updatedAt": "2026-04-16T22:38:40.784Z",
+  "updatedAt": "2026-04-17T02:28:26.645Z",
   "source": "https://defillama.com",
   "protocols": [
     {
@@ -4283,7 +4283,7 @@ window.__PERPS_SNAPSHOT__ = {
       "chain": "Monad",
       "name": "Perpl",
       "aliases": [],
-      "volume24h": 1630000,
+      "volume24h": 1750000,
       "volume7d": 7710000,
       "volume30d": 22030000,
       "volumeAllTime": 35750000,
@@ -4548,7 +4548,7 @@ window.__PERPS_SNAPSHOT__ = {
       "chain": "Monad",
       "name": "LeverUp",
       "aliases": [],
-      "volume24h": 13130000,
+      "volume24h": 11800000,
       "volume7d": 81430000,
       "volume30d": 347490000,
       "volumeAllTime": 2260000000,
@@ -9058,7 +9058,7 @@ window.__PERPS_SNAPSHOT__ = {
       "volume24h": 295750000,
       "volume7d": 1542000000,
       "volume30d": 6963000000,
-      "volumeAllTime": 473450000000,
+      "volumeAllTime": 473456000000,
       "chainFiltered": true,
       "dailyChart": [
         [
@@ -12267,7 +12267,7 @@ window.__PERPS_SNAPSHOT__ = {
         ],
         [
           1776297600000,
-          295749650
+          302056542
         ]
       ]
     },
@@ -19858,20 +19858,20 @@ window.__PERPS_SNAPSHOT__ = {
   ],
   "chains": {
     "MegaETH": {
-      "perpsVolume24h": 2730000,
-      "raw": "$2.73m"
+      "perpsVolume24h": 4450000,
+      "raw": "$4.45m"
     },
     "Monad": {
-      "perpsVolume24h": 14950000,
-      "raw": "$14.95m"
+      "perpsVolume24h": 14630000,
+      "raw": "$14.63m"
     },
     "BSC": {
-      "perpsVolume24h": 258470000.00000003,
-      "raw": "$258.47m"
+      "perpsVolume24h": 263490000,
+      "raw": "$263.49m"
     },
     "Solana": {
-      "perpsVolume24h": 842320000,
-      "raw": "$842.32m"
+      "perpsVolume24h": 842460000,
+      "raw": "$842.46m"
     }
   },
   "history": {
@@ -19883,6 +19883,10 @@ window.__PERPS_SNAPSHOT__ = {
       {
         "date": "2026-04-16",
         "value": 2730000
+      },
+      {
+        "date": "2026-04-17",
+        "value": 4450000
       }
     ],
     "Monad": [
@@ -19893,18 +19897,30 @@ window.__PERPS_SNAPSHOT__ = {
       {
         "date": "2026-04-16",
         "value": 14950000
+      },
+      {
+        "date": "2026-04-17",
+        "value": 14630000
       }
     ],
     "BSC": [
       {
         "date": "2026-04-16",
         "value": 258470000.00000003
+      },
+      {
+        "date": "2026-04-17",
+        "value": 263490000
       }
     ],
     "Solana": [
       {
         "date": "2026-04-16",
         "value": 842320000
+      },
+      {
+        "date": "2026-04-17",
+        "value": 842460000
       }
     ]
   }
