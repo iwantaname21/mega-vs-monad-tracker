@@ -57,9 +57,14 @@ export default async function handler(req) {
     }
     const upstream = await fetch(target, init);
     const body = await upstream.text();
+    // Only cache 2xx responses. A pinned 5xx or 4xx on the edge would keep
+    // the dashboard broken for up to 30 min.
+    const cacheHeader = upstream.ok
+      ? (isPost ? POST_CACHE_HEADER : GET_CACHE_HEADER)
+      : 'no-store';
     const headers = {
       'access-control-allow-origin': '*',
-      'cache-control': isPost ? POST_CACHE_HEADER : GET_CACHE_HEADER,
+      'cache-control': cacheHeader,
       'content-type': upstream.headers.get('content-type') || 'application/json',
     };
     return new Response(body, { status: upstream.status, headers });
