@@ -2379,57 +2379,15 @@ function renderPerformance() {
 }
 
 // ---------- API fetching ----------
-// Same-origin proxy fallback for when the browser is blocked from reaching
-// api.llama.fi / api.coingecko.com / stablecoins.llama.fi directly (Cloudflare
-// bot-check, adblock, firewall). Server-side proxy at /api/proxy bypasses the
-// browser-side check. Skipped on localhost/file:// (no proxy running there).
-const PROXY_HOSTS = {
-  'api.llama.fi': 'llama',
-  'stablecoins.llama.fi': 'stablecoins',
-  'api.coingecko.com': 'coingecko',
-  'api.fiscaldata.treasury.gov': 'treasury',
-};
-function proxyUrlFor(url) {
-  if (typeof window === 'undefined') return null;
-  if (location.protocol === 'file:') return null;
-  if (location.hostname === 'localhost' || location.hostname === '127.0.0.1') return null;
-  try {
-    const u = new URL(url);
-    const host = PROXY_HOSTS[u.host];
-    if (!host) return null;
-    const q = u.search ? u.search.slice(1) : '';
-    const params = new URLSearchParams({ host, path: u.pathname });
-    if (q) params.set('q', q);
-    return `/api/proxy?${params.toString()}`;
-  } catch { return null; }
-}
-async function tryFetchJSON(url, timeoutMs = 10000) {
-  const ctl = typeof AbortController !== 'undefined' ? new AbortController() : null;
-  const timer = ctl ? setTimeout(() => ctl.abort(), timeoutMs) : null;
-  try {
-    const r = await fetch(url, { signal: ctl?.signal });
-    if (!r.ok) return { ok: false, status: r.status };
-    try { return { ok: true, data: await r.json() }; }
-    catch { return { ok: false }; }
-  } catch {
-    return { ok: false };
-  } finally {
-    if (timer) clearTimeout(timer);
-  }
-}
 async function safeJson(url) {
-  // Direct first. On any non-ok response (Cloudflare 403s blocked browsers),
-  // fall through to the same-origin /api/proxy.
-  const direct = await tryFetchJSON(url);
-  if (direct.ok) return direct.data;
-  if (direct.status === 404) return null;
-  const proxy = proxyUrlFor(url);
-  if (proxy) {
-    const viaProxy = await tryFetchJSON(proxy);
-    if (viaProxy.ok) return viaProxy.data;
+  try {
+    const r = await fetch(url);
+    if (!r.ok) throw new Error(`${r.status}`);
+    return await r.json();
+  } catch (e) {
+    console.warn('fetch failed', url, e);
+    return null;
   }
-  console.warn('fetch failed', url);
-  return null;
 }
 
 async function loadAll() {
@@ -3259,55 +3217,15 @@ function renderEcosystem(d) {
   renderTable('ecosystem-table', rows);
 }
 
-// Did the fresh fetch come back with anything useful? If not, we keep the
-// previous render instead of wiping to blanks.
-function isResultEmpty(d) {
-  if (!d) return true;
-  return d.megaTVL == null && d.monadTVL == null
-    && d.dexMega?.total24h == null && d.dexMonad?.total24h == null
-    && d.feesMega?.total24h == null && d.feesMonad?.total24h == null
-    && (!Array.isArray(d.megaProtosAll) || d.megaProtosAll.length === 0);
-}
-
-// Merge fresh result with last-good, keeping non-null fields from the cache
-// when the fresh value is null/empty. A single failed fetch no longer wipes
-// the card back to "—" placeholders.
-function mergeWithCache(fresh, cached) {
-  if (!cached || !fresh) return fresh || cached;
-  const merged = { ...cached, ...fresh };
-  for (const k of Object.keys(merged)) {
-    const fv = fresh[k], cv = cached[k];
-    if (fv == null && cv != null) merged[k] = cv;
-    else if (Array.isArray(fv) && fv.length === 0 && Array.isArray(cv) && cv.length > 0) merged[k] = cv;
-    else if (typeof fv === 'object' && fv !== null && typeof cv === 'object' && cv !== null) {
-      const nested = { ...cv, ...fv };
-      for (const nk of Object.keys(nested)) {
-        if (fv[nk] == null && cv[nk] != null) nested[nk] = cv[nk];
-      }
-      merged[k] = nested;
-    }
-  }
-  return merged;
-}
-
 async function refresh() {
   document.querySelectorAll('.card, .summary').forEach(el => el.classList.add('loading'));
   try {
     const raw = await loadAll();
-    const cached = getCachedResult()?.d;
-    const merged = mergeWithCache(raw, cached);
-    LAST_DATA = merged;
-    renderAll(merged);
-    // Only overwrite the persisted cache if fresh actually had something useful;
-    // otherwise keep the older (better) cache so next reload still paints right.
-    if (!isResultEmpty(raw)) persistResult(merged);
+    LAST_DATA = raw;
+    renderAll(raw);
+    persistResult(raw);
     lastLoad = new Date();
-    const box = document.getElementById('error-box');
-    if (box) {
-      box.innerHTML = isResultEmpty(raw) && cached
-        ? `<div class="error">Showing cached data — upstream API temporarily unavailable.</div>`
-        : '';
-    }
+    document.getElementById('error-box').innerHTML = '';
   } catch (e) {
     console.error(e);
     document.getElementById('error-box').innerHTML = `<div class="error">Failed to load some data. Retrying shortly.</div>`;
