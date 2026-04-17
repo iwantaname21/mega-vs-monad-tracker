@@ -1105,14 +1105,36 @@ const MEGA_SUPPLY = 10_000_000_000;
 let MEGA_FDV_ESTIMATE = 1_350_000_000;
 let MEGA_PRICE = MEGA_FDV_ESTIMATE / MEGA_SUPPLY;
 
+async function hyperliquidPost(body) {
+  // Hyperliquid accepts POST /info for everything. Direct-first, proxy-fallback
+  // (browser may be blocked from reaching api.hyperliquid.xyz).
+  const direct = 'https://api.hyperliquid.xyz/info';
+  const useProxy = typeof location !== 'undefined'
+    && location.protocol !== 'file:'
+    && location.hostname !== 'localhost' && location.hostname !== '127.0.0.1';
+  const proxy = useProxy ? '/api/proxy?host=hyperliquid&path=/info' : null;
+  const init = {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body),
+  };
+  try {
+    const r = await fetch(direct, init);
+    if (r.ok) return r;
+  } catch {}
+  if (proxy) {
+    try {
+      const r = await fetch(proxy, init);
+      if (r.ok) return r;
+    } catch {}
+  }
+  return null;
+}
+
 async function fetchMegaHyperliquidPrice() {
   try {
-    const r = await fetch('https://api.hyperliquid.xyz/info', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ type: 'allMids' }),
-    });
-    if (!r.ok) return null;
+    const r = await hyperliquidPost({ type: 'allMids' });
+    if (!r) return null;
     const mids = await r.json();
     // Hyperliquid pre-market ticker can be MEGA, kMEGA, MEGAETH — try each.
     for (const sym of ['MEGA', 'kMEGA', 'MEGAETH', 'Mega']) {
@@ -1135,15 +1157,11 @@ async function fetchMegaHyperliquidHistory(days = 90) {
   const startMs = nowMs - days * 86400 * 1000;
   for (const coin of ['MEGA', 'kMEGA', 'MEGAETH', 'Mega']) {
     try {
-      const r = await fetch('https://api.hyperliquid.xyz/info', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          type: 'candleSnapshot',
-          req: { coin, interval: '1d', startTime: startMs, endTime: nowMs },
-        }),
+      const r = await hyperliquidPost({
+        type: 'candleSnapshot',
+        req: { coin, interval: '1d', startTime: startMs, endTime: nowMs },
       });
-      if (!r.ok) continue;
+      if (!r) continue;
       const data = await r.json();
       if (!Array.isArray(data) || !data.length) continue;
       const out = data.map(c => {

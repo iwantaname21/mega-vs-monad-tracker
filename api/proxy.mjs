@@ -21,7 +21,13 @@ const HOSTS = {
   stablecoins: 'https://stablecoins.llama.fi',
   coingecko: 'https://api.coingecko.com',
   treasury: 'https://api.fiscaldata.treasury.gov',
+  hyperliquid: 'https://api.hyperliquid.xyz',
 };
+
+// POSTs (Hyperliquid) aren't cacheable on Vercel's CDN, so use a short
+// in-isolate memo to at least coalesce rapid repeats. GETs get the long CDN TTL.
+const POST_CACHE_HEADER = 'public, s-maxage=60, stale-while-revalidate=300';
+const GET_CACHE_HEADER  = 'public, s-maxage=1800, stale-while-revalidate=7200';
 
 export default async function handler(req) {
   const url = new URL(req.url);
@@ -36,17 +42,24 @@ export default async function handler(req) {
     });
   }
   const target = base + path + (q ? (path.includes('?') ? '&' : '?') + q : '');
+  const isPost = req.method === 'POST';
   try {
-    const upstream = await fetch(target, {
+    const init = {
+      method: req.method,
       headers: {
         'accept': 'application/json',
         'user-agent': 'mega-vs-monad-dashboard/1.0',
       },
-    });
+    };
+    if (isPost) {
+      init.headers['content-type'] = 'application/json';
+      init.body = await req.text();
+    }
+    const upstream = await fetch(target, init);
     const body = await upstream.text();
     const headers = {
       'access-control-allow-origin': '*',
-      'cache-control': 'public, s-maxage=1800, stale-while-revalidate=7200',
+      'cache-control': isPost ? POST_CACHE_HEADER : GET_CACHE_HEADER,
       'content-type': upstream.headers.get('content-type') || 'application/json',
     };
     return new Response(body, { status: upstream.status, headers });
