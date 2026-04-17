@@ -2379,15 +2379,57 @@ function renderPerformance() {
 }
 
 // ---------- API fetching ----------
-async function safeJson(url) {
+// Same-origin proxy fallback for when the browser is blocked from reaching
+// api.llama.fi / api.coingecko.com / stablecoins.llama.fi directly (Cloudflare
+// bot-check, adblock, firewall). Server-side proxy at /api/proxy bypasses the
+// browser-side check. Skipped on localhost/file:// (no proxy running there).
+const PROXY_HOSTS = {
+  'api.llama.fi': 'llama',
+  'stablecoins.llama.fi': 'stablecoins',
+  'api.coingecko.com': 'coingecko',
+  'api.fiscaldata.treasury.gov': 'treasury',
+};
+function proxyUrlFor(url) {
+  if (typeof window === 'undefined') return null;
+  if (location.protocol === 'file:') return null;
+  if (location.hostname === 'localhost' || location.hostname === '127.0.0.1') return null;
   try {
-    const r = await fetch(url);
-    if (!r.ok) throw new Error(`${r.status}`);
-    return await r.json();
-  } catch (e) {
-    console.warn('fetch failed', url, e);
-    return null;
+    const u = new URL(url);
+    const host = PROXY_HOSTS[u.host];
+    if (!host) return null;
+    const q = u.search ? u.search.slice(1) : '';
+    const params = new URLSearchParams({ host, path: u.pathname });
+    if (q) params.set('q', q);
+    return `/api/proxy?${params.toString()}`;
+  } catch { return null; }
+}
+async function tryFetchJSON(url, timeoutMs = 10000) {
+  const ctl = typeof AbortController !== 'undefined' ? new AbortController() : null;
+  const timer = ctl ? setTimeout(() => ctl.abort(), timeoutMs) : null;
+  try {
+    const r = await fetch(url, { signal: ctl?.signal });
+    if (!r.ok) return { ok: false, status: r.status };
+    try { return { ok: true, data: await r.json() }; }
+    catch { return { ok: false }; }
+  } catch {
+    return { ok: false };
+  } finally {
+    if (timer) clearTimeout(timer);
   }
+}
+async function safeJson(url) {
+  // Direct first. On any non-ok response (Cloudflare 403s blocked browsers),
+  // fall through to the same-origin /api/proxy.
+  const direct = await tryFetchJSON(url);
+  if (direct.ok) return direct.data;
+  if (direct.status === 404) return null;
+  const proxy = proxyUrlFor(url);
+  if (proxy) {
+    const viaProxy = await tryFetchJSON(proxy);
+    if (viaProxy.ok) return viaProxy.data;
+  }
+  console.warn('fetch failed', url);
+  return null;
 }
 
 async function loadAll() {
