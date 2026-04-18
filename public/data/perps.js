@@ -1,5 +1,5 @@
 window.__PERPS_SNAPSHOT__ = {
-  "updatedAt": "2026-04-18T18:49:16.041Z",
+  "updatedAt": "2026-04-18T20:36:09.637Z",
   "source": "https://defillama.com",
   "protocols": [
     {
@@ -7,10 +7,10 @@ window.__PERPS_SNAPSHOT__ = {
       "chain": "MegaETH",
       "name": "World Markets",
       "aliases": [],
-      "volume24h": 14140000,
+      "volume24h": 14610000,
       "volume7d": 42430000,
       "volume30d": 48590000,
-      "volumeAllTime": 107100000,
+      "volumeAllTime": 107600000,
       "chainFiltered": true,
       "dailyChart": [
         [
@@ -283,7 +283,7 @@ window.__PERPS_SNAPSHOT__ = {
         ],
         [
           1776470400000,
-          14139776
+          14608017
         ]
       ]
     },
@@ -4299,10 +4299,10 @@ window.__PERPS_SNAPSHOT__ = {
       "chain": "Monad",
       "name": "Perpl",
       "aliases": [],
-      "volume24h": 890963,
+      "volume24h": 746923,
       "volume7d": 7990000,
       "volume30d": 23010000,
-      "volumeAllTime": 37260000,
+      "volumeAllTime": 37220000,
       "chainFiltered": true,
       "dailyChart": [
         [
@@ -4563,7 +4563,7 @@ window.__PERPS_SNAPSHOT__ = {
         ],
         [
           1776470400000,
-          786476
+          746923
         ]
       ]
     },
@@ -4572,7 +4572,7 @@ window.__PERPS_SNAPSHOT__ = {
       "chain": "Monad",
       "name": "LeverUp",
       "aliases": [],
-      "volume24h": 8270000,
+      "volume24h": 7560000,
       "volume7d": 77220000,
       "volume30d": 349280000,
       "volumeAllTime": 2276000000,
@@ -5160,7 +5160,7 @@ window.__PERPS_SNAPSHOT__ = {
         ],
         [
           1776470400000,
-          7452955
+          7558809
         ]
       ]
     },
@@ -9087,10 +9087,10 @@ window.__PERPS_SNAPSHOT__ = {
       "aliases": [
         "Jupiter"
       ],
-      "volume24h": 194450000,
+      "volume24h": 160790000,
       "volume7d": 1760000000,
       "volume30d": 7002000000,
-      "volumeAllTime": 473946000000,
+      "volumeAllTime": 473912000000,
       "chainFiltered": true,
       "dailyChart": [
         [
@@ -12307,7 +12307,7 @@ window.__PERPS_SNAPSHOT__ = {
         ],
         [
           1776470400000,
-          194452909
+          160792690
         ]
       ]
     },
@@ -19914,16 +19914,16 @@ window.__PERPS_SNAPSHOT__ = {
   ],
   "chains": {
     "MegaETH": {
-      "perpsVolume24h": 14490000,
-      "raw": "$14.49m"
+      "perpsVolume24h": 14960000,
+      "raw": "$14.96m"
     },
     "Monad": {
-      "perpsVolume24h": 10710000,
-      "raw": "$10.71m"
+      "perpsVolume24h": 9850000,
+      "raw": "$9.85m"
     },
     "BSC": {
-      "perpsVolume24h": 263100000.00000003,
-      "raw": "$263.1m"
+      "perpsVolume24h": 261519999.99999997,
+      "raw": "$261.52m"
     },
     "Solana": {
       "perpsVolume24h": 1130000000,
@@ -19946,7 +19946,7 @@ window.__PERPS_SNAPSHOT__ = {
       },
       {
         "date": "2026-04-18",
-        "value": 14490000
+        "value": 14960000
       }
     ],
     "Monad": [
@@ -19964,7 +19964,7 @@ window.__PERPS_SNAPSHOT__ = {
       },
       {
         "date": "2026-04-18",
-        "value": 10710000
+        "value": 9850000
       }
     ],
     "BSC": [
@@ -19978,7 +19978,7 @@ window.__PERPS_SNAPSHOT__ = {
       },
       {
         "date": "2026-04-18",
-        "value": 263100000.00000003
+        "value": 261519999.99999997
       }
     ],
     "Solana": [
