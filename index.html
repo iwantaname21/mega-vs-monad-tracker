@@ -621,26 +621,23 @@
     font-family: var(--font-mono);
     font-size: 10px;
     font-weight: 500;
-    padding: 4px 8px;
+    padding: 4px 10px;
     border-radius: 0;
     background: transparent;
     border: 1px solid var(--border-soft);
     color: var(--stone-2);
     font-variant-numeric: tabular-nums;
     white-space: nowrap;
-    min-width: 88px;
-    max-width: 100%;
+    min-width: 124px;
     min-height: 22px;
     box-sizing: border-box;
     line-height: 1.2;
     letter-spacing: 0.02em;
     text-align: center;
   }
-  /* Keep the Difference cell from overflowing into the Winner pill column
-     even at narrow widths / browser zoom. */
+  /* Gap between Difference badge and Winner pill column. */
   table.cmp td.diff-cell {
     padding-right: 14px;
-    overflow: hidden;
   }
   .diff.mega { border-color: var(--mega); color: var(--mega); }
   .diff.monad { border-color: var(--right-light); color: var(--right-light); }
@@ -1577,11 +1574,11 @@ function renderTable(containerId, rowsHtml) {
     <table class="cmp">
       <thead>
         <tr>
-          <th style="width: 30%">Metric</th>
-          <th style="width: 16%">${COL_HEAD_MEGA}</th>
-          <th style="width: 16%">${COL_HEAD_MONAD}</th>
-          <th style="width: 20%">Difference</th>
-          <th style="width: 18%">Winner</th>
+          <th style="width: 26%">Metric</th>
+          <th style="width: 15%">${COL_HEAD_MEGA}</th>
+          <th style="width: 15%">${COL_HEAD_MONAD}</th>
+          <th style="width: 28%">Difference</th>
+          <th style="width: 16%">Winner</th>
         </tr>
       </thead>
       <tbody>${rowsHtml}</tbody>
