@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-04-18T07:05:56.059Z",
+  "updatedAt": "2026-04-18T08:48:26.773Z",
   "source": "https://defillama.com",
   "protocols": [
     {
@@ -7,10 +7,10 @@
       "chain": "MegaETH",
       "name": "World Markets",
       "aliases": [],
-      "volume24h": 13270000,
+      "volume24h": 13380000,
       "volume7d": 42430000,
       "volume30d": 48590000,
-      "volumeAllTime": 106110000,
+      "volumeAllTime": 106370000,
       "chainFiltered": true,
       "dailyChart": [
         [
@@ -4299,10 +4299,10 @@
       "chain": "Monad",
       "name": "Perpl",
       "aliases": [],
-      "volume24h": 856341,
+      "volume24h": 904982,
       "volume7d": 7990000,
       "volume30d": 23010000,
-      "volumeAllTime": 37330000,
+      "volumeAllTime": 37380000,
       "chainFiltered": true,
       "dailyChart": [
         [
@@ -4563,7 +4563,7 @@
         ],
         [
           1776470400000,
-          852969
+          904982
         ]
       ]
     },
@@ -4572,7 +4572,7 @@
       "chain": "Monad",
       "name": "LeverUp",
       "aliases": [],
-      "volume24h": 8060000.000000001,
+      "volume24h": 8000000,
       "volume7d": 77220000,
       "volume30d": 349280000,
       "volumeAllTime": 2276000000,
@@ -5160,7 +5160,7 @@
         ],
         [
           1776470400000,
-          8092276
+          7998293
         ]
       ]
     },
@@ -9087,7 +9087,7 @@
       "aliases": [
         "Jupiter"
       ],
-      "volume24h": 295390000,
+      "volume24h": 292180000,
       "volume7d": 1760000000,
       "volume30d": 7002000000,
       "volumeAllTime": 474043000000,
@@ -19922,12 +19922,12 @@
       "raw": "$10.46m"
     },
     "BSC": {
-      "perpsVolume24h": 272840000,
-      "raw": "$272.84m"
+      "perpsVolume24h": 15060000,
+      "raw": "$15.06m"
     },
     "Solana": {
-      "perpsVolume24h": 1264000000,
-      "raw": "$1.264b"
+      "perpsVolume24h": 1261000000,
+      "raw": "$1.261b"
     }
   },
   "history": {
@@ -19978,7 +19978,7 @@
       },
       {
         "date": "2026-04-18",
-        "value": 272840000
+        "value": 15060000
       }
     ],
     "Solana": [
@@ -19992,7 +19992,7 @@
       },
       {
         "date": "2026-04-18",
-        "value": 1264000000
+        "value": 1261000000
       }
     ]
   }
