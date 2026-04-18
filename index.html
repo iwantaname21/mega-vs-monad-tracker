@@ -263,6 +263,27 @@
     50% { opacity: 0.35; }
   }
 
+  /* Skeleton loader — shown for FDV / FDV-multiple until Hyperliquid lands a
+     real price so we never surface the $1.35B placeholder as a real number. */
+  .skeleton-bar {
+    display: inline-block;
+    width: 140px;
+    height: 26px;
+    background: linear-gradient(
+      90deg,
+      rgba(223,217,217,0.06) 0%,
+      rgba(223,217,217,0.18) 50%,
+      rgba(223,217,217,0.06) 100%
+    );
+    background-size: 200% 100%;
+    animation: skeleton-shimmer 1.4s linear infinite;
+    vertical-align: middle;
+  }
+  @keyframes skeleton-shimmer {
+    from { background-position: 200% 0; }
+    to   { background-position: -200% 0; }
+  }
+
   /* ---------- Summary bar ---------- */
   .summary {
     display: grid;
@@ -895,16 +916,25 @@
     letter-spacing: 0.12em;
     color: var(--fg-dim);
     text-transform: uppercase;
-  }
-  .ticker-rail span {
-    display: inline-block;
+    /* inner <span>s are laid out horizontally so the marquee wraps seamlessly */
     white-space: nowrap;
-    padding-left: 100%;
+    display: flex;
+    align-items: center;
+  }
+  .ticker-rail .ticker-track {
+    display: inline-flex;
+    flex-shrink: 0;
     animation: megaeth-marq 70s linear infinite;
   }
+  .ticker-rail .ticker-track > span {
+    flex-shrink: 0;
+    padding-right: 48px;
+  }
   @keyframes megaeth-marq {
+    /* Two identical copies inside the track; moving -50% brings the second
+       copy to where the first started → seamless loop with no dead space. */
     from { transform: translateX(0); }
-    to   { transform: translateX(-100%); }
+    to   { transform: translateX(-50%); }
   }
 
   @media (max-width: 860px) {
@@ -1147,7 +1177,10 @@
   </div>
   <!-- Ticker rail -->
   <div class="ticker-rail">
-    <span>REMEMBER WHAT REAL-TIME FEELS LIKE     ·     SUB-MILLISECOND BLOCKS · 100K+ TPS     ·     MEGAETH ® MCMLXV TRACKER     ·     CHAIN FEES / APP FEES / IMPLIED YIELD     ·     BUILD WITHOUT BOUNDARIES     ·     </span>
+    <div class="ticker-track">
+      <span>REMEMBER WHAT REAL-TIME FEELS LIKE     ·     SUB-MILLISECOND BLOCKS · 100K+ TPS     ·     MEGAETH ® MCMLXV TRACKER     ·     CHAIN FEES / APP FEES / IMPLIED YIELD     ·     BUILD WITHOUT BOUNDARIES</span>
+      <span aria-hidden="true">REMEMBER WHAT REAL-TIME FEELS LIKE     ·     SUB-MILLISECOND BLOCKS · 100K+ TPS     ·     MEGAETH ® MCMLXV TRACKER     ·     CHAIN FEES / APP FEES / IMPLIED YIELD     ·     BUILD WITHOUT BOUNDARIES</span>
+    </div>
   </div>
 
   <a class="footer-link" href="https://defillama.com/chains" target="_blank" rel="noopener">
@@ -1160,10 +1193,34 @@ const COL_HEAD_MEGA  = '<span class="col-label"><span class="chain-dot mega"></s
 const COL_HEAD_MONAD = '<span class="col-label"><span class="chain-dot monad"></span>Monad</span>';
 
 // MegaETH pre-TGE — live price pulled from Hyperliquid pre-market (`MEGA`) when available.
-// Fallback is the pre-market FDV the user quoted (~$1.35B ⇒ ~$0.135 per token).
+// We persist the last-good price in localStorage so a slow/failed Hyperliquid
+// fetch on refresh doesn't show the stale $1.35B fallback FDV; instead we keep
+// reporting the most recent live price we've ever seen. Only the very first
+// visit with no cache and a broken Hyperliquid call falls back.
 const MEGA_SUPPLY = 10_000_000_000;
-let MEGA_FDV_ESTIMATE = 1_350_000_000;
+const MEGA_PRICE_CACHE_KEY = 'mega-vs-monad:hyperliquid-mega-price:v1';
+const MEGA_FDV_DEFAULT = 1_350_000_000;
+let MEGA_FDV_ESTIMATE = MEGA_FDV_DEFAULT;
 let MEGA_PRICE = MEGA_FDV_ESTIMATE / MEGA_SUPPLY;
+// Did we actually confirm the price (from Hyperliquid live or localStorage
+// cache), or are we still showing the $1.35B placeholder? UI uses this to
+// render a skeleton loader for FDV / FDV multiple until a real value lands,
+// so the user never sees the stale placeholder as a plausible number.
+let MEGA_FDV_CONFIRMED = false;
+(() => {
+  try {
+    const raw = localStorage.getItem(MEGA_PRICE_CACHE_KEY);
+    if (!raw) return;
+    const { price, ts } = JSON.parse(raw);
+    // Discard cache older than 7 days — if Hyperliquid's been down that long,
+    // the pre-market price is probably stale anyway.
+    if (!price || !ts || Date.now() - ts > 7 * 86400 * 1000) return;
+    if (!isFinite(price) || price <= 0) return;
+    MEGA_PRICE = price;
+    MEGA_FDV_ESTIMATE = price * MEGA_SUPPLY;
+    MEGA_FDV_CONFIRMED = true;
+  } catch {}
+})();
 const MONAD_SUPPLY = 100_700_000_000;
 
 async function fetchMegaHyperliquidPrice() {
@@ -2680,6 +2737,11 @@ async function loadAll() {
   if (megaLivePrice) {
     MEGA_PRICE = megaLivePrice;
     MEGA_FDV_ESTIMATE = megaLivePrice * MEGA_SUPPLY;
+    MEGA_FDV_CONFIRMED = true;
+    try {
+      localStorage.setItem(MEGA_PRICE_CACHE_KEY,
+        JSON.stringify({ price: megaLivePrice, ts: Date.now() }));
+    } catch {}
   }
 
   // --- TVL ---
@@ -2952,13 +3014,20 @@ function scopedFeesView(raw, scope) {
 
 // ---------- renderers ----------
 function renderSummary(d) {
-  const fdvRatio = d.monadFDV ? (d.monadFDV / MEGA_FDV_ESTIMATE).toFixed(2) + 'x' : '—';
+  // Until Hyperliquid (or localStorage cache) lands a real MEGA price, we
+  // don't want to show the stale $1.35B placeholder. A skeleton bar signals
+  // "loading" without lying about the number. Same for FDV Multiple, which
+  // is derived from MEGA_FDV_ESTIMATE.
+  const skel = '<span class="skeleton-bar"></span>';
+  const fdvRatio = (MEGA_FDV_CONFIRMED && d.monadFDV)
+    ? (d.monadFDV / MEGA_FDV_ESTIMATE).toFixed(2) + 'x'
+    : (d.monadFDV ? skel : '—');
   const feeRatio = fmtRatio(d.feesMega?.total24h, d.feesMonad?.total24h);
   const tvlRatio = fmtRatio(d.megaTVL, d.monadTVL);
-  const megaFdvFmt = fmtUSD(MEGA_FDV_ESTIMATE);
+  const megaFdvFmt = MEGA_FDV_CONFIRMED ? fmtUSD(MEGA_FDV_ESTIMATE) : skel;
   const monadFdvFmt = d.monadFDV ? fmtUSD(d.monadFDV) : '—';
   const monPriceFmt = d.monPriceUSD ? `$${d.monPriceUSD.toFixed(4)}` : '—';
-  const megaPriceFmt = `$${MEGA_PRICE.toFixed(4)}`;
+  const megaPriceFmt = MEGA_FDV_CONFIRMED ? `$${MEGA_PRICE.toFixed(4)}` : '—';
   document.getElementById('summary').innerHTML = `
     <div class="summary-card">
       <div class="label">MegaETH FDV</div>
