@@ -628,12 +628,19 @@
     color: var(--stone-2);
     font-variant-numeric: tabular-nums;
     white-space: nowrap;
-    min-width: 104px;
+    min-width: 88px;
+    max-width: 100%;
     min-height: 22px;
     box-sizing: border-box;
     line-height: 1.2;
     letter-spacing: 0.02em;
     text-align: center;
+  }
+  /* Keep the Difference cell from overflowing into the Winner pill column
+     even at narrow widths / browser zoom. */
+  table.cmp td.diff-cell {
+    padding-right: 14px;
+    overflow: hidden;
   }
   .diff.mega { border-color: var(--mega); color: var(--mega); }
   .diff.monad { border-color: var(--right-light); color: var(--right-light); }
