@@ -966,6 +966,10 @@
     .card { padding: 20px; }
     .card h2 { font-size: 18px; }
     .proto-cols { grid-template-columns: 1fr; gap: 12px; }
+    /* Shrink the top-left corner notch on narrow viewports so it doesn't
+       visually eat into the card's heading/content area. */
+    .card::before { width: 10px; height: 10px; }
+    .summary::before { width: 10px; height: 10px; }
 
     table.cmp { min-width: 0; table-layout: auto; }
     table.cmp th:nth-child(4),
