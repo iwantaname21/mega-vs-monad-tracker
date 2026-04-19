@@ -1,5 +1,5 @@
 window.__PERPS_SNAPSHOT__ = {
-  "updatedAt": "2026-04-19T18:49:09.711Z",
+  "updatedAt": "2026-04-19T20:36:16.766Z",
   "source": "https://defillama.com",
   "protocols": [
     {
@@ -9103,7 +9103,7 @@ window.__PERPS_SNAPSHOT__ = {
       "aliases": [
         "Jupiter"
       ],
-      "volume24h": 155190000,
+      "volume24h": 157740000,
       "volume7d": 1795000000,
       "volume30d": 6900000000,
       "volumeAllTime": 474075000000,
@@ -19950,8 +19950,8 @@ window.__PERPS_SNAPSHOT__ = {
       "raw": "$8.51m"
     },
     "BSC": {
-      "perpsVolume24h": 258519999.99999997,
-      "raw": "$258.52m"
+      "perpsVolume24h": 257640000,
+      "raw": "$257.64m"
     },
     "Solana": {
       "perpsVolume24h": 392530000,
@@ -20018,7 +20018,7 @@ window.__PERPS_SNAPSHOT__ = {
       },
       {
         "date": "2026-04-19",
-        "value": 258519999.99999997
+        "value": 257640000
       }
     ],
     "Solana": [
