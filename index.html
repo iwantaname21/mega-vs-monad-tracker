@@ -3643,10 +3643,20 @@ function renderProtocols(d) {
       .filter(p => !isChainEntry(p.name, chain) && !isCexEntry(p))
       .slice();
     if (scope === 'native') arr = arr.filter(p => isNative(chain, p.name));
+    // chainTvls[chainKey] is the authoritative per-chain TVL. p.tvl is the
+    // cross-chain total and MUST NOT be used as a fallback for a multi-chain
+    // protocol — doing so credits (e.g.) ether.fi Stake's $5.2B Ethereum TVL
+    // to Arbitrum. Only fall back when the protocol exists on exactly one
+    // chain (then p.tvl == that chain's TVL unambiguously).
+    const perChainTvl = (p) => {
+      const direct = p.chainTvls?.[chainKey];
+      if (typeof direct === 'number') return direct;
+      return (p.chains?.length === 1) ? (p.tvl ?? null) : null;
+    };
     return arr
       .map(p => ({
         name: p.name,
-        val: (p.chainTvls?.[chainKey]) ?? p.tvl,
+        val: perChainTvl(p),
         logo: p.logo,
         slug: p.slug || p.defillamaId,
         category: p.category,
