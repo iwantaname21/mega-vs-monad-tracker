@@ -192,6 +192,7 @@
   }
   .hero-logo.mega {
     filter: brightness(0) invert(1);
+    transform: translateY(-3px);
   }
   .hero-logo.monad {
     filter: brightness(0) invert(1);
@@ -4168,10 +4169,15 @@ function applyChainChrome() {
     //             align-items: flex-end; we override this one item).
     let transform = '';
     let alignSelf = '';
-    if (c.key === 'solana') {
+    if (c.key === 'monad') {
+      transform = 'translateY(3px)';
+    } else if (c.key === 'solana') {
       transform = 'translateY(5px) scale(0.8)';
+    } else if (c.key === 'arbitrum') {
+      transform = 'translateY(2px)';
     } else if (c.key === 'base') {
-      transform = 'scale(0.75)';
+      // 0.75 × 1.3 ≈ 0.975 — 30% larger than the original shrunk size.
+      transform = 'scale(0.975)';
       alignSelf = 'center';
     }
     logo.style.transform = transform;
