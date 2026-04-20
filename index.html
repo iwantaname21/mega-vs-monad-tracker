@@ -4160,7 +4160,22 @@ function applyChainChrome() {
   if (logo) {
     logo.style.transformOrigin = 'left center';
     logo.style.maxWidth  = c.key === 'arbitrum' ? '52%' : '';
-    logo.style.transform = c.key === 'solana'   ? 'translateY(5px) scale(0.8)' : '';
+    // Per-chain vertical + scale tweaks.
+    //   Solana  — wider-for-its-height wordmark; shrink + nudge down.
+    //   Base    — smaller scale + center-align vertically so the circle
+    //             on the left side of the wordmark lines up with the
+    //             midpoint of the MEGAETH logo (the row defaults to
+    //             align-items: flex-end; we override this one item).
+    let transform = '';
+    let alignSelf = '';
+    if (c.key === 'solana') {
+      transform = 'translateY(5px) scale(0.8)';
+    } else if (c.key === 'base') {
+      transform = 'scale(0.75)';
+      alignSelf = 'center';
+    }
+    logo.style.transform = transform;
+    logo.style.alignSelf = alignSelf;
     logo.alt = c.displayName;
     if (logo.getAttribute('src') !== c.hero) {
       // Preload + decode the new mark before swapping the visible src.
