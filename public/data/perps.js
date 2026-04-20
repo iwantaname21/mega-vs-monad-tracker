@@ -1,5 +1,5 @@
 window.__PERPS_SNAPSHOT__ = {
-  "updatedAt": "2026-04-20T09:57:12.577Z",
+  "updatedAt": "2026-04-20T11:19:17.030Z",
   "source": "https://defillama.com",
   "protocols": [
     {
@@ -9119,7 +9119,7 @@ window.__PERPS_SNAPSHOT__ = {
       "aliases": [
         "Jupiter"
       ],
-      "volume24h": 218050000,
+      "volume24h": 213720000,
       "volume7d": 1778000000,
       "volume30d": 6905000000,
       "volumeAllTime": 474338000000,
@@ -19970,12 +19970,12 @@ window.__PERPS_SNAPSHOT__ = {
   ],
   "chains": {
     "MegaETH": {
-      "perpsVolume24h": 14960000,
-      "raw": "$14.96m"
+      "perpsVolume24h": 9570000,
+      "raw": "$9.57m"
     },
     "Monad": {
-      "perpsVolume24h": 14910000,
-      "raw": "$14.91m"
+      "perpsVolume24h": 15880000,
+      "raw": "$15.88m"
     },
     "BSC": {
       "perpsVolume24h": 285270000,
@@ -20010,7 +20010,7 @@ window.__PERPS_SNAPSHOT__ = {
       },
       {
         "date": "2026-04-20",
-        "value": 14960000
+        "value": 9570000
       }
     ],
     "Monad": [
@@ -20036,7 +20036,7 @@ window.__PERPS_SNAPSHOT__ = {
       },
       {
         "date": "2026-04-20",
-        "value": 14910000
+        "value": 15880000
       }
     ],
     "BSC": [
