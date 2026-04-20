@@ -4020,23 +4020,17 @@ function applyChainChrome() {
   const c = R();
   const logo = document.getElementById('hero-logo-right');
   if (logo) {
-    logo.src = c.hero;
-    logo.alt = c.displayName;
-    // Per-chain optical tweaks so each mark sits on the same baseline.
-    logo.style.maxWidth = '';
-    if (c.key === 'solana') {
-      // Solana wordmark is visually wider for its height — shrink and nudge
-      // down so it aligns with the MegaETH and Monad marks.
-      logo.style.transform = 'translateY(5px) scale(0.8)';
-    } else if (c.key === 'arbitrum') {
-      // Arbitrum SVG is wider (cube + 'Arbitrum' text). Needs a bit more
-      // max-width headroom so it doesn't clamp at 42% of the hero row.
-      logo.style.transform = '';
-      logo.style.maxWidth = '52%';
-    } else {
-      logo.style.transform = '';
-    }
+    // Apply the size constraints BEFORE swapping src. If src changes first,
+    // the new image paints at its intrinsic SVG dimensions for one frame
+    // before the per-chain maxWidth/transform lands — looks like a momentary
+    // zoom-in. Setting style first means the new image loads already scoped.
     logo.style.transformOrigin = 'left center';
+    logo.style.maxWidth  = c.key === 'arbitrum' ? '52%' : '';
+    logo.style.transform = c.key === 'solana'   ? 'translateY(5px) scale(0.8)' : '';
+    if (logo.getAttribute('src') !== c.hero) {
+      logo.src = c.hero;
+    }
+    logo.alt = c.displayName;
   }
   const sub = document.getElementById('fdv-subtitle');
   if (sub) sub.textContent =
