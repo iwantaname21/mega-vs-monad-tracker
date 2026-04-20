@@ -1031,6 +1031,11 @@
       <span class="hero-vs">VS</span>
       <img class="hero-logo monad" id="hero-logo-right" src="public/Assets/Monad/Full.png" alt="Monad" style="filter: brightness(0) invert(1);">
     </div>
+    <div class="chain-switcher" role="tablist" aria-label="Compare chain">
+      <button class="chain-btn" data-chain="monad">&lt; MONAD &gt;</button>
+      <button class="chain-btn" data-chain="bnb">&lt; BNB CHAIN &gt;</button>
+      <button class="chain-btn" data-chain="solana">&lt; SOLANA &gt;</button>
+    </div>
   </div>
 
   <div class="last-updated">
@@ -1049,7 +1054,7 @@
       <div class="card-header">
         <div>
           <h2>FDV Multiple · Historical</h2>
-          <div class="card-sub">Monad FDV ÷ MegaETH FDV over time — higher means Monad trades at a larger premium</div>
+          <div class="card-sub" id="fdv-subtitle">Monad FDV ÷ MegaETH FDV over time — higher means Monad trades at a larger premium</div>
         </div>
         <div class="scope-toggle" data-card="fdv-range">
           <button class="scope-btn active" data-range="30">30d</button>
@@ -1176,7 +1181,7 @@
           <ul class="proto-list" id="proto-mega"></ul>
         </div>
         <div class="proto-col">
-          <h3><span class="chain-dot monad"></span>Monad</h3>
+          <h3><span class="chain-dot monad"></span><span id="proto-monad-heading">Monad</span></h3>
           <ul class="proto-list" id="proto-monad"></ul>
         </div>
       </div>
@@ -1198,7 +1203,7 @@
 </div>
 <script>
 const COL_HEAD_MEGA  = '<span class="col-label"><span class="chain-dot mega"></span>MegaETH</span>';
-const COL_HEAD_MONAD = '<span class="col-label"><span class="chain-dot monad"></span>Monad</span>';
+const COL_HEAD_MONAD = () => `<span class="col-label"><span class="chain-dot monad"></span>${R().displayName}</span>`;
 
 // MegaETH pre-TGE — live price pulled from Hyperliquid pre-market (`MEGA`) when available.
 // We persist the last-good price in localStorage so a slow/failed Hyperliquid
@@ -1230,6 +1235,100 @@ let MEGA_FDV_CONFIRMED = false;
   } catch {}
 })();
 const MONAD_SUPPLY = 100_700_000_000;
+
+// ─── Chain config ─────────────────────────────────────────────────────────
+// All right-side chain data flows through CHAIN_CONFIG → R() so there are
+// NO hardcoded 'Monad' strings below. Adding a new chain = new entry here.
+const CHAIN_CONFIG = {
+  monad: {
+    key: 'monad',
+    displayName: 'Monad',
+    shortName: 'MON',
+    llamaName: 'Monad',              // /overview/dexs/{llamaName}, etc.
+    llamaChainKey: 'Monad',          // case-sensitive, matches protocol.chains
+    llamaFeesSlug: 'monad',          // /summary/fees/{slug}
+    coingeckoId: 'monad',
+    supply: 100_700_000_000,
+    priceLabel: 'CoinGecko spot',
+    hero: 'public/Assets/Monad/Full.png',
+    perfStats: [
+      ['Target TPS',   10_000, '10,000'],
+      ['Block Time',      400, '400 ms', true],
+      ['Throughput',      300, '300 MGas/s'],
+      ['Avg Tx Cost',  0.0055, '$0.004–$0.007', true],
+    ],
+    nativeApps: [
+      'Currvance', 'Neverland', 'SHMonad', 'sHMONAD', 'SH Monad',
+      'Magma Staking', 'Magma', 'LeverUp', 'Lever Up', 'Kuru', 'Kuru Exchange',
+      'Perpl', 'PerpL', 'Capricorn', 'Townsquare', 'Town Square',
+      'Atlantis DEX', 'Atlantis', 'Nad.fun', 'Nadfun', 'Kizzy',
+    ],
+  },
+  bnb: {
+    key: 'bnb',
+    displayName: 'BNB Chain',
+    shortName: 'BNB',
+    llamaName: 'BSC',        // DeFiLlama URL segment (overview/dexs/BSC)
+    llamaChainKey: 'Binance', // protocol.chains + chainTvls use 'Binance'
+    llamaFeesSlug: 'bsc',
+    coingeckoId: 'binancecoin',
+    supply: 139_000_000,              // BNB circulating ~139M post-burns
+    priceLabel: 'CoinGecko spot',
+    hero: 'public/Assets/BNB/wordmark.svg',
+    perfStats: [
+      ['Target TPS',    2_222, '2,222'],
+      ['Block Time',    3_000, '3,000 ms', true],
+      ['Throughput',    1_000, '1,000 MGas/s'],
+      ['Avg Tx Cost',    0.03, '$0.01–$0.05', true],
+    ],
+    nativeApps: [
+      'PancakeSwap', 'Pancake Swap', 'Venus', 'Venus Core Pool', 'Venus Finance',
+      'Aster DEX', 'Aster', 'Thena', 'Lista DAO', 'Lista',
+      'Kinza Finance', 'Kinza', 'SolvBTC', 'Radiant', 'Ethena',
+      'DODO', 'Wombat Exchange', 'Wombat', 'Biswap', 'ApolloX',
+    ],
+  },
+  solana: {
+    key: 'solana',
+    displayName: 'Solana',
+    shortName: 'SOL',
+    llamaName: 'Solana',
+    llamaChainKey: 'Solana',
+    llamaFeesSlug: 'solana',
+    coingeckoId: 'solana',
+    supply: 600_000_000,               // SOL circulating ~600M
+    priceLabel: 'CoinGecko spot',
+    hero: 'public/Assets/Solana/wordmark.svg',
+    perfStats: [
+      ['Target TPS',   65_000, '65,000'],
+      ['Block Time',      400, '400 ms', true],
+      ['Throughput',    2_000, '2,000 MGas/s'],
+      ['Avg Tx Cost',   0.005, '$0.001–$0.01', true],
+    ],
+    nativeApps: [
+      'Jupiter', 'Raydium', 'Drift', 'Marinade', 'Jito', 'Jito Liquid Staking',
+      'Kamino', 'Kamino Lend', 'Orca', 'Sanctum', 'Meteora', 'Marginfi',
+      'Solend', 'Phoenix', 'Zeta Markets', 'Mango Markets', 'Mango',
+      'Tensor', 'MarginFi', 'GMX Solana',
+    ],
+  },
+};
+
+function resolveInitialChain() {
+  try {
+    const urlChain = new URLSearchParams(location.search).get('chain');
+    if (urlChain && CHAIN_CONFIG[urlChain]) return urlChain;
+    const saved = localStorage.getItem('mega-vs-monad:compare-chain');
+    if (saved && CHAIN_CONFIG[saved]) return saved;
+  } catch {}
+  return 'monad';
+}
+
+// Current right-hand chain config — swapped by the chain switcher.
+// Reads STATE.compareChain which is defined later; the getter form means we
+// pick up whatever the current selection is at call time.
+const R = () => CHAIN_CONFIG[(window.STATE && window.STATE.compareChain) || 'monad']
+            || CHAIN_CONFIG.monad;
 
 async function fetchMegaHyperliquidPrice() {
   try {
@@ -1288,11 +1387,12 @@ async function fetchMegaHyperliquidHistory(days = 90) {
 // Missing days on either side are forward-filled from the last known close so
 // the series stays continuous when one source skips a day.
 async function fetchFdvMultipleHistory(days = 90) {
+  const chain = R();
   // CoinGecko's /market_chart endpoint rate-limits aggressively when hit in
   // parallel with other CoinGecko calls. Retry a few times with increasing
   // backoff so the first page load eventually succeeds.
-  const fetchMonad = async () => {
-    const url = `https://api.coingecko.com/api/v3/coins/monad/market_chart?vs_currency=usd&days=${days}&interval=daily`;
+  const fetchRight = async () => {
+    const url = `https://api.coingecko.com/api/v3/coins/${chain.coingeckoId}/market_chart?vs_currency=usd&days=${days}&interval=daily`;
     for (const delay of [0, 1500, 3500, 6000]) {
       if (delay) await new Promise(res => setTimeout(res, delay));
       const r = await safeJson(url);
@@ -1300,47 +1400,48 @@ async function fetchFdvMultipleHistory(days = 90) {
     }
     return [];
   };
-  const [monadRaw, megaHist] = await Promise.all([
-    fetchMonad(),
+  const cacheKey = `mega-vs-monad:fdv-ratio:${chain.key}:v1`;
+  const [rightRaw, megaHist] = await Promise.all([
+    fetchRight(),
     fetchMegaHyperliquidHistory(days),
   ]);
-  if (!monadRaw.length) {
+  if (!rightRaw.length) {
     // Final fallback: reuse the last successful fdv ratio history from localStorage.
     try {
-      const cached = JSON.parse(localStorage.getItem('mega-vs-monad:fdv-ratio:v1') || 'null');
+      const cached = JSON.parse(localStorage.getItem(cacheKey) || 'null');
       if (Array.isArray(cached) && cached.length) return cached;
     } catch {}
     return [];
   }
 
   const dayBucket = (sec) => Math.floor(sec / 86400) * 86400;
-  const monadByDay = new Map();
-  for (const [ms, p] of monadRaw) {
+  const rightByDay = new Map();
+  for (const [ms, p] of rightRaw) {
     const day = dayBucket(Math.floor(ms / 1000));
-    if (isFinite(p) && p > 0) monadByDay.set(day, p);
+    if (isFinite(p) && p > 0) rightByDay.set(day, p);
   }
   const megaByDay = new Map();
   for (const [sec, p] of megaHist) {
     megaByDay.set(dayBucket(sec), p);
   }
 
-  const allDays = [...new Set([...monadByDay.keys(), ...megaByDay.keys()])].sort((a, b) => a - b);
+  const allDays = [...new Set([...rightByDay.keys(), ...megaByDay.keys()])].sort((a, b) => a - b);
   if (!allDays.length) return [];
 
   const out = [];
   let lastMega = megaHist.length ? megaHist[0][1] : MEGA_PRICE;
-  let lastMonad = monadByDay.get(allDays[0]) ?? null;
+  let lastRight = rightByDay.get(allDays[0]) ?? null;
   for (const day of allDays) {
     if (megaByDay.has(day)) lastMega = megaByDay.get(day);
-    if (monadByDay.has(day)) lastMonad = monadByDay.get(day);
-    if (lastMega == null || lastMonad == null) continue;
-    const monadFdv = lastMonad * MONAD_SUPPLY;
+    if (rightByDay.has(day)) lastRight = rightByDay.get(day);
+    if (lastMega == null || lastRight == null) continue;
+    const rightFdv = lastRight * chain.supply;
     const megaFdv  = lastMega  * MEGA_SUPPLY;
-    if (megaFdv > 0) out.push([day, monadFdv / megaFdv]);
+    if (megaFdv > 0) out.push([day, rightFdv / megaFdv]);
   }
   // Persist on success so future loads survive CoinGecko rate-limit spikes.
   if (out.length) {
-    try { localStorage.setItem('mega-vs-monad:fdv-ratio:v1', JSON.stringify(out)); } catch {}
+    try { localStorage.setItem(cacheKey, JSON.stringify(out)); } catch {}
   }
   return out;
 }
@@ -1384,8 +1485,12 @@ const NATIVE_NORM = {
 function isNative(chain, protoName) {
   const n = normName(protoName);
   if (!n) return false;
-  const set = NATIVE_NORM[chain];
-  // exact match or substring either way (handles "CurveHands" vs "Curve.Hands")
+  // 'mega' uses the static NATIVE_APPS.mega. 'monad' is the right-chain slot —
+  // pull its native-apps list live from the current CHAIN_CONFIG entry, so
+  // BNB / Solana natives work too.
+  const set = chain === 'mega'
+    ? NATIVE_NORM.mega
+    : new Set(R().nativeApps.map(normName));
   if (set.has(n)) return true;
   for (const candidate of set) {
     if (n.includes(candidate) || candidate.includes(n)) return true;
@@ -1415,7 +1520,9 @@ function persistLastGood() {
 // Stale-while-revalidate cache for the full loadAll() result. On page load
 // we hydrate from this immediately, so repeat visits paint in ~50ms instead
 // of waiting 3-5s for every DefiLlama + CoinGecko request to resolve.
-const RESULT_CACHE_KEY = 'mega-vs-monad:last-result:v3';
+// Per-chain cache key so switching Monad↔BNB↔Solana never bleeds one chain's
+// data into another's render.
+const RESULT_CACHE_KEY = () => `mega-vs-monad:last-result:${(window.STATE && window.STATE.compareChain) || 'monad'}:v4`;
 const RESULT_CACHE_MAX_AGE_MS = 24 * 60 * 60 * 1000; // discard after 24h
 
 function persistResult(d) {
@@ -1445,13 +1552,13 @@ function persistResult(d) {
       revMega:  slimOverview(d.revMega),  revMonad: slimOverview(d.revMonad),
       perpsMega: slimOverview(d.perpsMega), perpsMonad: slimOverview(d.perpsMonad),
     };
-    localStorage.setItem(RESULT_CACHE_KEY, JSON.stringify({ ts: Date.now(), d: lean }));
+    localStorage.setItem(RESULT_CACHE_KEY(), JSON.stringify({ ts: Date.now(), d: lean }));
   } catch (e) { /* quota exceeded or SecurityError — silently skip */ }
 }
 
 function getCachedResult() {
   try {
-    const raw = localStorage.getItem(RESULT_CACHE_KEY);
+    const raw = localStorage.getItem(RESULT_CACHE_KEY());
     if (!raw) return null;
     const { ts, d } = JSON.parse(raw);
     if (!ts || Date.now() - ts > RESULT_CACHE_MAX_AGE_MS) return null;
@@ -1462,15 +1569,16 @@ function getCachedResult() {
 // Per-card toggles — each card owns its own scope.
 // Default FDV range to 30d on mobile, 90d on desktop.
 const _isMobile = window.matchMedia('(max-width: 860px)').matches;
-const STATE = {
-  tvlScope: 'all',      // TVL & Activity card
-  feesScope: 'all',     // Fees card
-  feesMetric: 'fees',   // Fees card — fees vs revenue
-  protoMetric: 'tvl',   // Top Protocols card — ranking axis
-  protoScope: 'all',    // Top Protocols card — all vs native
-  protoWindow: '24h',   // Top Protocols card — time window for Fees / Vol-Spot / Vol-Perps
-  ecoWindow: '24h',     // Ecosystem Value Capture card
-  fdvRange: _isMobile ? '30' : '90',  // FDV Multiple chart — '30' | '90' | 'all'
+const STATE = window.STATE = {
+  tvlScope: 'all',                      // TVL & Activity card
+  feesScope: 'all',                     // Fees card
+  feesMetric: 'fees',                   // Fees card — fees vs revenue
+  protoMetric: 'tvl',                   // Top Protocols card — ranking axis
+  protoScope: 'all',                    // Top Protocols card — all vs native
+  protoWindow: '24h',                   // Top Protocols card — time window
+  ecoWindow: '24h',                     // Ecosystem Value Capture card
+  fdvRange: _isMobile ? '30' : '90',    // FDV Multiple — '30' | '90' | 'all'
+  compareChain: resolveInitialChain(),  // 'monad' | 'bnb' | 'solana'
 };
 let LAST_DATA = null;
 
@@ -1580,7 +1688,7 @@ function renderTable(containerId, rowsHtml) {
         <tr>
           <th style="width: 26%">Metric</th>
           <th style="width: 15%">${COL_HEAD_MEGA}</th>
-          <th style="width: 15%">${COL_HEAD_MONAD}</th>
+          <th style="width: 15%">${COL_HEAD_MONAD()}</th>
           <th style="width: 28%">Difference</th>
           <th style="width: 16%">Winner</th>
         </tr>
@@ -1861,7 +1969,7 @@ function renderLineChart(containerId, megaSeries, monadSeries, opts = {}) {
       <div class="chart-title">${title}</div>
       <div class="chart-legend">
         <span class="chart-key mega"><span class="dot"></span>MegaETH${mLatest != null ? ` · ${yFormat(mLatest)}` : ''}</span>
-        <span class="chart-key monad"><span class="dot"></span>Monad${nLatest != null ? ` · ${yFormat(nLatest)}` : ''}</span>
+        <span class="chart-key monad"><span class="dot"></span>${R().displayName}${nLatest != null ? ` · ${yFormat(nLatest)}` : ''}</span>
       </div>
     </div>
     <div class="chart-svg-wrap"></div>`;
@@ -1995,7 +2103,7 @@ function renderLineChart(containerId, megaSeries, monadSeries, opts = {}) {
         <span class="tt-val">${m ? yFormat(m[1]) : '—'}</span>
       </div>
       <div class="tt-row monad ${active === 'monad' ? 'active' : 'dim'}">
-        <span class="tt-label"><span class="tt-dot"></span>Monad</span>
+        <span class="tt-label"><span class="tt-dot"></span>${R().displayName}</span>
         <span class="tt-val">${n ? yFormat(n[1]) : '—'}</span>
       </div>`;
     // Viewport-absolute anchor point for the cursor.
@@ -2436,7 +2544,7 @@ function renderStackedBarChart(containerId, series, opts = {}) {
       <div class="chart-title">${title}</div>
       <div class="chart-legend">
         ${legendChain('MegaETH', '#2e9a57', chainTotals.MegaETH, byChain.MegaETH)}
-        ${legendChain('Monad',   '#6B5AE8', chainTotals.Monad,   byChain.Monad)}
+        ${legendChain(R().displayName, '#6B5AE8', chainTotals.Monad, byChain.Monad)}
       </div>
     </div>
     <div class="chart-svg-wrap"></div>`;
@@ -2548,7 +2656,7 @@ function renderStackedBarChart(containerId, series, opts = {}) {
     tooltip.innerHTML = `
       <div class="tt-date">${dateStr(xs[i])}</div>
       ${renderRows('MegaETH', '#2e9a57', perChainRows.MegaETH, megaSum)}
-      ${renderRows('Monad',   '#6B5AE8', perChainRows.Monad,   monadSum)}`;
+      ${renderRows(R().displayName, '#6B5AE8', perChainRows.Monad, monadSum)}`;
     const pxX = rect.left + ((bx + slot / 2) / W) * rect.width;
     const pxY = rect.top  + (pad.top / H) * rect.height;
     positionTooltip(tooltip, pxX, pxY);
@@ -2647,15 +2755,19 @@ function buildPerpsDailyBars(snapshot, days = 30) {
 
 // ---------- static: performance ----------
 function renderPerformance() {
-  const rows = [
-    ['Target TPS', 100000, 10000, '100,000', '10,000'],
-    ['Block Time', 10, 400, '10 ms', '400 ms', true],
-    ['Throughput', 1700, 300, '1,700 MGas/s', '300 MGas/s'],
-    ['Avg Tx Cost', 0.0002, 0.0055, '~$0.0002', '$0.004–$0.007', true],
+  // MegaETH specs are fixed. Right-chain specs come from CHAIN_CONFIG so the
+  // Performance table reflects whichever comparison chain is selected.
+  const megaSpecs = [
+    ['Target TPS', 100000, '100,000'],
+    ['Block Time',     10, '10 ms', true],
+    ['Throughput',   1700, '1,700 MGas/s'],
+    ['Avg Tx Cost', 0.0002, '~$0.0002', true],
   ];
-  const html = rows.map(([label, m, mo, md, mod, low]) =>
-    renderRow(label, m, mo, md, mod, low || false, 'mega')
-  ).join('');
+  const rightSpecs = R().perfStats;
+  const html = megaSpecs.map(([label, m, md, low], i) => {
+    const [, mo, mod] = rightSpecs[i] || [, null, '—'];
+    return renderRow(label, m, mo, md, mod, !!low, 'mega');
+  }).join('');
   renderTable('perf-table', html);
 }
 
@@ -2692,13 +2804,13 @@ async function loadAll() {
   ] = await Promise.all([
     safeJson('https://api.llama.fi/v2/chains'),
     safeJson(`https://api.llama.fi/overview/dexs/MegaETH?${OVR}`),
-    safeJson(`https://api.llama.fi/overview/dexs/Monad?${OVR}`),
+    safeJson(`https://api.llama.fi/overview/dexs/${R().llamaName}?${OVR}`),
     safeJson(`https://api.llama.fi/overview/fees/MegaETH?${OVR}&dataType=dailyFees`),
-    safeJson(`https://api.llama.fi/overview/fees/Monad?${OVR}&dataType=dailyFees`),
+    safeJson(`https://api.llama.fi/overview/fees/${R().llamaName}?${OVR}&dataType=dailyFees`),
     safeJson(`https://api.llama.fi/overview/fees/MegaETH?${OVR}&dataType=dailyRevenue`),
-    safeJson(`https://api.llama.fi/overview/fees/Monad?${OVR}&dataType=dailyRevenue`),
+    safeJson(`https://api.llama.fi/overview/fees/${R().llamaName}?${OVR}&dataType=dailyRevenue`),
     safeJson(`https://api.llama.fi/overview/fees/MegaETH?${OVR}&dataType=dailyBribesRevenue`),
-    safeJson(`https://api.llama.fi/overview/fees/Monad?${OVR}&dataType=dailyBribesRevenue`),
+    safeJson(`https://api.llama.fi/overview/fees/${R().llamaName}?${OVR}&dataType=dailyBribesRevenue`),
     // Derivatives API is paywalled — we fill perpsMega/perpsMonad from the
     // scraped snapshot after Promise.all resolves, so just push nulls here.
     Promise.resolve(null),
@@ -2712,7 +2824,7 @@ async function loadAll() {
       }
       return null;
     })(),
-    safeJson('https://api.llama.fi/summary/fees/monad?dataType=dailyFees'),
+    safeJson(`https://api.llama.fi/summary/fees/${R().llamaFeesSlug}?dataType=dailyFees`),
     (async () => {
       const slugs = ['megaeth', 'mega-eth', 'megaeth-chain', 'megaeth-l2', 'megaeth-network', 'megaeth-mainnet'];
       for (const s of slugs) {
@@ -2721,13 +2833,13 @@ async function loadAll() {
       }
       return null;
     })(),
-    safeJson('https://api.llama.fi/summary/fees/monad?dataType=dailyRevenue'),
+    safeJson(`https://api.llama.fi/summary/fees/${R().llamaFeesSlug}?dataType=dailyRevenue`),
     safeJson('https://stablecoins.llama.fi/stablecoins?includePrices=true'),
     safeJson('https://api.llama.fi/protocols'),
-    safeJson('https://api.coingecko.com/api/v3/simple/price?ids=monad&vs_currencies=usd&include_market_cap=true&include_24hr_vol=true'),
+    safeJson(`https://api.coingecko.com/api/v3/simple/price?ids=${R().coingeckoId}&vs_currencies=usd&include_market_cap=true&include_24hr_vol=true`),
     // Historical TVL per chain — for the 30-day TVL chart.
     safeJson('https://api.llama.fi/v2/historicalChainTvl/MegaETH'),
-    safeJson('https://api.llama.fi/v2/historicalChainTvl/Monad'),
+    safeJson(`https://api.llama.fi/v2/historicalChainTvl/${R().llamaName}`),
     // Perps snapshot comes from window.__PERPS_SNAPSHOT__ (loaded via <script>
     // in the <head>). Using a script instead of fetch() so it works from file://.
     Promise.resolve(typeof window !== 'undefined' ? window.__PERPS_SNAPSHOT__ || null : null),
@@ -2753,9 +2865,16 @@ async function loadAll() {
   }
 
   // --- TVL ---
+  const chain = R();
+  // For /v2/chains + stablecoins + URL segments we use llamaName ('BSC').
+  // For /protocols matching + chainTvls lookups we use llamaChainKey
+  // ('Binance' for BNB; DeFiLlama is inconsistent across endpoints).
+  const rightLlamaLower = chain.llamaName.toLowerCase();
+  const rightChainKeyLower = chain.llamaChainKey.toLowerCase();
+  const rightChainKey = chain.llamaChainKey;
   const findChain = (name) => chains?.find(c => c.name?.toLowerCase() === name.toLowerCase());
   const megaChain = findChain('MegaETH');
-  const monadChain = findChain('Monad');
+  const monadChain = findChain(chain.llamaName);
   const megaTVL = megaChain?.tvl ?? null;
   const monadTVL = monadChain?.tvl ?? null;
 
@@ -2764,9 +2883,9 @@ async function loadAll() {
   if (Array.isArray(protocols)) {
     for (const p of protocols) {
       const onMega = p.chains?.some(c => c.toLowerCase() === 'megaeth');
-      const onMonad = p.chains?.some(c => c.toLowerCase() === 'monad');
+      const onRight = p.chains?.some(c => c.toLowerCase() === rightChainKeyLower);
       if (onMega) megaProtos.push(p);
-      if (onMonad) monadProtos.push(p);
+      if (onRight) monadProtos.push(p);
     }
   }
   const megaProtoCount = megaProtos.length;
@@ -2784,7 +2903,7 @@ async function loadAll() {
     return s;
   };
   const megaTVLNative = sumChainTvl(megaProtos.filter(p => isNative('mega', p.name)), 'MegaETH');
-  const monadTVLNative = sumChainTvl(monadProtos.filter(p => isNative('monad', p.name)), 'Monad');
+  const monadTVLNative = sumChainTvl(monadProtos.filter(p => isNative('monad', p.name)), rightChainKey);
 
   // --- Stablecoins ---
   let megaStable = 0, monadStable = 0;
@@ -2792,26 +2911,28 @@ async function loadAll() {
   if (stables?.peggedAssets) {
     for (const a of stables.peggedAssets) {
       const cc = a.chainCirculating || {};
-      // names on DeFiLlama can be "MegaETH" / "Monad" or with odd casing
-      const mk = Object.keys(cc).find(k => k.toLowerCase() === 'megaeth');
-      const mnk = Object.keys(cc).find(k => k.toLowerCase() === 'monad');
-      const mv = mk ? cc[mk]?.current?.peggedUSD : 0;
+      const mk  = Object.keys(cc).find(k => k.toLowerCase() === 'megaeth');
+      const mnk = Object.keys(cc).find(k => k.toLowerCase() === rightLlamaLower);
+      const mv  = mk  ? cc[mk]?.current?.peggedUSD  : 0;
       const mnv = mnk ? cc[mnk]?.current?.peggedUSD : 0;
-      if (mv) { megaStable += mv; megaStablesBreak.push({ name: a.symbol || a.name, v: mv }); }
+      if (mv)  { megaStable  += mv;  megaStablesBreak.push({ name: a.symbol || a.name, v: mv }); }
       if (mnv) { monadStable += mnv; monadStablesBreak.push({ name: a.symbol || a.name, v: mnv }); }
     }
   }
 
-  // --- Monad FDV ---
-  // Sticky values — if the CoinGecko call intermittently fails/returns empty,
-  // reuse the last known good value instead of flashing "—".
-  const newPrice = monPrice?.monad?.usd;
-  const newMcap  = monPrice?.monad?.usd_market_cap;
-  if (typeof newPrice === 'number' && newPrice > 0) LAST_GOOD.monPriceUSD = newPrice;
-  if (typeof newMcap  === 'number' && newMcap  > 0) LAST_GOOD.monadMarketCap = newMcap;
-  const monPriceUSD = LAST_GOOD.monPriceUSD;
-  const monadFDV = monPriceUSD ? monPriceUSD * MONAD_SUPPLY : null;
-  if (monadFDV) LAST_GOOD.monadFDV = monadFDV;
+  // --- Right-chain FDV ---
+  // Sticky values per-chain so switching Monad↔BNB↔Solana doesn't leak stale
+  // data. LAST_GOOD is indexed by chain key so each chain has its own cache.
+  const newPrice = monPrice?.[chain.coingeckoId]?.usd;
+  const newMcap  = monPrice?.[chain.coingeckoId]?.usd_market_cap;
+  const priceKey = `monPriceUSD_${chain.key}`;
+  const mcapKey  = `monadMarketCap_${chain.key}`;
+  const fdvKey   = `monadFDV_${chain.key}`;
+  if (typeof newPrice === 'number' && newPrice > 0) LAST_GOOD[priceKey] = newPrice;
+  if (typeof newMcap  === 'number' && newMcap  > 0) LAST_GOOD[mcapKey]  = newMcap;
+  const monPriceUSD = LAST_GOOD[priceKey] ?? LAST_GOOD.monPriceUSD ?? null;
+  const monadFDV = monPriceUSD ? monPriceUSD * chain.supply : null;
+  if (monadFDV) LAST_GOOD[fdvKey] = monadFDV;
 
   // --- Granular chain-level fees + revenue (4 time buckets each) ---
   const pick = (obj) => obj ? {
@@ -2844,8 +2965,8 @@ async function loadAll() {
 
   const megaChainFeesData  = chainFeesMega  || findChainEntry(feesMega,  'MegaETH');
   const megaChainRevData   = chainRevMega   || findChainEntry(revMega,   'MegaETH');
-  const monadChainFeesData = chainFeesMonad || findChainEntry(feesMonad, 'Monad');
-  const monadChainRevData  = chainRevMonad  || findChainEntry(revMonad,  'Monad');
+  const monadChainFeesData = chainFeesMonad || findChainEntry(feesMonad, chain.llamaName);
+  const monadChainRevData  = chainRevMonad  || findChainEntry(revMonad,  chain.llamaName);
 
   // Build perps overview objects from the scraped snapshot so renderActivity /
   // renderProtocols keep the same shape they'd get from DefiLlama's overview API.
@@ -2877,7 +2998,7 @@ async function loadAll() {
     };
   };
   perpsMega  = perpsMega  || snapshotForChain('MegaETH');
-  perpsMonad = perpsMonad || snapshotForChain('Monad');
+  perpsMonad = perpsMonad || snapshotForChain(chain.llamaName);
 
   // --- Risk-free rate (US T-Bill aggregate) ---
   const tbillPct = parseFloat(tbillData?.data?.[0]?.avg_interest_rate_amt);
@@ -3036,6 +3157,7 @@ function renderSummary(d) {
   const monadFdvFmt = d.monadFDV ? fmtUSD(d.monadFDV) : '—';
   const monPriceFmt = d.monPriceUSD ? `$${d.monPriceUSD.toFixed(4)}` : '—';
   const megaPriceFmt = MEGA_FDV_CONFIRMED ? `$${MEGA_PRICE.toFixed(4)}` : '—';
+  const c = R();
   document.getElementById('summary').innerHTML = `
     <div class="summary-card">
       <div class="label">MegaETH FDV</div>
@@ -3043,19 +3165,19 @@ function renderSummary(d) {
       <div class="sub">${megaPriceFmt} · Hyperliquid pre-market</div>
     </div>
     <div class="summary-card">
-      <div class="label">Monad FDV</div>
+      <div class="label">${c.displayName} FDV</div>
       <div class="value">${monadFdvFmt}</div>
-      <div class="sub">${monPriceFmt} · CoinGecko spot</div>
+      <div class="sub">${monPriceFmt} · ${c.priceLabel}</div>
     </div>
     <div class="summary-card">
       <div class="label">FDV Multiple</div>
       <div class="value">${fdvRatio}</div>
-      <div class="sub">Monad premium over MegaETH</div>
+      <div class="sub">${c.displayName} premium over MegaETH</div>
     </div>
     <div class="summary-card">
       <div class="label">TVL Ratio</div>
       <div class="value">${tvlRatio}</div>
-      <div class="sub">MegaETH vs Monad TVL</div>
+      <div class="sub">MegaETH vs ${c.displayName} TVL</div>
     </div>
     <div class="summary-card">
       <div class="label">Fee Ratio</div>
@@ -3092,7 +3214,7 @@ function renderActivity(d) {
       values: [pm.total24h ?? null, pm.total7d ?? null, pm.total30d ?? null],
     },
     {
-      name: 'Monad',
+      name: R().displayName,
       color: '#6B5AE8',
       values: [pn.total24h ?? null, pn.total7d ?? null, pn.total30d ?? null],
     },
@@ -3190,7 +3312,7 @@ function renderStables(d) {
     <div style="margin-top: 16px;">
       <div style="color: #666; font-size: 11px; letter-spacing: 0.8px; text-transform: uppercase; margin-bottom: 8px;">MegaETH stables</div>
       <div class="stable-list">${topN(d.megaStablesBreak) || '<span class="stable-chip">None</span>'}</div>
-      <div style="color: #666; font-size: 11px; letter-spacing: 0.8px; text-transform: uppercase; margin: 14px 0 8px;">Monad stables</div>
+      <div style="color: #666; font-size: 11px; letter-spacing: 0.8px; text-transform: uppercase; margin: 14px 0 8px;">${R().displayName} stables</div>
       <div class="stable-list">${topN(d.monadStablesBreak) || '<span class="stable-chip">None</span>'}</div>
     </div>`;
 }
@@ -3258,7 +3380,7 @@ function renderProtocols(d) {
   };
 
   const pickList = (chain) => {
-    const chainKey = chain === 'mega' ? 'MegaETH' : 'Monad';
+    const chainKey = chain === 'mega' ? 'MegaETH' : R().llamaChainKey;
     const overviewPick = (pool) => {
       let arr = (pool?.protocols || [])
         .filter(p => !isChainEntry(p.name, chain))
@@ -3441,7 +3563,7 @@ function renderFdvRatio(d) {
   renderSingleLineChart('chart-fdv-ratio', clipped, {
     title: titleLabel,
     color: '#6B5AE8',
-    legendLabel: 'Monad FDV ÷ MegaETH FDV',
+    legendLabel: `${R().displayName} FDV ÷ MegaETH FDV`,
     height: 280,
     milestones: allMilestones,
   });
@@ -3538,8 +3660,53 @@ function updateTimestamp() {
   document.getElementById('updated-text').textContent = `Last updated: ${txt}`;
 }
 
+// Apply chain-specific chrome (hero logo, FDV subtitle, protocol heading,
+// right-column col-label) for the currently-selected chain. Called on init
+// and on every chain-switcher click.
+function applyChainChrome() {
+  const c = R();
+  const logo = document.getElementById('hero-logo-right');
+  if (logo) {
+    logo.src = c.hero;
+    logo.alt = c.displayName;
+  }
+  const sub = document.getElementById('fdv-subtitle');
+  if (sub) sub.textContent =
+    `${c.displayName} FDV ÷ MegaETH FDV over time — higher means ${c.displayName} trades at a larger premium`;
+  const h = document.getElementById('proto-monad-heading');
+  if (h) h.textContent = c.displayName;
+  document.querySelectorAll('.chain-btn').forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.chain === STATE.compareChain);
+  });
+}
+
+function wireChainSwitcher() {
+  document.querySelectorAll('.chain-btn').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      if (btn.dataset.chain === STATE.compareChain) return;
+      STATE.compareChain = btn.dataset.chain;
+      try { localStorage.setItem('mega-vs-monad:compare-chain', STATE.compareChain); } catch {}
+      applyChainChrome();
+      renderPerformance();
+      // Paint from per-chain cache immediately if we have one, then refetch.
+      const cached = getCachedResult();
+      if (cached) {
+        LAST_DATA = cached.d;
+        try { renderAll(cached.d); } catch (e) { console.warn(e); }
+      } else {
+        LAST_DATA = null;
+        const sum = document.getElementById('summary');
+        if (sum) sum.innerHTML = '';
+      }
+      await refresh();
+    });
+  });
+}
+
+applyChainChrome();
 renderPerformance();
 wireScopeToggles();
+wireChainSwitcher();
 // Sync the FDV range toggle's active button with the STATE default (mobile=30d, desktop=90d).
 document.querySelectorAll('[data-card="fdv-range"] .scope-btn').forEach(btn => {
   btn.classList.toggle('active', btn.dataset.range === STATE.fdvRange);

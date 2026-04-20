@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 520 80" width="520" height="80">
+  <g fill="#000">
+    <!-- BNB diamond mark -->
+    <g transform="translate(0,10)">
+      <path d="M30 0 L15 15 L20 20 L30 10 L40 20 L45 15 Z"/>
+      <path d="M30 60 L15 45 L20 40 L30 50 L40 40 L45 45 Z"/>
+      <path d="M5 25 L15 15 L20 20 L10 30 L20 40 L15 45 Z"/>
+      <path d="M55 25 L45 15 L40 20 L50 30 L40 40 L45 45 Z"/>
+      <rect x="24" y="24" width="12" height="12" transform="rotate(45 30 30)"/>
+    </g>
+    <text x="75" y="58" font-family="Helvetica Neue, Helvetica, Arial, sans-serif" font-weight="900" font-size="52" letter-spacing="-0.01em">BNB CHAIN</text>
+  </g>
+</svg>
