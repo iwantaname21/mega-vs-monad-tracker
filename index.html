@@ -764,6 +764,21 @@
   .proto-cols.combined { grid-template-columns: 1fr; }
   .proto-cols.combined .proto-col:first-child { display: none; }
   .proto-cols.combined .proto-col h3 { display: none; }
+  /* Combined-view rows get a 3-column grid: name (flex) · value · chain tag.
+     The chain tag moves out of the name span and into its own right-aligned
+     column so it reads as a 'winner pill' column matching the comparison
+     tables above. */
+  .proto-cols.combined .proto-list li {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto auto;
+    gap: 16px;
+    align-items: center;
+  }
+  .proto-cols.combined .proto-list li .ptag {
+    min-width: 64px;
+    display: inline-flex;
+    justify-content: flex-end;
+  }
   .proto-row.mega  { border-left: 2px solid var(--mega); padding-left: 10px !important; background: var(--mega-tint) !important; }
   .proto-row.monad { border-left: 2px solid var(--right-dark); padding-left: 10px !important; background: var(--right-tint) !important; }
   .chain-tag {
@@ -3882,12 +3897,16 @@ function renderProtocols(d) {
     if (cols) cols.classList.add('combined');
     const items = merged.slice(0, 30);
     const html = !items.length
-      ? '<li><span class="pname">No data</span><span class="pval">—</span></li>'
-      : items.map((p, i) => `
+      ? '<li><span class="pname">No data</span><span class="pval">—</span><span class="ptag"></span></li>'
+      : items.map((p, i) => {
+          const tagLabel = p.chain === 'mega' ? 'MEGA' : R().shortName;
+          return `
         <li class="proto-row ${p.chain}">
-          <span class="pname"><span class="prank">${i + 1}</span>${renderLogo(p)}${p.name}<span class="chain-tag ${p.chain}">${p.chain === 'mega' ? 'MEGA' : R().shortName}</span></span>
+          <span class="pname"><span class="prank">${i + 1}</span>${renderLogo(p)}${p.name}</span>
           <span class="pval">${fmtUSD(p.val)}</span>
-        </li>`).join('');
+          <span class="ptag"><span class="chain-tag ${p.chain}">${tagLabel}</span></span>
+        </li>`;
+        }).join('');
     document.getElementById('proto-mega').innerHTML  = '';
     document.getElementById('proto-monad').innerHTML = html;
   } else {
