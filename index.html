@@ -4171,13 +4171,17 @@ function applyChainChrome() {
     let alignSelf = '';
     if (c.key === 'monad') {
       transform = 'translateY(3px)';
+    } else if (c.key === 'bnb') {
+      transform = 'translateY(2px)';
     } else if (c.key === 'solana') {
       transform = 'translateY(5px) scale(0.8)';
     } else if (c.key === 'arbitrum') {
-      transform = 'translateY(2px)';
+      // Cumulative: 2px from the previous adjust + 2px more = 4px total.
+      transform = 'translateY(4px)';
     } else if (c.key === 'base') {
       // 0.75 × 1.3 ≈ 0.975 — 30% larger than the original shrunk size.
-      transform = 'scale(0.975)';
+      // translateY nudges 2px down from its centered position.
+      transform = 'translateY(2px) scale(0.975)';
       alignSelf = 'center';
     }
     logo.style.transform = transform;
