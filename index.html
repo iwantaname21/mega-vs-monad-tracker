@@ -1637,7 +1637,10 @@ function persistLastGood() {
 // Per-chain cache key so switching Monad↔BNB↔Solana never bleeds one chain's
 // data into another's render. cacheKeyFor(chainKey) lets callers pin the key
 // they care about; RESULT_CACHE_KEY() is the "current chain" shortcut.
-const cacheKeyFor = (chainKey) => `mega-vs-monad:last-result:${chainKey}:v4`;
+// Bumped to v5 on the CEX-exclusion change — v4 caches still have Binance /
+// Gate / Bybit etc baked into chain TVL; invalidating them forces a refetch
+// so returning users see the DeFi-only numbers immediately on next load.
+const cacheKeyFor = (chainKey) => `mega-vs-monad:last-result:${chainKey}:v5`;
 const RESULT_CACHE_KEY = () => cacheKeyFor((window.STATE && window.STATE.compareChain) || 'monad');
 const RESULT_CACHE_MAX_AGE_MS = 24 * 60 * 60 * 1000; // discard after 24h
 
