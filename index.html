@@ -2981,6 +2981,30 @@ async function safeJsonMemo(url, ttlMs = 5 * 60_000) {
   return data;
 }
 
+// Heavy payloads (/protocols: 7.7MB, /stablecoins: ~5MB) that we DEFER so
+// first paint doesn't wait for them. Before they arrive, loadAll returns
+// null for these fields and cards that depend on them render a skeleton
+// state. Once they land, refresh() re-runs loadAll so Top Protocols +
+// Stablecoin Supply get populated.
+const HEAVY_URLS = {
+  protocols: 'https://api.llama.fi/protocols',
+  stables:   'https://stablecoins.llama.fi/stablecoins?includePrices=true',
+};
+const _heavyCache = { protocols: null, stables: null };
+let _heavyPromise = null;
+function ensureHeavyLoaded() {
+  if (_heavyPromise) return _heavyPromise;
+  _heavyPromise = Promise.all([
+    safeJsonMemo(HEAVY_URLS.protocols, 5 * 60_000),
+    safeJsonMemo(HEAVY_URLS.stables,   5 * 60_000),
+  ]).then(([protocols, stables]) => {
+    if (protocols) _heavyCache.protocols = protocols;
+    if (stables)   _heavyCache.stables   = stables;
+    return _heavyCache;
+  });
+  return _heavyPromise;
+}
+
 async function loadAll() {
   // Keep the per-protocol breakdown excluded (huge payload) but DO include the
   // totalDataChart — that's the historical series we graph.
@@ -3032,12 +3056,12 @@ async function loadAll() {
       return null;
     })(),
     safeJson(`https://api.llama.fi/summary/fees/${R().llamaFeesSlug}?dataType=dailyRevenue`),
-    // Stablecoins list ~5MB, updates slowly. Memoize 5 min.
-    safeJsonMemo('https://stablecoins.llama.fi/stablecoins?includePrices=true', 5 * 60_000),
-    // /protocols is the biggest payload by far (~7.7MB). Memoize in-memory
-    // for 5 min — it only changes when new protocols are added to Llama,
-    // which doesn't need minute-by-minute freshness.
-    safeJsonMemo('https://api.llama.fi/protocols', 5 * 60_000),
+    // Heavy payloads are pulled from the deferred _heavyCache, not re-fetched
+    // here. First-visit render skips them (null); refresh() triggers
+    // ensureHeavyLoaded() in the background and re-calls loadAll when they
+    // land, so Top Protocols + Stablecoin Supply populate in the second pass.
+    Promise.resolve(_heavyCache.stables),
+    Promise.resolve(_heavyCache.protocols),
     // Edge proxy first (shared-cached server-side, bypasses CoinGecko's
     // per-IP rate limit for fresh browsers), direct fallback.
     (async () => {
@@ -3310,6 +3334,10 @@ async function loadAll() {
     chainRevMonad:  normDimChart(chainRevMonad?.totalDataChart),
   };
 
+  // heavyPending: true during the first paint when /protocols + /stablecoins
+  // haven't arrived yet. Renderers for Top Protocols, Stablecoin Supply,
+  // Protocol Count use this to show a 'loading' state instead of zeros.
+  const heavyPending = !Array.isArray(protocols) || !stables;
   return {
     megaTVL, monadTVL,
     megaTVLNative, monadTVLNative,
@@ -3327,6 +3355,7 @@ async function loadAll() {
     perpsSnapshot,
     fdvRatioHistory,
     charts,
+    heavyPending,
     ...gran,
   };
 }
@@ -3430,7 +3459,12 @@ function renderActivity(d) {
     renderRow('Perps Volume 24h', pm.total24h, pn.total24h, fmtUSD(pm.total24h), fmtUSD(pn.total24h)),
     renderRow('Perps Volume 7d',  pm.total7d,  pn.total7d,  fmtUSD(pm.total7d),  fmtUSD(pn.total7d)),
     renderRow('Perps Volume 30d', pm.total30d, pn.total30d, fmtUSD(pm.total30d), fmtUSD(pn.total30d)),
-    renderRow('Protocol Count', d.megaProtoCount, d.monadProtoCount, fmtNum(d.megaProtoCount), fmtNum(d.monadProtoCount)),
+    // When /protocols hasn't finished loading yet, fmtNum(0) would show '0' —
+    // render a dash placeholder instead so users don't misread it as the
+    // chain having no protocols.
+    d.heavyPending
+      ? renderRow('Protocol Count', null, null, '…', '…')
+      : renderRow('Protocol Count', d.megaProtoCount, d.monadProtoCount, fmtNum(d.megaProtoCount), fmtNum(d.monadProtoCount)),
   ].join('');
   renderTable('activity-table', rows);
 
@@ -3533,9 +3567,20 @@ function renderStables(d) {
   const mr = d.megaTVL ? d.megaStable / d.megaTVL : null;
   const nr = d.monadTVL ? d.monadStable / d.monadTVL : null;
   const fmtR = (v) => v == null ? '—' : `${(v * 100).toFixed(1)}%`;
+  // /stablecoins hasn't arrived yet — show a loading placeholder so users
+  // don't see $0 (which would look like 'this chain has no stables').
+  const loading = d.heavyPending;
+  const stableCell = (v) => loading ? '…' : fmtUSD(v);
   const rows = [
-    renderRow('Total Stablecoin Supply', d.megaStable, d.monadStable, fmtUSD(d.megaStable), fmtUSD(d.monadStable)),
-    renderRow('Stablecoin / DeFi TVL Ratio', mr, nr, fmtR(mr), fmtR(nr), true),
+    renderRow('Total Stablecoin Supply',
+      loading ? null : d.megaStable,
+      loading ? null : d.monadStable,
+      stableCell(d.megaStable), stableCell(d.monadStable)),
+    renderRow('Stablecoin / DeFi TVL Ratio',
+      loading ? null : mr,
+      loading ? null : nr,
+      loading ? '…' : fmtR(mr),
+      loading ? '…' : fmtR(nr), true),
   ].join('');
   renderTable('stable-table', rows);
 
@@ -3570,6 +3615,18 @@ function renderProtocols(d) {
   const focus  = STATE.protoMetric;    // 'tvl' | 'fees' | 'volspot' | 'volperps'
   const scope  = STATE.protoScope;     // 'all' | 'native'
   const window = STATE.protoWindow;    // '24h' | '7d' | '30d' (ignored for 'tvl')
+
+  // /protocols hasn't finished downloading — show a loading placeholder in
+  // both columns rather than empty lists. The second-phase refresh will
+  // re-call renderAll with the populated data.
+  if (d.heavyPending) {
+    const load = `<li class="loading-row" style="padding:14px 12px;color:var(--fg-dim);font-family:var(--font-mono);font-size:11px;letter-spacing:0.12em;text-transform:uppercase">Loading top protocols…</li>`;
+    const mega  = document.getElementById('proto-mega');
+    const monad = document.getElementById('proto-monad');
+    if (mega  && !mega.querySelector('li:not(.loading-row)'))  mega.innerHTML  = load;
+    if (monad && !monad.querySelector('li:not(.loading-row)')) monad.innerHTML = load;
+    return;
+  }
 
   // Field lookup for a given time window on an overview protocol entry.
   const totalField = window === '7d' ? 'total7d' : window === '30d' ? 'total30d' : 'total24h';
@@ -3894,23 +3951,47 @@ function renderEcosystem(d) {
 }
 
 async function refresh() {
-  // Capture the chain this refresh was started for. If the user switches
-  // chains while loadAll() is in flight (typical since loadAll can take
-  // several seconds), we discard the now-stale result instead of letting
-  // Solana/BNB data overwrite the current chain's LAST_DATA + cache.
+  // Chain-lock: capture the chain this refresh was started for. If the
+  // user switches mid-fetch, we drop the stale result so Solana/BNB data
+  // can't overwrite the currently-selected chain.
   const startedFor = STATE.compareChain;
   document.querySelectorAll('.card, .summary').forEach(el => el.classList.add('loading'));
+
+  // Kick off the heavy fetches IN PARALLEL with the fast path. ensureHeavy
+  // populates _heavyCache + resolves a promise we await at the end of this
+  // refresh for a second-pass render.
+  const heavyLoading = _heavyCache.protocols == null || _heavyCache.stables == null;
+  const heavyPromise = ensureHeavyLoaded();
+
   try {
-    const raw = await loadAll();
-    if (STATE.compareChain !== startedFor) {
-      // User moved on — leave LAST_DATA + render + cache alone.
-      return;
-    }
-    LAST_DATA = raw;
-    renderAll(raw);
-    persistResult(raw, startedFor);
+    // Phase 1: fast fetches only. /protocols + /stablecoins are pulled from
+    // the deferred cache (null on first visit), so this round-trip is
+    // bounded by the smaller DefiLlama / Hyperliquid / CoinGecko-edge calls —
+    // usually 1-3s on a fresh visit vs 40+s when /protocols was in the
+    // blocking path.
+    const partial = await loadAll();
+    if (STATE.compareChain !== startedFor) return;
+    LAST_DATA = partial;
+    renderAll(partial);
+    persistResult(partial, startedFor);
     lastLoad = new Date();
     document.getElementById('error-box').innerHTML = '';
+    document.querySelectorAll('.card, .summary').forEach(el => el.classList.remove('loading'));
+    updateTimestamp();
+
+    // Phase 2: if the heavy payloads weren't ready for phase 1, wait for
+    // them and do one more loadAll to enrich the already-rendered cards
+    // (Top Protocols, Stablecoin Supply, Protocol Count).
+    if (heavyLoading) {
+      await heavyPromise;
+      if (STATE.compareChain !== startedFor) return;
+      const full = await loadAll();
+      if (STATE.compareChain !== startedFor) return;
+      LAST_DATA = full;
+      renderAll(full);
+      persistResult(full, startedFor);
+    }
+    return;
   } catch (e) {
     console.error(e);
     if (STATE.compareChain === startedFor) {
