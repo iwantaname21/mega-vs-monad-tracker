@@ -142,7 +142,10 @@
     width: 100%;
     display: flex;
     justify-content: flex-start;
-    align-items: center;
+    /* Bottom-align so MEGA + VS + right logo all share the hero row's
+       bottom border as their baseline, regardless of intrinsic asset
+       whitespace. */
+    align-items: flex-end;
     gap: clamp(20px, 3vw, 48px);
     flex-wrap: wrap;
     min-width: 0;
@@ -2685,7 +2688,17 @@ function renderGroupedBarChart(containerId, series, opts = {}) {
       const bx = gx + barGap + k * (barW + barGap);
       const by = y(v);
       const bh = pad.top + plotH - by;
-      barsSvg.push(`<rect x="${bx.toFixed(1)}" y="${by.toFixed(1)}" width="${barW.toFixed(1)}" height="${bh.toFixed(1)}" rx="3" fill="${series[k].color}" fill-opacity="0.85" />`);
+      // Match the line/area charts: sharp (rx=0) edges, semi-transparent
+      // fill body, solid-color stroke border. Mirrors how TVL/DEX/Fees
+      // charts render their chain-colored areas.
+      const color = series[k].color;
+      barsSvg.push(
+        `<rect x="${bx.toFixed(1)}" y="${by.toFixed(1)}" ` +
+        `width="${barW.toFixed(1)}" height="${bh.toFixed(1)}" ` +
+        `rx="0" ry="0" ` +
+        `fill="${color}" fill-opacity="0.22" ` +
+        `stroke="${color}" stroke-width="1.4" />`
+      );
     }
   }
 
