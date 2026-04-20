@@ -980,6 +980,26 @@
     .topbar { flex-wrap: wrap; gap: 12px; }
     .hero { gap: 14px; padding: 18px 0 22px; }
     .hero { --hero-h: clamp(38px, 9vw, 56px); }
+    /* Chain switcher on mobile: 4 buttons in a 2x2 grid that fills the full
+       row instead of free-wrapping with whitespace on the right. */
+    .chain-switcher {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      width: 100%;
+      border: 1px solid var(--border);
+    }
+    .chain-btn {
+      border-right: 1px solid var(--border);
+      border-bottom: 1px solid var(--border);
+      padding: 12px 10px;
+      text-align: center;
+      justify-content: center;
+    }
+    .chain-btn:nth-child(2n) { border-right: none; }
+    .chain-btn:nth-last-child(-n+2) { border-bottom: none; }
+    /* If there are an odd number (e.g. 3 chains), the last row's single btn
+       spans full width to avoid dead space. */
+    .chain-btn:last-child:nth-child(odd) { grid-column: 1 / -1; border-right: none; }
     .hero-logo {
       height: var(--hero-h);
       width: auto;
@@ -2920,6 +2940,19 @@ async function safeJson(url) {
   }
 }
 
+// In-memory TTL cache for endpoints that are expensive to re-fetch every
+// refresh cycle but don't change second-to-second. /protocols is 7.7MB;
+// refetching it every 60s was the dominant load-time cost. Cache it in
+// memory for 5 min so the auto-refresh only pays the cost once per window.
+const _memCache = new Map();
+async function safeJsonMemo(url, ttlMs = 5 * 60_000) {
+  const cached = _memCache.get(url);
+  if (cached && Date.now() - cached.ts < ttlMs) return cached.data;
+  const data = await safeJson(url);
+  if (data != null) _memCache.set(url, { data, ts: Date.now() });
+  return data;
+}
+
 async function loadAll() {
   // Keep the per-protocol breakdown excluded (huge payload) but DO include the
   // totalDataChart — that's the historical series we graph.
@@ -2971,8 +3004,12 @@ async function loadAll() {
       return null;
     })(),
     safeJson(`https://api.llama.fi/summary/fees/${R().llamaFeesSlug}?dataType=dailyRevenue`),
-    safeJson('https://stablecoins.llama.fi/stablecoins?includePrices=true'),
-    safeJson('https://api.llama.fi/protocols'),
+    // Stablecoins list ~5MB, updates slowly. Memoize 5 min.
+    safeJsonMemo('https://stablecoins.llama.fi/stablecoins?includePrices=true', 5 * 60_000),
+    // /protocols is the biggest payload by far (~7.7MB). Memoize in-memory
+    // for 5 min — it only changes when new protocols are added to Llama,
+    // which doesn't need minute-by-minute freshness.
+    safeJsonMemo('https://api.llama.fi/protocols', 5 * 60_000),
     safeJson(`https://api.coingecko.com/api/v3/simple/price?ids=${R().coingeckoId}&vs_currencies=usd&include_market_cap=true&include_24hr_vol=true`),
     // Historical TVL per chain — for the 30-day TVL chart.
     safeJson('https://api.llama.fi/v2/historicalChainTvl/MegaETH'),
@@ -3045,12 +3082,17 @@ async function loadAll() {
     }
     return s;
   };
-  // DeFi-only chain TVL: sum per-chain TVL of every protocol on the chain
-  // that's NOT a CEX wallet. Fall back to raw /v2/chains TVL if we have
-  // no protocols list (e.g. /protocols fetch failed).
-  const megaTVL  = megaProtosNoCex.length ? sumChainTvl(megaProtosNoCex, 'MegaETH')    : (megaChain?.tvl ?? null);
-  const monadTVL = monadProtosNoCex.length ? sumChainTvl(monadProtosNoCex, rightChainKey) : (monadChain?.tvl ?? null);
+  // DeFi TVL from /v2/chains directly — this IS DefiLlama's default DeFi-only
+  // aggregate (matches what's shown on defillama.com/chain/{name}). Summing
+  // chainTvls ourselves double-counts liquid-staking derivatives, lending-
+  // collateral re-staked into LSTs, etc — an earlier attempt at DIY CEX
+  // filtering was inflating Solana from $5.6B to $14B because of this.
+  const megaTVL  = megaChain?.tvl ?? null;
+  const monadTVL = monadChain?.tvl ?? null;
 
+  // Native-app TVL (for the "Native" scope toggle) still comes from per-
+  // protocol chainTvls since there's no 'native-only' chain endpoint. CEX-
+  // filtered to keep the Binance-style wallets out of the native sum.
   const megaTVLNative = sumChainTvl(megaProtosNoCex.filter(p => isNative('mega', p.name)), 'MegaETH');
   const monadTVLNative = sumChainTvl(monadProtosNoCex.filter(p => isNative('monad', p.name)), rightChainKey);
 
@@ -3215,22 +3257,11 @@ async function loadAll() {
   // paint a fake cliff down to 0 and back (see BNB chain-fees gaps 4/4–4/8).
   const normDimChart = (chart) => normOverviewChart(chart).filter(p => p[1] > 0);
 
-  // DeFi-only historical TVL: /v2/historicalChainTvl/{chain} is the raw
-  // chain aggregate (includes CEX wallets like Binance). DefiLlama's site
-  // has a 'DeFi TVL' toggle that strips those. We approximate that view by
-  // scaling the historical series by today's DeFi-fraction — i.e. if the
-  // current CEX-excluded TVL is 40% of the raw chain TVL, every historical
-  // point is also scaled to 40%. Assumes CEX ratio is stable over the
-  // 30-day window, which it mostly is.
-  const tvlScale = (rawHist, rawToday, defiToday) => {
-    const series = normHistChain(rawHist);
-    if (!rawToday || !defiToday || !isFinite(defiToday / rawToday)) return series;
-    const f = defiToday / rawToday;
-    return series.map(([t, v]) => [t, v * f]);
-  };
+  // /v2/historicalChainTvl/{chain} is already DefiLlama's DeFi TVL series,
+  // same basis as the headline /v2/chains value, so no scaling needed.
   const charts = {
-    tvlMega:  tvlScale(histTvlMega,  megaChain?.tvl,  megaTVL),
-    tvlMonad: tvlScale(histTvlMonad, monadChain?.tvl, monadTVL),
+    tvlMega:  normHistChain(histTvlMega),
+    tvlMonad: normHistChain(histTvlMonad),
     dexMega:  normDimChart(dexMega?.totalDataChart),
     dexMonad: normDimChart(dexMonad?.totalDataChart),
     // Perps now rendered as stacked-area per-chain — see renderActivity.
