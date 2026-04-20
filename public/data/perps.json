@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-04-20T02:33:51.328Z",
+  "updatedAt": "2026-04-20T06:13:53.084Z",
   "source": "https://defillama.com",
   "protocols": [
     {
@@ -9107,9 +9107,9 @@
       "aliases": [
         "Jupiter"
       ],
-      "volume24h": 202020000,
-      "volume7d": 1773000000,
-      "volume30d": 6900000000,
+      "volume24h": 208930000,
+      "volume7d": 1778000000,
+      "volume30d": 6905000000,
       "volumeAllTime": 474333000000,
       "chainFiltered": true,
       "dailyChart": [
@@ -19948,6 +19948,10 @@
         [
           1776556800000,
           0
+        ],
+        [
+          1776643200000,
+          0
         ]
       ]
     }
@@ -19958,16 +19962,16 @@
       "raw": "$17.32m"
     },
     "Monad": {
-      "perpsVolume24h": 11940000,
-      "raw": "$11.94m"
+      "perpsVolume24h": 13590000,
+      "raw": "$13.59m"
     },
     "BSC": {
       "perpsVolume24h": 254360000,
       "raw": "$254.36m"
     },
     "Solana": {
-      "perpsVolume24h": 436800000,
-      "raw": "$436.8m"
+      "perpsVolume24h": 502130000,
+      "raw": "$502.13m"
     }
   },
   "history": {
@@ -20020,7 +20024,7 @@
       },
       {
         "date": "2026-04-20",
-        "value": 11940000
+        "value": 13590000
       }
     ],
     "BSC": [
@@ -20064,7 +20068,7 @@
       },
       {
         "date": "2026-04-20",
-        "value": 436800000
+        "value": 502130000
       }
     ]
   }
