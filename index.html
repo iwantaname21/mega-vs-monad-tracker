@@ -3884,7 +3884,7 @@ function renderProtocols(d) {
       ? '<li><span class="pname">No data</span><span class="pval">—</span></li>'
       : items.map((p, i) => `
         <li class="proto-row ${p.chain}">
-          <span class="pname"><span class="prank">${i + 1}</span>${renderLogo(p)}${p.name}<span class="chain-tag ${p.chain}">${p.chain === 'mega' ? 'MEGA' : 'MONAD'}</span></span>
+          <span class="pname"><span class="prank">${i + 1}</span>${renderLogo(p)}${p.name}<span class="chain-tag ${p.chain}">${p.chain === 'mega' ? 'MEGA' : R().shortName}</span></span>
           <span class="pval">${fmtUSD(p.val)}</span>
         </li>`).join('');
     document.getElementById('proto-mega').innerHTML  = '';
