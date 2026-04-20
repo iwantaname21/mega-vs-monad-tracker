@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-04-20T17:02:53.737Z",
+  "updatedAt": "2026-04-20T19:03:40.779Z",
   "source": "https://defillama.com",
   "protocols": [
     {
@@ -7,10 +7,10 @@
       "chain": "MegaETH",
       "name": "World Markets",
       "aliases": [],
-      "volume24h": 3550000,
+      "volume24h": 3730000,
       "volume7d": 70810000,
       "volume30d": 76990000,
-      "volumeAllTime": 125760000,
+      "volumeAllTime": 125950000,
       "chainFiltered": true,
       "dailyChart": [
         [
@@ -291,7 +291,7 @@
         ],
         [
           1776643200000,
-          3549361
+          983830
         ]
       ]
     },
@@ -4315,10 +4315,10 @@
       "chain": "Monad",
       "name": "Perpl",
       "aliases": [],
-      "volume24h": 1630000,
+      "volume24h": 1670000,
       "volume7d": 8279999.999999999,
       "volume30d": 24780000,
-      "volumeAllTime": 40910000,
+      "volumeAllTime": 40970000,
       "chainFiltered": true,
       "dailyChart": [
         [
@@ -4587,7 +4587,7 @@
         ],
         [
           1776643200000,
-          1631708
+          1695848
         ]
       ]
     },
@@ -4596,10 +4596,10 @@
       "chain": "Monad",
       "name": "LeverUp",
       "aliases": [],
-      "volume24h": 14460000,
+      "volume24h": 15410000,
       "volume7d": 76230000,
       "volume30d": 344290000,
-      "volumeAllTime": 2298000000,
+      "volumeAllTime": 2295000000,
       "chainFiltered": true,
       "dailyChart": [
         [
@@ -5192,7 +5192,7 @@
         ],
         [
           1776643200000,
-          14925073
+          11358070
         ]
       ]
     },
@@ -9119,7 +9119,7 @@
       "aliases": [
         "Jupiter"
       ],
-      "volume24h": 212130000,
+      "volume24h": 221150000,
       "volume7d": 1778000000,
       "volume30d": 6905000000,
       "volumeAllTime": 474344000000,
@@ -19970,20 +19970,20 @@
   ],
   "chains": {
     "MegaETH": {
-      "perpsVolume24h": 3620000,
-      "raw": "$3.62m"
+      "perpsVolume24h": 3800000,
+      "raw": "$3.8m"
     },
     "Monad": {
-      "perpsVolume24h": 16790000,
-      "raw": "$16.79m"
+      "perpsVolume24h": 17780000,
+      "raw": "$17.78m"
     },
     "BSC": {
-      "perpsVolume24h": 262269999.99999997,
-      "raw": "$262.27m"
+      "perpsVolume24h": 261709999.99999997,
+      "raw": "$261.71m"
     },
     "Solana": {
-      "perpsVolume24h": 496760000,
-      "raw": "$496.76m"
+      "perpsVolume24h": 505770000,
+      "raw": "$505.77m"
     }
   },
   "history": {
@@ -20010,7 +20010,7 @@
       },
       {
         "date": "2026-04-20",
-        "value": 3620000
+        "value": 3800000
       }
     ],
     "Monad": [
@@ -20036,7 +20036,7 @@
       },
       {
         "date": "2026-04-20",
-        "value": 16790000
+        "value": 17780000
       }
     ],
     "BSC": [
@@ -20058,7 +20058,7 @@
       },
       {
         "date": "2026-04-20",
-        "value": 262269999.99999997
+        "value": 261709999.99999997
       }
     ],
     "Solana": [
@@ -20080,7 +20080,7 @@
       },
       {
         "date": "2026-04-20",
-        "value": 496760000
+        "value": 505770000
       }
     ]
   }
