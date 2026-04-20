@@ -3669,6 +3669,10 @@ function applyChainChrome() {
   if (logo) {
     logo.src = c.hero;
     logo.alt = c.displayName;
+    // The Solana wordmark is visually wider for its height than the others —
+    // scale it down so it sits at the same optical weight as Monad / BNB.
+    logo.style.transform = c.key === 'solana' ? 'scale(0.8)' : '';
+    logo.style.transformOrigin = 'left center';
   }
   const sub = document.getElementById('fdv-subtitle');
   if (sub) sub.textContent =
@@ -3688,6 +3692,12 @@ function wireChainSwitcher() {
       try { localStorage.setItem('mega-vs-monad:compare-chain', STATE.compareChain); } catch {}
       applyChainChrome();
       renderPerformance();
+      // The FDV Multiple chart derives from a different CoinGecko coin per
+      // chain, so the previous render is meaningless the instant we switch.
+      // Clear it immediately — otherwise there's a ~500ms flash of the old
+      // chain's line while new data loads.
+      const fdvEl = document.getElementById('chart-fdv-ratio');
+      if (fdvEl) fdvEl.innerHTML = '<div class="chart-empty">Loading…</div>';
       // Paint from per-chain cache immediately if we have one, then refetch.
       const cached = getCachedResult();
       if (cached) {
