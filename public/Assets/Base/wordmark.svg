@@ -1,0 +1,16 @@
+<!-- Base brand mark: circle-with-slit motif + "Base" wordmark.
+     All paths in solid black so the brightness(0) invert(1) filter on
+     .hero-logo flips to pure white on the Night Sky background. -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1120 400" width="1120" height="400">
+  <g fill="#000">
+    <!-- Base logomark: circle with a horizontal "slit" removed. Approx of
+         the official mark (a solid disk with a thin horizontal gap). -->
+    <path d="M200 0
+             A200 200 0 1 0 200 400
+             A200 200 0 0 0 200 0 Z
+             M40 192 H360 V208 H40 Z"
+          fill-rule="evenodd"/>
+    <text x="420" y="295" font-family="'Helvetica Neue','Helvetica','Arial Black',sans-serif"
+          font-weight="900" font-size="290" letter-spacing="-0.03em">Base</text>
+  </g>
+</svg>

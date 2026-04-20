@@ -174,15 +174,28 @@
     width: auto;
     max-width: 42%;
     object-fit: contain;
-    object-position: center;
-    flex-shrink: 1;
+    /* Anchor every logo to the bottom of its box so all marks share a
+       common baseline with MEGA. Monad's PNG, BNB's cube+wordmark, and
+       Arbitrum's cube+wordmark all have vertical whitespace inside their
+       source assets — center-aligning made them sit too high relative to
+       MEGA whose wordmark fills its box edge-to-edge. */
+    object-position: left bottom;
+    flex-shrink: 0;
+  }
+  .hero-logo.mega {
+    /* MEGA's width doesn't change with the right-chain selection — pin
+       its width so flex redistribution on chain switch can't jiggle it. */
+    flex: 0 0 auto;
   }
   .hero-logo.mega {
     filter: brightness(0) invert(1);
   }
   .hero-logo.monad {
     filter: brightness(0) invert(1);
-    transform: translateY(5px);
+    /* Per-chain vertical nudges live in applyChainChrome() — the class
+       .monad is shared by every right-chain logo (Monad / BNB / Solana /
+       Arbitrum / Base), so a blanket translateY here pushed every mark
+       down, not just Monad. */
   }
   .hero-vs {
     font-family: var(--font-sans);
@@ -261,6 +274,20 @@
   @keyframes pulse {
     0%, 100% { opacity: 1; }
     50% { opacity: 0.35; }
+  }
+
+  /* No-token placeholder — used for Base (no native token) where an FDV
+     value would otherwise appear. Muted mono text so it reads as
+     'unavailable' rather than a data point. */
+  .no-token {
+    display: inline-block;
+    color: var(--stone-2);
+    font-family: var(--font-mono);
+    font-weight: 500;
+    font-size: 0.8em;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    opacity: 0.7;
   }
 
   /* Skeleton loader — shown for FDV / FDV-multiple until Hyperliquid lands a
@@ -837,7 +864,10 @@
     z-index: 9999;
     opacity: 0;
     transform: translate3d(-9999px, -9999px, 0);
-    transition: opacity 0.18s ease-out, transform 0.12s cubic-bezier(.2,.7,.3,1);
+    /* Fade opacity only — NOT transform. Previously transform was
+       transitioned too, so on first hover the tooltip visibly flew in
+       from (-9999, -9999) to the cursor. Snap-to-position, fade in. */
+    transition: opacity 0.15s ease-out;
     will-change: transform, opacity;
     letter-spacing: 0.02em;
   }
@@ -978,28 +1008,39 @@
   @media (max-width: 860px) {
     .container { padding: 16px 14px 48px; }
     .topbar { flex-wrap: wrap; gap: 12px; }
-    .hero { gap: 14px; padding: 18px 0 22px; }
-    .hero { --hero-h: clamp(38px, 9vw, 56px); }
-    /* Chain switcher on mobile: 4 buttons in a 2x2 grid that fills the full
-       row instead of free-wrapping with whitespace on the right. */
+    /* Mobile hero: keep MEGA logo · VS · right-chain logo on a single row.
+       Was wrapping to 2 lines because flex-wrap was allowed + children
+       didn't shrink aggressively enough. */
+    .hero {
+      gap: clamp(8px, 2vw, 16px);
+      padding: 18px 0 22px;
+      flex-wrap: nowrap;
+      --hero-h: clamp(30px, 7.5vw, 48px);
+    }
+    .hero-logo { flex: 0 1 auto; min-width: 0; }
+    /* Chain switcher on mobile: 5 buttons in a 3-col grid — top row holds
+       Monad / BNB / Solana, bottom row holds Arbitrum + Base (each spanning
+       1.5 cols). Fills the row width cleanly with no dead space. */
     .chain-switcher {
       display: grid;
-      grid-template-columns: 1fr 1fr;
+      grid-template-columns: repeat(6, 1fr);
       width: 100%;
       border: 1px solid var(--border);
     }
     .chain-btn {
       border-right: 1px solid var(--border);
       border-bottom: 1px solid var(--border);
-      padding: 12px 10px;
+      padding: 12px 8px;
       text-align: center;
       justify-content: center;
+      grid-column: span 2;
     }
-    .chain-btn:nth-child(2n) { border-right: none; }
-    .chain-btn:nth-last-child(-n+2) { border-bottom: none; }
-    /* If there are an odd number (e.g. 3 chains), the last row's single btn
-       spans full width to avoid dead space. */
-    .chain-btn:last-child:nth-child(odd) { grid-column: 1 / -1; border-right: none; }
+    /* Top row: Monad (1-2) | BNB (3-4) | Solana (5-6). */
+    /* Bottom row: Arbitrum spans 3 cols, Base spans 3 cols. */
+    .chain-btn:nth-child(4) { grid-column: span 3; }
+    .chain-btn:nth-child(5) { grid-column: span 3; border-right: none; }
+    .chain-btn:nth-child(3) { border-right: none; }
+    .chain-btn:nth-child(4), .chain-btn:nth-child(5) { border-bottom: none; }
     .hero-logo {
       height: var(--hero-h);
       width: auto;
@@ -1090,6 +1131,7 @@
       <button class="chain-btn" data-chain="bnb">&lt; BNB CHAIN &gt;</button>
       <button class="chain-btn" data-chain="solana">&lt; SOLANA &gt;</button>
       <button class="chain-btn" data-chain="arbitrum">&lt; ARBITRUM &gt;</button>
+      <button class="chain-btn" data-chain="base">&lt; BASE &gt;</button>
     </div>
   </div>
 
@@ -1343,6 +1385,35 @@ const CHAIN_CONFIG = {
       'DODO', 'Wombat Exchange', 'Wombat', 'Biswap', 'ApolloX',
     ],
   },
+  base: {
+    key: 'base',
+    displayName: 'Base',
+    shortName: 'BASE',
+    llamaName: 'Base',
+    llamaChainKey: 'Base',
+    llamaFeesSlug: 'base',
+    // Base has no native token — all FDV / price metrics render as
+    // "No Token" via the noToken flag. Keep coingeckoId null so nothing
+    // in loadAll tries to resolve a price.
+    noToken: true,
+    coingeckoId: null,
+    supply: null,
+    priceLabel: 'No Token',
+    hero: 'public/Assets/Base/wordmark.svg',
+    perfStats: [
+      ['Target TPS',    2_000, '2,000'],
+      ['Block Time',    2_000, '2,000 ms', true],
+      ['Throughput',      500, '500 MGas/s'],
+      ['Avg Tx Cost',    0.01, '$0.005–$0.02', true],
+    ],
+    nativeApps: [
+      'Aerodrome', 'Aerodrome SlipStream', 'Aerodrome V1', 'Moonwell',
+      'Morpho Blue', 'Seamless Protocol', 'Seamless', 'BaseSwap', 'Basepaint',
+      'Extra Finance', 'Compound V3', 'Virtuals Protocol', 'Virtuals',
+      'LayerBank', 'Overnight.fi', 'Woofi', 'Friend.tech', 'Kinetic',
+      'Alien Base', 'AlienBase',
+    ],
+  },
   arbitrum: {
     key: 'arbitrum',
     displayName: 'Arbitrum',
@@ -1472,6 +1543,9 @@ async function fetchMegaHyperliquidHistory(days = 90) {
 const FDV_HIST_FRESH_MS = 30 * 60 * 1000;
 async function fetchFdvMultipleHistory(days = 90) {
   const chain = R();
+  // Base has no native token — nothing to compare FDV against. Return empty
+  // so the chart paints its "No Token" watermark instead.
+  if (chain.noToken || !chain.coingeckoId || !chain.supply) return [];
   // v2 — invalidates any bad cached series from earlier versions (the
   // Arbitrum 0.20x last-day cliff, kMEGA scaling artifacts, etc).
   const cacheKey = `mega-vs-monad:fdv-ratio:${chain.key}:v2`;
@@ -3063,9 +3137,11 @@ async function loadAll() {
     Promise.resolve(_heavyCache.stables),
     Promise.resolve(_heavyCache.protocols),
     // Edge proxy first (shared-cached server-side, bypasses CoinGecko's
-    // per-IP rate limit for fresh browsers), direct fallback.
+    // per-IP rate limit for fresh browsers), direct fallback. Base-style
+    // chains with no native token skip the fetch entirely.
     (async () => {
       const id = R().coingeckoId;
+      if (!id) return null;
       const viaProxy = await safeJson(`/api/price?id=${encodeURIComponent(id)}`);
       if (viaProxy && viaProxy[id]) return viaProxy;
       return safeJson(`https://api.coingecko.com/api/v3/simple/price?ids=${id}&vs_currencies=usd&include_market_cap=true&include_24hr_vol=true`);
@@ -3410,14 +3486,18 @@ function renderSummary(d) {
   // "loading" without lying about the number. Same for FDV Multiple, which
   // is derived from MEGA_FDV_ESTIMATE.
   const skel = '<span class="skeleton-bar"></span>';
-  const fdvRatio = (MEGA_FDV_CONFIRMED && d.monadFDV)
-    ? (d.monadFDV / MEGA_FDV_ESTIMATE).toFixed(2) + 'x'
-    : (d.monadFDV ? skel : '—');
+  const noTok = '<span class="no-token">No Token</span>';
+  const noToken = !!R().noToken;
+  const fdvRatio = noToken
+    ? noTok
+    : (MEGA_FDV_CONFIRMED && d.monadFDV)
+      ? (d.monadFDV / MEGA_FDV_ESTIMATE).toFixed(2) + 'x'
+      : (d.monadFDV ? skel : '—');
   const feeRatio = fmtRatio(d.feesMega?.total24h, d.feesMonad?.total24h);
   const tvlRatio = fmtRatio(d.megaTVL, d.monadTVL);
   const megaFdvFmt = MEGA_FDV_CONFIRMED ? fmtUSD(MEGA_FDV_ESTIMATE) : skel;
-  const monadFdvFmt = d.monadFDV ? fmtUSD(d.monadFDV) : '—';
-  const monPriceFmt = d.monPriceUSD ? `$${d.monPriceUSD.toFixed(4)}` : '—';
+  const monadFdvFmt = noToken ? noTok : (d.monadFDV ? fmtUSD(d.monadFDV) : '—');
+  const monPriceFmt = noToken ? 'No Token' : (d.monPriceUSD ? `$${d.monPriceUSD.toFixed(4)}` : '—');
   const megaPriceFmt = MEGA_FDV_CONFIRMED ? `$${MEGA_PRICE.toFixed(4)}` : '—';
   const c = R();
   document.getElementById('summary').innerHTML = `
@@ -3597,6 +3677,7 @@ function renderStables(d) {
 
 function renderDerived(d) {
   const fm = d.feesMega || {}, fn = d.feesMonad || {};
+  const noToken = !!R().noToken;
   const megaAnnual = fm.total30d ? fm.total30d * 12 : null;
   const monadAnnual = fn.total30d ? fn.total30d * 12 : null;
   const megaFdvTvl = d.megaTVL ? MEGA_FDV_ESTIMATE / d.megaTVL : null;
@@ -3604,9 +3685,11 @@ function renderDerived(d) {
   const megaFdvFees = megaAnnual ? MEGA_FDV_ESTIMATE / megaAnnual : null;
   const monadFdvFees = (d.monadFDV && monadAnnual) ? d.monadFDV / monadAnnual : null;
   const fmtX = (v) => v == null || !isFinite(v) ? '—' : `${v.toFixed(1)}x`;
+  const rightDisp = (v) => noToken ? 'No Token' : fmtX(v);
+  const rightVal  = (v) => noToken ? null : v;
   const rows = [
-    renderRow('FDV / TVL', megaFdvTvl, monadFdvTvl, fmtX(megaFdvTvl), fmtX(monadFdvTvl), true),
-    renderRow('FDV / Annualized Fees', megaFdvFees, monadFdvFees, fmtX(megaFdvFees), fmtX(monadFdvFees), true),
+    renderRow('FDV / DeFi TVL', megaFdvTvl, rightVal(monadFdvTvl), fmtX(megaFdvTvl), rightDisp(monadFdvTvl), true),
+    renderRow('FDV / Annualized Fees', megaFdvFees, rightVal(monadFdvFees), fmtX(megaFdvFees), rightDisp(monadFdvFees), true),
   ].join('');
   renderTable('derived-table', rows);
 }
@@ -3830,6 +3913,22 @@ function renderAll(raw) {
 }
 
 function renderFdvRatio(d) {
+  // Base (or any future no-token chain) has no FDV to compute — paint a
+  // muted "No Token" watermark in place of the chart so the card stays
+  // visually present but clearly signals unavailability.
+  if (R().noToken) {
+    const el = document.getElementById('chart-fdv-ratio');
+    if (el) {
+      el.innerHTML = `
+        <div class="chart-empty no-token-watermark"
+             style="min-height:280px;display:flex;align-items:center;justify-content:center;
+                    color:var(--stone-2);font-family:var(--font-mono);font-size:14px;
+                    letter-spacing:0.2em;text-transform:uppercase;opacity:0.45;">
+          No Token
+        </div>`;
+    }
+    return;
+  }
   const live = (d.monadFDV && MEGA_FDV_CONFIRMED && MEGA_FDV_ESTIMATE)
     ? d.monadFDV / MEGA_FDV_ESTIMATE
     : null;
@@ -3917,12 +4016,18 @@ function renderEcosystem(d) {
   };
   // Foundation value capture = what the L1/foundation directly monetizes:
   //   MegaETH → chain fees + internalized USDM yield
-  //   Monad   → 0 (validator-captured fees do not accrue to the foundation)
+  //   Base    → chain fees (Base's sequencer is Coinbase-operated; chain
+  //             fees flow to the foundation/operator)
+  //   Monad / BNB / Solana / Arbitrum → 0 (validator- or sequencer-
+  //             captured fees don't accrue to the chain's foundation)
   const megaFoundation  = sumVals([megaChain, megaYield]);
-  const monadFoundation = 0;
+  const chainCapturesFees = R().key === 'base';
+  const monadFoundation = chainCapturesFees ? (monadChain || 0) : 0;
   // Ecosystem total adds the app-layer fees on top.
   const megaTotal  = sumVals([megaChain,  megaApp,  megaYield]);
-  const monadTotal = sumVals([monadChain, monadApp]);
+  const monadTotal = chainCapturesFees
+    ? sumVals([monadChain, monadApp])
+    : sumVals([monadChain, monadApp]);
 
   const pct = d.tbillRate ? (d.tbillRate * 100).toFixed(2) : '—';
   const usdmFmt = d.megaUSDM ? fmtUSD(d.megaUSDM) : '—';
@@ -4020,17 +4125,27 @@ function applyChainChrome() {
   const c = R();
   const logo = document.getElementById('hero-logo-right');
   if (logo) {
-    // Apply the size constraints BEFORE swapping src. If src changes first,
-    // the new image paints at its intrinsic SVG dimensions for one frame
-    // before the per-chain maxWidth/transform lands — looks like a momentary
-    // zoom-in. Setting style first means the new image loads already scoped.
     logo.style.transformOrigin = 'left center';
     logo.style.maxWidth  = c.key === 'arbitrum' ? '52%' : '';
     logo.style.transform = c.key === 'solana'   ? 'translateY(5px) scale(0.8)' : '';
-    if (logo.getAttribute('src') !== c.hero) {
-      logo.src = c.hero;
-    }
     logo.alt = c.displayName;
+    if (logo.getAttribute('src') !== c.hero) {
+      // Preload + decode the new mark before swapping the visible src.
+      // Without this, the browser paints one frame of the new SVG at its
+      // intrinsic (unconstrained) dimensions before layout catches up,
+      // which reads as a jank/zoom on every chain switch.
+      const pre = new Image();
+      pre.src = c.hero;
+      const swap = () => { logo.src = c.hero; };
+      if (pre.decode) {
+        pre.decode().then(swap).catch(swap);
+      } else if (pre.complete) {
+        swap();
+      } else {
+        pre.onload = swap;
+        pre.onerror = swap;
+      }
+    }
   }
   const sub = document.getElementById('fdv-subtitle');
   if (sub) sub.textContent =

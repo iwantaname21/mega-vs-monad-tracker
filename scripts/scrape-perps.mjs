@@ -41,8 +41,13 @@ const PROTOCOLS = [
   { slug: 'gains-network',     chain: 'Arbitrum', name: 'Gains Network',   aliases: ['Gains'] },
   { slug: 'mux-protocol',      chain: 'Arbitrum', name: 'MUX Protocol',    aliases: ['MUX'] },
   { slug: 'rage-trade',        chain: 'Arbitrum', name: 'Rage Trade',      aliases: [] },
+  // Base
+  { slug: 'synfutures-v3',     chain: 'Base',     name: 'SynFutures V3',   aliases: ['SynFutures'] },
+  { slug: 'avantis',           chain: 'Base',     name: 'Avantis',         aliases: [] },
+  { slug: 'aerodrome-slipstream', chain: 'Base',  name: 'Aerodrome SlipStream', aliases: ['Aerodrome'] },
+  { slug: 'pear-protocol',     chain: 'Base',     name: 'Pear Protocol',   aliases: [] },
 ];
-const CHAINS = ['MegaETH', 'Monad', 'BSC', 'Solana', 'Arbitrum'];
+const CHAINS = ['MegaETH', 'Monad', 'BSC', 'Solana', 'Arbitrum', 'Base'];
 
 // "$1.23m" / "$4.5K" / "$1,234" → number of USD.
 function parseUsd(raw) {
