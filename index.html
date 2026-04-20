@@ -1488,11 +1488,18 @@ async function fetchFdvMultipleHistory(days = 90) {
   } catch {}
 
   const fetchRight = async () => {
-    const url = `https://api.coingecko.com/api/v3/coins/${chain.coingeckoId}/market_chart?vs_currency=usd&days=${days}&interval=daily`;
-    for (const delay of [0, 1500, 3500, 6000]) {
-      if (delay) await new Promise(res => setTimeout(res, delay));
-      const r = await safeJson(url);
-      if (Array.isArray(r?.prices) && r.prices.length) return r.prices;
+    // Hit our own edge proxy first — it caches for 30 min across all
+    // visitors, so a fresh browser no longer pays CoinGecko's per-IP
+    // rate limit. Fall back to direct CoinGecko if the proxy itself
+    // 5xxs for any reason.
+    const proxyUrl = `/api/fdv-history?id=${encodeURIComponent(chain.coingeckoId)}&days=${days}`;
+    const directUrl = `https://api.coingecko.com/api/v3/coins/${chain.coingeckoId}/market_chart?vs_currency=usd&days=${days}&interval=daily`;
+    for (const url of [proxyUrl, directUrl]) {
+      for (const delay of [0, 1500, 3500]) {
+        if (delay) await new Promise(res => setTimeout(res, delay));
+        const r = await safeJson(url);
+        if (Array.isArray(r?.prices) && r.prices.length) return r.prices;
+      }
     }
     return [];
   };
@@ -3031,7 +3038,14 @@ async function loadAll() {
     // for 5 min — it only changes when new protocols are added to Llama,
     // which doesn't need minute-by-minute freshness.
     safeJsonMemo('https://api.llama.fi/protocols', 5 * 60_000),
-    safeJson(`https://api.coingecko.com/api/v3/simple/price?ids=${R().coingeckoId}&vs_currencies=usd&include_market_cap=true&include_24hr_vol=true`),
+    // Edge proxy first (shared-cached server-side, bypasses CoinGecko's
+    // per-IP rate limit for fresh browsers), direct fallback.
+    (async () => {
+      const id = R().coingeckoId;
+      const viaProxy = await safeJson(`/api/price?id=${encodeURIComponent(id)}`);
+      if (viaProxy && viaProxy[id]) return viaProxy;
+      return safeJson(`https://api.coingecko.com/api/v3/simple/price?ids=${id}&vs_currencies=usd&include_market_cap=true&include_24hr_vol=true`);
+    })(),
     // Historical TVL per chain — for the 30-day TVL chart.
     safeJson('https://api.llama.fi/v2/historicalChainTvl/MegaETH'),
     safeJson(`https://api.llama.fi/v2/historicalChainTvl/${R().llamaName}`),
