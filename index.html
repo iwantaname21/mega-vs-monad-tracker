@@ -1596,6 +1596,20 @@ const NATIVE_NORM = {
   mega: new Set(NATIVE_APPS.mega.map(normName)),
   monad: new Set(NATIVE_APPS.monad.filter(n => n !== 'Pancake Swap').map(normName)),
 };
+// Exclude centralized-exchange wallets + non-DeFi categories from every
+// chain-level ranking (TVL sum, Top Protocols, etc). DeFiLlama tags CEXs
+// as category 'CEX' but their wallet reserves aren't DeFi capital.
+const CEX_CATEGORIES = new Set(['cex', 'centralized exchange', 'chain', 'bridge']);
+const CEX_NAME_RE = /\b(cex|exchange reserves?)\b/;
+const CEX_NAMES = ['binance','coinbase','okx','bybit','gate','kraken','htx','kucoin','bitfinex','crypto.com','mexc','gate.io','bitmex','bitget'];
+function isCexEntry(p) {
+  const c = (p?.category || '').toLowerCase();
+  if (CEX_CATEGORIES.has(c)) return true;
+  const n = (p?.name || '').toLowerCase();
+  if (CEX_NAME_RE.test(n)) return true;
+  return CEX_NAMES.some(x => n.includes(x));
+}
+
 function isNative(chain, protoName) {
   const n = normName(protoName);
   if (!n) return false;
@@ -3015,19 +3029,11 @@ async function loadAll() {
   const monadProtoCountNative = monadProtos.filter(p => isNative('monad', p.name)).length;
 
   // Exclude centralized exchange wallets (Binance, Coinbase, Gate, OKX, Bybit,
-  // etc.) from DeFi TVL. DeFiLlama tags them as category 'CEX' and they
-  // dominate chain-level TVL (esp. on BSC + Solana), distorting
-  // 'on-chain DeFi capital' comparisons.
-  const CEX_CATEGORIES = new Set(['cex', 'centralized exchange', 'chain', 'bridge']);
-  const isCexEntry = (p) => {
-    const c = (p.category || '').toLowerCase();
-    if (CEX_CATEGORIES.has(c)) return true;
-    // Belt-and-braces: catch any protocol whose name ends with 'CEX' or is
-    // a named centralized exchange even if DeFiLlama mis-categorises it.
-    const n = (p.name || '').toLowerCase();
-    return /\b(cex|exchange reserves?)\b/.test(n)
-      || ['binance','coinbase','okx','bybit','gate','kraken','htx','kucoin','bitfinex','crypto.com','mexc','gate.io','bitmex'].some(x => n.includes(x));
-  };
+  // etc.) from DeFi TVL AND from every downstream ranking. DeFiLlama tags
+  // them as category 'CEX' and they dominate chain-level TVL (esp. on BSC +
+  // Solana) and Top-Protocols rankings, distorting 'DeFi on this chain'
+  // comparisons. Using a window-scoped helper so render code reachable via
+  // LAST_DATA can reuse the same rule without re-implementing.
   const megaProtosNoCex  = megaProtos.filter(p => !isCexEntry(p));
   const monadProtosNoCex = monadProtos.filter(p => !isCexEntry(p));
 
@@ -3209,9 +3215,22 @@ async function loadAll() {
   // paint a fake cliff down to 0 and back (see BNB chain-fees gaps 4/4–4/8).
   const normDimChart = (chart) => normOverviewChart(chart).filter(p => p[1] > 0);
 
+  // DeFi-only historical TVL: /v2/historicalChainTvl/{chain} is the raw
+  // chain aggregate (includes CEX wallets like Binance). DefiLlama's site
+  // has a 'DeFi TVL' toggle that strips those. We approximate that view by
+  // scaling the historical series by today's DeFi-fraction — i.e. if the
+  // current CEX-excluded TVL is 40% of the raw chain TVL, every historical
+  // point is also scaled to 40%. Assumes CEX ratio is stable over the
+  // 30-day window, which it mostly is.
+  const tvlScale = (rawHist, rawToday, defiToday) => {
+    const series = normHistChain(rawHist);
+    if (!rawToday || !defiToday || !isFinite(defiToday / rawToday)) return series;
+    const f = defiToday / rawToday;
+    return series.map(([t, v]) => [t, v * f]);
+  };
   const charts = {
-    tvlMega:  normHistChain(histTvlMega),
-    tvlMonad: normHistChain(histTvlMonad),
+    tvlMega:  tvlScale(histTvlMega,  megaChain?.tvl,  megaTVL),
+    tvlMonad: tvlScale(histTvlMonad, monadChain?.tvl, monadTVL),
     dexMega:  normDimChart(dexMega?.totalDataChart),
     dexMonad: normDimChart(dexMonad?.totalDataChart),
     // Perps now rendered as stacked-area per-chain — see renderActivity.
@@ -3323,9 +3342,9 @@ function renderSummary(d) {
       <div class="sub">${c.displayName} premium over MegaETH</div>
     </div>
     <div class="summary-card">
-      <div class="label">TVL Ratio</div>
+      <div class="label">DeFi TVL Ratio</div>
       <div class="value">${tvlRatio}</div>
-      <div class="sub">MegaETH vs ${c.displayName} TVL</div>
+      <div class="sub">MegaETH vs ${c.displayName} DeFi TVL (CEX excluded)</div>
     </div>
     <div class="summary-card">
       <div class="label">Fee Ratio</div>
@@ -3338,7 +3357,7 @@ function renderActivity(d) {
   const dm = d.dexMega || {},   dn = d.dexMonad || {};
   const pm = d.perpsMega || {}, pn = d.perpsMonad || {};
   const rows = [
-    renderRow('TVL', d.megaTVL, d.monadTVL, fmtUSD(d.megaTVL), fmtUSD(d.monadTVL)),
+    renderRow('DeFi TVL', d.megaTVL, d.monadTVL, fmtUSD(d.megaTVL), fmtUSD(d.monadTVL)),
     renderRow('DEX Volume 24h (Spot)', dm.total24h, dn.total24h, fmtUSD(dm.total24h), fmtUSD(dn.total24h)),
     renderRow('DEX Volume 30d (Spot)', dm.total30d, dn.total30d, fmtUSD(dm.total30d), fmtUSD(dn.total30d)),
     renderRow('DEX Volume All-Time (Spot)', dm.totalAllTime, dn.totalAllTime, fmtUSD(dm.totalAllTime), fmtUSD(dn.totalAllTime)),
@@ -3350,7 +3369,7 @@ function renderActivity(d) {
   renderTable('activity-table', rows);
 
   const c = d.charts || {};
-  renderLineChart('chart-tvl',   c.tvlMega,   c.tvlMonad,   { title: 'TVL — last 30 days' });
+  renderLineChart('chart-tvl',   c.tvlMega,   c.tvlMonad,   { title: 'DeFi TVL — last 30 days' });
   renderLineChart('chart-dex',   c.dexMega,   c.dexMonad,   { title: 'DEX Volume (Spot) — last 30 days' });
   // Perps: 3 time-window bars per chain. Numbers come directly from the
   // chain-filtered /perps/chain/{chain} totals so they match what DefiLlama
@@ -3450,7 +3469,7 @@ function renderStables(d) {
   const fmtR = (v) => v == null ? '—' : `${(v * 100).toFixed(1)}%`;
   const rows = [
     renderRow('Total Stablecoin Supply', d.megaStable, d.monadStable, fmtUSD(d.megaStable), fmtUSD(d.monadStable)),
-    renderRow('Stablecoin / TVL Ratio', mr, nr, fmtR(mr), fmtR(nr), true),
+    renderRow('Stablecoin / DeFi TVL Ratio', mr, nr, fmtR(mr), fmtR(nr), true),
   ].join('');
   renderTable('stable-table', rows);
 
@@ -3531,7 +3550,7 @@ function renderProtocols(d) {
     const chainKey = chain === 'mega' ? 'MegaETH' : R().llamaChainKey;
     const overviewPick = (pool) => {
       let arr = (pool?.protocols || [])
-        .filter(p => !isChainEntry(p.name, chain))
+        .filter(p => !isChainEntry(p.name, chain) && !isCexEntry(p))
         .map(p => ({ ...p, _val: sumVol(p, chainKey) }))
         .filter(p => p._val != null && p._val > 0);
       if (scope === 'native') arr = arr.filter(p => isNative(chain, p.name));
@@ -3542,7 +3561,7 @@ function renderProtocols(d) {
     if (focus === 'fees') {
       const pool = chain === 'mega' ? d.feesMega : d.feesMonad;
       let arr = (pool?.protocols || [])
-        .filter(p => !isChainEntry(p.name, chain))
+        .filter(p => !isChainEntry(p.name, chain) && !isCexEntry(p))
         .map(p => ({ ...p, _val: chainFeeValue(p, chainKey) }))
         .filter(p => p._val != null && p._val > 0);
       if (scope === 'native') arr = arr.filter(p => isNative(chain, p.name));
@@ -3590,7 +3609,7 @@ function renderProtocols(d) {
     let pool = chain === 'mega' ? d.megaProtosAll : d.monadProtosAll;
     if (!pool) return [];
     let arr = pool
-      .filter(p => !isChainEntry(p.name, chain))
+      .filter(p => !isChainEntry(p.name, chain) && !isCexEntry(p))
       .slice();
     if (scope === 'native') arr = arr.filter(p => isNative(chain, p.name));
     return arr
