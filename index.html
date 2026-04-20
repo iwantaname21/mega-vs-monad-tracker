@@ -1472,7 +1472,9 @@ async function fetchMegaHyperliquidHistory(days = 90) {
 const FDV_HIST_FRESH_MS = 30 * 60 * 1000;
 async function fetchFdvMultipleHistory(days = 90) {
   const chain = R();
-  const cacheKey = `mega-vs-monad:fdv-ratio:${chain.key}:v1`;
+  // v2 — invalidates any bad cached series from earlier versions (the
+  // Arbitrum 0.20x last-day cliff, kMEGA scaling artifacts, etc).
+  const cacheKey = `mega-vs-monad:fdv-ratio:${chain.key}:v2`;
   const cacheTsKey = `${cacheKey}:ts`;
 
   // Fast path: if we have a recent cached history for this chain, return it.
@@ -1544,26 +1546,32 @@ async function fetchFdvMultipleHistory(days = 90) {
     }
   }
 
-  // Outlier filter: if a single day's ratio is more than 10x off the median
-  // of its 5-day neighborhood, replace it with that median. Guards against
-  // a bad Hyperliquid candle (kMEGA scaling glitch, $0 close, etc) creating
-  // a fake dip or spike in the chart. Only runs on >=7 points.
-  if (out.length >= 7) {
+  // Outlier filter: if a single day's ratio is more than 3x off the median
+  // of its 5-day neighborhood, replace it with that median. Tight threshold
+  // because real FDV ratios move a few % per day, not orders of magnitude.
+  // Guards against stale-cache / kMEGA / partial-day Hyperliquid artifacts
+  // creating a fake spike or dip. Runs on >=5 points.
+  if (out.length >= 5) {
     const median = (arr) => {
       if (!arr.length) return null;
       const s = [...arr].sort((a, b) => a - b);
       const m = Math.floor(s.length / 2);
       return s.length % 2 ? s[m] : (s[m - 1] + s[m]) / 2;
     };
-    for (let i = 0; i < out.length; i++) {
-      const lo = Math.max(0, i - 2);
-      const hi = Math.min(out.length, i + 3);
-      const neighborhood = out.slice(lo, hi).map(p => p[1]).filter(v => v > 0);
-      const med = median(neighborhood);
-      if (med == null || med <= 0) continue;
-      const v = out[i][1];
-      if (v > med * 10 || v < med / 10) out[i] = [out[i][0], med];
-    }
+    const cleaned = out.map(([t, v], i) => {
+      // For each point, use neighbors EXCLUDING the point itself so an
+      // outlier can't prop up its own median.
+      const neighbors = [];
+      for (let j = Math.max(0, i - 3); j <= Math.min(out.length - 1, i + 3); j++) {
+        if (j !== i && out[j][1] > 0) neighbors.push(out[j][1]);
+      }
+      const med = median(neighbors);
+      if (med == null || med <= 0) return [t, v];
+      if (v > med * 3 || v < med / 3) return [t, med];
+      return [t, v];
+    });
+    out.length = 0;
+    out.push(...cleaned);
   }
 
   // Don't regress to a shorter series — stabilizes the chart when a refresh
