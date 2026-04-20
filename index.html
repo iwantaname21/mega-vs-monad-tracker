@@ -1504,11 +1504,24 @@ async function fetchFdvMultipleHistory(days = 90) {
   // Load the previously cached history (may be older than FDV_HIST_FRESH_MS
   // but still useful as a floor). We won't replace it with a strictly worse
   // result — a partial/empty fresh fetch should NEVER regress the chart.
+  // Read v2 first, then fall back to legacy v1 (so cache-version bumps
+  // don't blank the chart during the transition), then to the last-result
+  // cache's embedded fdvRatioHistory.
   let previousCached = [];
-  try {
-    const raw = localStorage.getItem(cacheKey);
-    if (raw) { const p = JSON.parse(raw); if (Array.isArray(p)) previousCached = p; }
-  } catch {}
+  const readArr = (key) => {
+    try { const raw = localStorage.getItem(key); if (raw) { const p = JSON.parse(raw); if (Array.isArray(p)) return p; } } catch {}
+    return null;
+  };
+  previousCached = readArr(cacheKey) || readArr(`mega-vs-monad:fdv-ratio:${chain.key}:v1`) || [];
+  if (previousCached.length === 0) {
+    try {
+      const lr = localStorage.getItem(cacheKeyFor(chain.key));
+      if (lr) {
+        const parsed = JSON.parse(lr);
+        if (Array.isArray(parsed?.d?.fdvRatioHistory)) previousCached = parsed.d.fdvRatioHistory;
+      }
+    } catch {}
+  }
 
   if (!rightRaw.length) {
     // CoinGecko failed entirely — keep whatever we had.
@@ -3750,6 +3763,12 @@ function renderFdvRatio(d) {
     ? d.monadFDV / MEGA_FDV_ESTIMATE
     : null;
   const hist = Array.isArray(d.fdvRatioHistory) ? d.fdvRatioHistory.slice() : [];
+  // If the fresh fetch came back empty and the chart currently has a rendered
+  // series, leave it alone — don't blank it to a placeholder. The next
+  // refresh cycle will try again.
+  if (hist.length === 0 && document.querySelector('#chart-fdv-ratio .chart-svg')) {
+    return;
+  }
   // Append today's live ratio so the line hits the same number shown in the
   // summary — but ONLY when history has enough points that a single appended
   // value won't dominate the chart, and ONLY when the live value is within
