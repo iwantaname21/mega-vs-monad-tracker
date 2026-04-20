@@ -3,7 +3,7 @@
 
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>MEGA vs MON TRACKER</title>
+<title>Mega vs Chain Tracker</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="">
 <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&amp;display=swap" rel="stylesheet">
@@ -1047,7 +1047,7 @@
   <div class="topbar">
     <span class="brand">
       <img src="assets/icon.svg" alt="Ⓜ">
-      <strong>MEGAETH ® / TRACKER v1</strong>
+      <strong>MEGA vs CHAIN TRACKER</strong>
     </span>
     <span class="rail">
       <span><span class="dot"></span>ONCHAIN DATA · DEFILLAMA + COINGECKO + HYPERLIQUID</span>
@@ -1635,14 +1635,19 @@ function persistLastGood() {
 // we hydrate from this immediately, so repeat visits paint in ~50ms instead
 // of waiting 3-5s for every DefiLlama + CoinGecko request to resolve.
 // Per-chain cache key so switching Monad↔BNB↔Solana never bleeds one chain's
-// data into another's render.
-const RESULT_CACHE_KEY = () => `mega-vs-monad:last-result:${(window.STATE && window.STATE.compareChain) || 'monad'}:v4`;
+// data into another's render. cacheKeyFor(chainKey) lets callers pin the key
+// they care about; RESULT_CACHE_KEY() is the "current chain" shortcut.
+const cacheKeyFor = (chainKey) => `mega-vs-monad:last-result:${chainKey}:v4`;
+const RESULT_CACHE_KEY = () => cacheKeyFor((window.STATE && window.STATE.compareChain) || 'monad');
 const RESULT_CACHE_MAX_AGE_MS = 24 * 60 * 60 * 1000; // discard after 24h
 
-function persistResult(d) {
+function persistResult(d, chainKey) {
+  // IMPORTANT: callers must pass the chainKey the result was FETCHED for,
+  // not rely on the current STATE — otherwise an in-flight refresh that
+  // finishes after the user switches chains would write itself into the
+  // wrong chain's cache.
+  const key = chainKey ? cacheKeyFor(chainKey) : RESULT_CACHE_KEY();
   try {
-    // Slim the protocols arrays to only fields we actually render, so the
-    // serialized blob fits comfortably under localStorage quotas (~5MB).
     const slimProto = (p) => ({
       name: p.name, slug: p.slug, category: p.category,
       tvl: p.tvl, chains: p.chains, chainTvls: p.chainTvls,
@@ -1666,13 +1671,14 @@ function persistResult(d) {
       revMega:  slimOverview(d.revMega),  revMonad: slimOverview(d.revMonad),
       perpsMega: slimOverview(d.perpsMega), perpsMonad: slimOverview(d.perpsMonad),
     };
-    localStorage.setItem(RESULT_CACHE_KEY(), JSON.stringify({ ts: Date.now(), d: lean }));
+    localStorage.setItem(key, JSON.stringify({ ts: Date.now(), d: lean }));
   } catch (e) { /* quota exceeded or SecurityError — silently skip */ }
 }
 
-function getCachedResult() {
+function getCachedResult(chainKey) {
+  const key = chainKey ? cacheKeyFor(chainKey) : RESULT_CACHE_KEY();
   try {
-    const raw = localStorage.getItem(RESULT_CACHE_KEY());
+    const raw = localStorage.getItem(key);
     if (!raw) return null;
     const { ts, d } = JSON.parse(raw);
     if (!ts || Date.now() - ts > RESULT_CACHE_MAX_AGE_MS) return null;
@@ -2989,8 +2995,6 @@ async function loadAll() {
   const findChain = (name) => chains?.find(c => c.name?.toLowerCase() === name.toLowerCase());
   const megaChain = findChain('MegaETH');
   const monadChain = findChain(chain.llamaName);
-  const megaTVL = megaChain?.tvl ?? null;
-  const monadTVL = monadChain?.tvl ?? null;
 
   // --- Protocols (with native detection) ---
   let megaProtos = [], monadProtos = [];
@@ -3007,7 +3011,23 @@ async function loadAll() {
   const megaProtoCountNative = megaProtos.filter(p => isNative('mega', p.name)).length;
   const monadProtoCountNative = monadProtos.filter(p => isNative('monad', p.name)).length;
 
-  // --- Per-chain TVL from native protocols (summed from chainTvls where possible) ---
+  // Exclude centralized exchange wallets (Binance, Coinbase, Gate, OKX, Bybit,
+  // etc.) from DeFi TVL. DeFiLlama tags them as category 'CEX' and they
+  // dominate chain-level TVL (esp. on BSC + Solana), distorting
+  // 'on-chain DeFi capital' comparisons.
+  const CEX_CATEGORIES = new Set(['cex', 'centralized exchange', 'chain', 'bridge']);
+  const isCexEntry = (p) => {
+    const c = (p.category || '').toLowerCase();
+    if (CEX_CATEGORIES.has(c)) return true;
+    // Belt-and-braces: catch any protocol whose name ends with 'CEX' or is
+    // a named centralized exchange even if DeFiLlama mis-categorises it.
+    const n = (p.name || '').toLowerCase();
+    return /\b(cex|exchange reserves?)\b/.test(n)
+      || ['binance','coinbase','okx','bybit','gate','kraken','htx','kucoin','bitfinex','crypto.com','mexc','gate.io','bitmex'].some(x => n.includes(x));
+  };
+  const megaProtosNoCex  = megaProtos.filter(p => !isCexEntry(p));
+  const monadProtosNoCex = monadProtos.filter(p => !isCexEntry(p));
+
   const sumChainTvl = (protos, chainKey) => {
     let s = 0;
     for (const p of protos) {
@@ -3016,8 +3036,14 @@ async function loadAll() {
     }
     return s;
   };
-  const megaTVLNative = sumChainTvl(megaProtos.filter(p => isNative('mega', p.name)), 'MegaETH');
-  const monadTVLNative = sumChainTvl(monadProtos.filter(p => isNative('monad', p.name)), rightChainKey);
+  // DeFi-only chain TVL: sum per-chain TVL of every protocol on the chain
+  // that's NOT a CEX wallet. Fall back to raw /v2/chains TVL if we have
+  // no protocols list (e.g. /protocols fetch failed).
+  const megaTVL  = megaProtosNoCex.length ? sumChainTvl(megaProtosNoCex, 'MegaETH')    : (megaChain?.tvl ?? null);
+  const monadTVL = monadProtosNoCex.length ? sumChainTvl(monadProtosNoCex, rightChainKey) : (monadChain?.tvl ?? null);
+
+  const megaTVLNative = sumChainTvl(megaProtosNoCex.filter(p => isNative('mega', p.name)), 'MegaETH');
+  const monadTVLNative = sumChainTvl(monadProtosNoCex.filter(p => isNative('monad', p.name)), rightChainKey);
 
   // --- Stablecoins ---
   let megaStable = 0, monadStable = 0;
@@ -3764,17 +3790,28 @@ function renderEcosystem(d) {
 }
 
 async function refresh() {
+  // Capture the chain this refresh was started for. If the user switches
+  // chains while loadAll() is in flight (typical since loadAll can take
+  // several seconds), we discard the now-stale result instead of letting
+  // Solana/BNB data overwrite the current chain's LAST_DATA + cache.
+  const startedFor = STATE.compareChain;
   document.querySelectorAll('.card, .summary').forEach(el => el.classList.add('loading'));
   try {
     const raw = await loadAll();
+    if (STATE.compareChain !== startedFor) {
+      // User moved on — leave LAST_DATA + render + cache alone.
+      return;
+    }
     LAST_DATA = raw;
     renderAll(raw);
-    persistResult(raw);
+    persistResult(raw, startedFor);
     lastLoad = new Date();
     document.getElementById('error-box').innerHTML = '';
   } catch (e) {
     console.error(e);
-    document.getElementById('error-box').innerHTML = `<div class="error">Failed to load some data. Retrying shortly.</div>`;
+    if (STATE.compareChain === startedFor) {
+      document.getElementById('error-box').innerHTML = `<div class="error">Failed to load some data. Retrying shortly.</div>`;
+    }
   } finally {
     document.querySelectorAll('.card, .summary').forEach(el => el.classList.remove('loading'));
     updateTimestamp();
