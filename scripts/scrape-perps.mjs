@@ -24,28 +24,28 @@ const PROTOCOLS = [
   // Monad
   { slug: 'perpl',             chain: 'Monad',   name: 'Perpl',            aliases: [] },
   { slug: 'leverup',           chain: 'Monad',   name: 'LeverUp',          aliases: [] },
-  // BSC (BNB Chain)
-  { slug: 'aster-perp',        chain: 'BSC',     name: 'Aster Perps',      aliases: ['Aster', 'Aster Perp'] },
+  // BSC (BNB Chain) — only protocols that actually match on BSC itself.
+  // Dropped: Aster Perps (moved to Aster Chain), ApolloX (moved to APX
+  // Chain), Ostium (100% Arbitrum-native — relocated to Arbitrum below).
   { slug: 'thena-perps',       chain: 'BSC',     name: 'Thena Perps',      aliases: ['Thena'] },
-  { slug: 'apollox-perpetual', chain: 'BSC',     name: 'ApolloX',          aliases: ['APX Finance'] },
-  { slug: 'ostium',            chain: 'BSC',     name: 'Ostium',           aliases: [] },
-  // Solana
+  { slug: 'myx-finance',       chain: 'BSC',     name: 'MYX Finance',      aliases: ['MYX'] },
+  // Solana — dropped Mango Markets (deprecated, ~$0 volume).
   { slug: 'jupiter-perpetual-exchange', chain: 'Solana', name: 'Jupiter Perps', aliases: ['Jupiter Perpetuals'] },
   { slug: 'drift-trade',       chain: 'Solana',  name: 'Drift',            aliases: ['Drift Trade'] },
   { slug: 'zeta',              chain: 'Solana',  name: 'Zeta Markets',     aliases: ['Zeta'] },
-  { slug: 'mango-markets',     chain: 'Solana',  name: 'Mango Markets',    aliases: ['Mango'] },
   { slug: 'phoenix',           chain: 'Solana',  name: 'Phoenix',          aliases: [] },
-  // Arbitrum
+  // Arbitrum — added Ostium (the previously-misplaced BSC entry is
+  // actually 100% Arbitrum-native).
   { slug: 'gmx-v2-perps',      chain: 'Arbitrum', name: 'GMX V2 Perps',    aliases: ['GMX'] },
   { slug: 'vertex-protocol',   chain: 'Arbitrum', name: 'Vertex Protocol', aliases: ['Vertex'] },
   { slug: 'gains-network',     chain: 'Arbitrum', name: 'Gains Network',   aliases: ['Gains'] },
   { slug: 'mux-protocol',      chain: 'Arbitrum', name: 'MUX Protocol',    aliases: ['MUX'] },
   { slug: 'rage-trade',        chain: 'Arbitrum', name: 'Rage Trade',      aliases: [] },
-  // Base
+  { slug: 'ostium',            chain: 'Arbitrum', name: 'Ostium',          aliases: [] },
+  // Base — dropped Pear Protocol (primary matching is on Arbitrum).
   { slug: 'synfutures-v3',     chain: 'Base',     name: 'SynFutures V3',   aliases: ['SynFutures'] },
   { slug: 'avantis',           chain: 'Base',     name: 'Avantis',         aliases: [] },
   { slug: 'aerodrome-slipstream', chain: 'Base',  name: 'Aerodrome SlipStream', aliases: ['Aerodrome'] },
-  { slug: 'pear-protocol',     chain: 'Base',     name: 'Pear Protocol',   aliases: [] },
 ];
 const CHAINS = ['MegaETH', 'Monad', 'BSC', 'Solana', 'Arbitrum', 'Base'];
 

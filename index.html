@@ -4159,43 +4159,40 @@ function applyChainChrome() {
   const c = R();
   const logo = document.getElementById('hero-logo-right');
   if (logo) {
-    logo.style.transformOrigin = 'left center';
-    logo.style.maxWidth  = c.key === 'arbitrum' ? '52%' : '';
-    // Per-chain vertical + scale tweaks.
-    //   Solana  — wider-for-its-height wordmark; shrink + nudge down.
-    //   Base    — smaller scale + center-align vertically so the circle
-    //             on the left side of the wordmark lines up with the
-    //             midpoint of the MEGAETH logo (the row defaults to
-    //             align-items: flex-end; we override this one item).
+    // Compute the target per-chain styles, but DON'T apply them yet if the
+    // src is about to change. If we apply transform/maxWidth/alignSelf
+    // synchronously, the CURRENTLY-VISIBLE old image jerks into the new
+    // chain's position for ~100ms before the new image finishes decoding.
+    // Defer to the swap callback so the new styles + new src land in one
+    // single paint frame (no pre-swap jitter).
     let transform = '';
     let alignSelf = '';
+    const maxWidth = c.key === 'arbitrum' ? '52%' : '';
     if (c.key === 'monad') {
       transform = 'translateY(3px)';
     } else if (c.key === 'bnb') {
       transform = 'translateY(2px)';
     } else if (c.key === 'solana') {
-      // was translateY(5px); nudged 1px up → 4px.
       transform = 'translateY(4px) scale(0.8)';
     } else if (c.key === 'arbitrum') {
-      // Cumulative: 2px from the previous adjust + 2px more = 4px total.
       transform = 'translateY(4px)';
     } else if (c.key === 'base') {
-      // 0.75 × 1.3 ≈ 0.975 — 30% larger than the original shrunk size.
-      // translateY: was 2px, nudged 1px lower → 3px.
       transform = 'translateY(3px) scale(0.975)';
       alignSelf = 'center';
     }
-    logo.style.transform = transform;
-    logo.style.alignSelf = alignSelf;
+    const applyStyles = () => {
+      logo.style.transformOrigin = 'left center';
+      logo.style.maxWidth  = maxWidth;
+      logo.style.transform = transform;
+      logo.style.alignSelf = alignSelf;
+    };
     logo.alt = c.displayName;
     if (logo.getAttribute('src') !== c.hero) {
-      // Preload + decode the new mark before swapping the visible src.
-      // Without this, the browser paints one frame of the new SVG at its
-      // intrinsic (unconstrained) dimensions before layout catches up,
-      // which reads as a jank/zoom on every chain switch.
+      // Preload + decode so the new image is ready before the browser
+      // paints it, AND apply styles in the same moment as the src swap.
       const pre = new Image();
       pre.src = c.hero;
-      const swap = () => { logo.src = c.hero; };
+      const swap = () => { applyStyles(); logo.src = c.hero; };
       if (pre.decode) {
         pre.decode().then(swap).catch(swap);
       } else if (pre.complete) {
@@ -4204,6 +4201,10 @@ function applyChainChrome() {
         pre.onload = swap;
         pre.onerror = swap;
       }
+    } else {
+      // Same chain clicked again (e.g. explicit re-click) — apply styles
+      // immediately, no src change needed.
+      applyStyles();
     }
   }
   const sub = document.getElementById('fdv-subtitle');
