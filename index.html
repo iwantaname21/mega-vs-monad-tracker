@@ -1669,7 +1669,7 @@ function renderRow(label, megaVal, monadVal, megaDisp, monadDisp, lowerIsBetter 
   const pill = w === 'mega'
     ? '<span class="pill mega">MEGA</span>'
     : w === 'monad'
-      ? '<span class="pill monad">MONAD</span>'
+      ? `<span class="pill monad">${R().shortName}</span>`
       : '<span class="pill neutral">—</span>';
   return `
     <tr class="${cls}">

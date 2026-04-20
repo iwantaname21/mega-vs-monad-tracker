@@ -18,12 +18,25 @@ const chromium = rawChromium;
 // its chain-filtered pages — e.g. "GMX V2 Perps" on the protocol page is
 // rendered as just "GMX" on the MegaETH chain page.
 const PROTOCOLS = [
-  { slug: 'world-markets', chain: 'MegaETH', name: 'World Markets', aliases: [] },
-  { slug: 'gmx-v2-perps',  chain: 'MegaETH', name: 'GMX V2 Perps',  aliases: ['GMX'] },
-  { slug: 'perpl',         chain: 'Monad',   name: 'Perpl',         aliases: [] },
-  { slug: 'leverup',       chain: 'Monad',   name: 'LeverUp',       aliases: [] },
+  // MegaETH
+  { slug: 'world-markets',     chain: 'MegaETH', name: 'World Markets',    aliases: [] },
+  { slug: 'gmx-v2-perps',      chain: 'MegaETH', name: 'GMX V2 Perps',     aliases: ['GMX'] },
+  // Monad
+  { slug: 'perpl',             chain: 'Monad',   name: 'Perpl',            aliases: [] },
+  { slug: 'leverup',           chain: 'Monad',   name: 'LeverUp',          aliases: [] },
+  // BSC (BNB Chain)
+  { slug: 'aster-perp',        chain: 'BSC',     name: 'Aster Perps',      aliases: ['Aster', 'Aster Perp'] },
+  { slug: 'thena-perps',       chain: 'BSC',     name: 'Thena Perps',      aliases: ['Thena'] },
+  { slug: 'apollox-perpetual', chain: 'BSC',     name: 'ApolloX',          aliases: ['APX Finance'] },
+  { slug: 'ostium',            chain: 'BSC',     name: 'Ostium',           aliases: [] },
+  // Solana
+  { slug: 'jupiter-perpetual-exchange', chain: 'Solana', name: 'Jupiter Perps', aliases: ['Jupiter Perpetuals'] },
+  { slug: 'drift-trade',       chain: 'Solana',  name: 'Drift',            aliases: ['Drift Trade'] },
+  { slug: 'zeta',              chain: 'Solana',  name: 'Zeta Markets',     aliases: ['Zeta'] },
+  { slug: 'mango-markets',     chain: 'Solana',  name: 'Mango Markets',    aliases: ['Mango'] },
+  { slug: 'phoenix',           chain: 'Solana',  name: 'Phoenix',          aliases: [] },
 ];
-const CHAINS = ['MegaETH', 'Monad'];
+const CHAINS = ['MegaETH', 'Monad', 'BSC', 'Solana'];
 
 // "$1.23m" / "$4.5K" / "$1,234" → number of USD.
 function parseUsd(raw) {
