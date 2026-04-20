@@ -3692,13 +3692,10 @@ function wireChainSwitcher() {
       try { localStorage.setItem('mega-vs-monad:compare-chain', STATE.compareChain); } catch {}
       applyChainChrome();
       renderPerformance();
-      // The FDV Multiple chart derives from a different CoinGecko coin per
-      // chain, so the previous render is meaningless the instant we switch.
-      // Clear it immediately — otherwise there's a ~500ms flash of the old
-      // chain's line while new data loads.
-      const fdvEl = document.getElementById('chart-fdv-ratio');
-      if (fdvEl) fdvEl.innerHTML = '<div class="chart-empty">Loading…</div>';
-      // Paint from per-chain cache immediately if we have one, then refetch.
+      // Immediately paint whatever we have cached for this chain so there's
+      // no blank / old-data flash. Order: full-result cache first (has
+      // everything), then the dedicated fdv-ratio cache as a fallback for
+      // just the FDV chart, then a Loading placeholder as last resort.
       const cached = getCachedResult();
       if (cached) {
         LAST_DATA = cached.d;
@@ -3707,6 +3704,19 @@ function wireChainSwitcher() {
         LAST_DATA = null;
         const sum = document.getElementById('summary');
         if (sum) sum.innerHTML = '';
+        // No full-result cache, but we may still have a fdv-ratio cache
+        // written by fetchFdvMultipleHistory on a past visit.
+        let cachedFdv = null;
+        try {
+          const raw = localStorage.getItem(`mega-vs-monad:fdv-ratio:${R().key}:v1`);
+          if (raw) cachedFdv = JSON.parse(raw);
+        } catch {}
+        const fdvEl = document.getElementById('chart-fdv-ratio');
+        if (Array.isArray(cachedFdv) && cachedFdv.length) {
+          try { renderFdvRatio({ fdvRatioHistory: cachedFdv }); } catch {}
+        } else if (fdvEl) {
+          fdvEl.innerHTML = '<div class="chart-empty">Loading…</div>';
+        }
       }
       await refresh();
     });
