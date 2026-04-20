@@ -484,6 +484,11 @@
     text-transform: uppercase;
     padding: 10px 14px;
     border-bottom: 1px solid var(--border);
+    /* Prevent header content (chain wordmarks, 'Difference', etc) from
+       bleeding into neighbouring columns at mid-size viewport widths. */
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
   table.cmp th .chain-head {
     display: inline-flex; align-items: center; gap: 8px;
@@ -511,6 +516,10 @@
     text-transform: uppercase;
     color: var(--fg);
     white-space: nowrap;
+    max-width: 100%;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
   .col-label .chain-dot {
     width: 8px; height: 8px; border-radius: 50%;
@@ -939,6 +948,17 @@
        copy to where the first started → seamless loop with no dead space. */
     from { transform: translateX(0); }
     to   { transform: translateX(-50%); }
+  }
+
+  /* Narrow-but-not-mobile viewports: the 2-col grid cards shrink below ~550px
+     and the table's 28% Difference + 16% Winner columns start to touch. Drop
+     padding + font size + let columns wrap so nothing bleeds between cells. */
+  @media (max-width: 1200px) {
+    table.cmp td, table.cmp th { padding: 10px 8px; font-size: 12px; }
+    table.cmp th { font-size: 10px; padding: 10px 6px; }
+    .diff { min-width: 96px; padding: 4px 6px; font-size: 9px; }
+    .pill { font-size: 9px; padding: 2px 5px; }
+    .val-win-mega, .val-win-monad { font-size: 12px; }
   }
 
   @media (max-width: 860px) {
@@ -3115,21 +3135,26 @@ async function loadAll() {
   const normOverviewChart = (chart) => Array.isArray(chart)
     ? chart.map(p => [Number(p[0]), Number(p[1])]).filter(p => isFinite(p[0]) && isFinite(p[1]))
     : [];
+  // For fees / revenue / DEX-volume series, a day reported as 0 is almost
+  // always a DefiLlama gap (missing daily snapshot), not a legitimate
+  // 'the chain literally earned $0' day. Drop zeros so the chart doesn't
+  // paint a fake cliff down to 0 and back (see BNB chain-fees gaps 4/4–4/8).
+  const normDimChart = (chart) => normOverviewChart(chart).filter(p => p[1] > 0);
 
   const charts = {
     tvlMega:  normHistChain(histTvlMega),
     tvlMonad: normHistChain(histTvlMonad),
-    dexMega:  normOverviewChart(dexMega?.totalDataChart),
-    dexMonad: normOverviewChart(dexMonad?.totalDataChart),
+    dexMega:  normDimChart(dexMega?.totalDataChart),
+    dexMonad: normDimChart(dexMonad?.totalDataChart),
     // Perps now rendered as stacked-area per-chain — see renderActivity.
-    appFeesMega:  normOverviewChart(feesMega?.totalDataChart),
-    appFeesMonad: normOverviewChart(feesMonad?.totalDataChart),
-    appRevMega:   normOverviewChart(revMega?.totalDataChart),
-    appRevMonad:  normOverviewChart(revMonad?.totalDataChart),
-    chainFeesMega:  normOverviewChart(chainFeesMega?.totalDataChart),
-    chainFeesMonad: normOverviewChart(chainFeesMonad?.totalDataChart),
-    chainRevMega:   normOverviewChart(chainRevMega?.totalDataChart),
-    chainRevMonad:  normOverviewChart(chainRevMonad?.totalDataChart),
+    appFeesMega:  normDimChart(feesMega?.totalDataChart),
+    appFeesMonad: normDimChart(feesMonad?.totalDataChart),
+    appRevMega:   normDimChart(revMega?.totalDataChart),
+    appRevMonad:  normDimChart(revMonad?.totalDataChart),
+    chainFeesMega:  normDimChart(chainFeesMega?.totalDataChart),
+    chainFeesMonad: normDimChart(chainFeesMonad?.totalDataChart),
+    chainRevMega:   normDimChart(chainRevMega?.totalDataChart),
+    chainRevMonad:  normDimChart(chainRevMonad?.totalDataChart),
   };
 
   return {
