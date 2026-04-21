@@ -553,10 +553,14 @@
     overflow: hidden;
     text-overflow: ellipsis;
   }
-  .col-label .cl-short { display: none; }
+  /* Column headers always use the short chain code (MEGA / BNB / MON / SOL /
+     ARB / BASE). The cards sit in a 2-column grid on desktop, so even at
+     1440px each data column is only ~100px — not enough for "BNB CHAIN"
+     at uppercase 11px with letter-spacing. Short forms fit everywhere
+     and the full chain name is already shown in the hero. */
+  .col-label .cl-long  { display: none; }
+  .col-label .cl-short { display: inline; }
   @media (max-width: 860px) {
-    .col-label .cl-long  { display: none; }
-    .col-label .cl-short { display: inline; }
     .col-label { letter-spacing: 0.06em; gap: 6px; }
   }
   .col-label .chain-dot {
