@@ -1582,18 +1582,17 @@ async function fetchFdvMultipleHistory(days = 90) {
   } catch {}
 
   const fetchRight = async () => {
-    // Hit our own edge proxy first — it caches for 30 min across all
-    // visitors, so a fresh browser no longer pays CoinGecko's per-IP
-    // rate limit. Fall back to direct CoinGecko if the proxy itself
-    // 5xxs for any reason.
-    const proxyUrl = `/api/fdv-history?id=${encodeURIComponent(chain.coingeckoId)}&days=${days}`;
-    const directUrl = `https://api.coingecko.com/api/v3/coins/${chain.coingeckoId}/market_chart?vs_currency=usd&days=${days}&interval=daily`;
-    for (const url of [proxyUrl, directUrl]) {
-      for (const delay of [0, 1500, 3500]) {
-        if (delay) await new Promise(res => setTimeout(res, delay));
-        const r = await safeJson(url);
-        if (Array.isArray(r?.prices) && r.prices.length) return r.prices;
-      }
+    // Edge proxy first (30-min CDN cache across all visitors, dodges CoinGecko
+    // per-IP rate limit). Fall back to direct CoinGecko if the proxy misses.
+    // safeJson already retries 3× with backoff — don't stack another retry
+    // loop on top, or a 404/429 burns ~5s of sleep before falling through.
+    const urls = [
+      `/api/fdv-history?id=${encodeURIComponent(chain.coingeckoId)}&days=${days}`,
+      `https://api.coingecko.com/api/v3/coins/${chain.coingeckoId}/market_chart?vs_currency=usd&days=${days}&interval=daily`,
+    ];
+    for (const url of urls) {
+      const r = await safeJson(url);
+      if (Array.isArray(r?.prices) && r.prices.length) return r.prices;
     }
     return [];
   };
