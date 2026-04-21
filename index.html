@@ -3060,15 +3060,31 @@ function renderPerformance() {
 }
 
 // ---------- API fetching ----------
-async function safeJson(url) {
-  try {
-    const r = await fetch(url);
-    if (!r.ok) throw new Error(`${r.status}`);
-    return await r.json();
-  } catch (e) {
-    console.warn('fetch failed', url, e);
-    return null;
+// Retry transient failures so a fresh/incognito first load doesn't lose fields
+// to a single 429 / Cloudflare flap / upstream 5xx. 4xx (except 429) are
+// intentional rejections — don't retry those, they won't change.
+async function safeJson(url, { retries = 2, retryDelayMs = 600 } = {}) {
+  for (let attempt = 0; attempt <= retries; attempt++) {
+    try {
+      const r = await fetch(url);
+      if (r.ok) return await r.json();
+      // Non-OK response — decide whether to retry.
+      const retryable = r.status === 429 || r.status >= 500;
+      if (!retryable) return null; // 4xx: won't change, bail now
+      if (attempt >= retries) {
+        console.warn('fetch failed (exhausted retries)', url, r.status);
+        return null;
+      }
+    } catch (e) {
+      // Network-level failure (offline, CORS, DNS, abort). Retryable.
+      if (attempt >= retries) {
+        console.warn('fetch failed', url, e);
+        return null;
+      }
+    }
+    await new Promise(res => setTimeout(res, retryDelayMs * (attempt + 1)));
   }
+  return null;
 }
 
 // In-memory TTL cache for endpoints that are expensive to re-fetch every
