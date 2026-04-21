@@ -553,6 +553,12 @@
     overflow: hidden;
     text-overflow: ellipsis;
   }
+  .col-label .cl-short { display: none; }
+  @media (max-width: 860px) {
+    .col-label .cl-long  { display: none; }
+    .col-label .cl-short { display: inline; }
+    .col-label { letter-spacing: 0.06em; gap: 6px; }
+  }
   .col-label .chain-dot {
     width: 8px; height: 8px; border-radius: 50%;
     display: inline-block;
@@ -1321,8 +1327,11 @@
   </a>
 </div>
 <script>
-const COL_HEAD_MEGA  = '<span class="col-label"><span class="chain-dot mega"></span>MegaETH</span>';
-const COL_HEAD_MONAD = () => `<span class="col-label"><span class="chain-dot monad"></span>${R().displayName}</span>`;
+// Emit both long and short chain labels; CSS swaps them at narrow widths so
+// "BNB Chain" / "MegaETH" don't truncate to "BNB CH." / "MEGAET" in the
+// narrow card columns.
+const COL_HEAD_MEGA  = '<span class="col-label"><span class="chain-dot mega"></span><span class="cl-long">MegaETH</span><span class="cl-short">MEGA</span></span>';
+const COL_HEAD_MONAD = () => `<span class="col-label"><span class="chain-dot monad"></span><span class="cl-long">${esc(R().displayName)}</span><span class="cl-short">${esc(R().shortName)}</span></span>`;
 
 // MegaETH pre-TGE — live price pulled from Hyperliquid pre-market (`MEGA`) when available.
 // We persist the last-good price in localStorage so a slow/failed Hyperliquid
