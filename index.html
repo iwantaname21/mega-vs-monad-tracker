@@ -1118,8 +1118,10 @@
     .pill { font-size: 9px; padding: 2px 6px; }
   }
 </style>
-<!-- Perps snapshot - loaded as script so file:// works. -->
-<script src="public/data/perps.js" onerror="console.warn('perps snapshot not loaded')"></script>
+<!-- Perps snapshot is fetched async from public/data/perps.json inside
+     loadAll(); see window.__PERPS_SNAPSHOT__ handling there. Dropped the
+     707KB render-blocking <script> that used to live here and delayed
+     first paint by seconds on cold connections. -->
 </head>
 <body>
 <div class="container">
@@ -1500,54 +1502,76 @@ function resolveInitialChain() {
 const R = () => CHAIN_CONFIG[(window.STATE && window.STATE.compareChain) || 'monad']
             || CHAIN_CONFIG.monad;
 
-async function fetchMegaHyperliquidPrice() {
+const HL_TICKER_CACHE_KEY = 'mega-vs-monad:hl-ticker:v1';
+const HL_TICKERS = ['MEGA', 'kMEGA', 'MEGAETH', 'Mega'];
+function hlTickerOrder() {
   try {
-    const r = await fetch('https://api.hyperliquid.xyz/info', {
+    const cached = localStorage.getItem(HL_TICKER_CACHE_KEY);
+    if (cached && HL_TICKERS.includes(cached)) {
+      return [cached, ...HL_TICKERS.filter(t => t !== cached)];
+    }
+  } catch {}
+  return HL_TICKERS;
+}
+function rememberHlTicker(t) {
+  try { localStorage.setItem(HL_TICKER_CACHE_KEY, t); } catch {}
+}
+
+async function fetchMegaHyperliquidPrice() {
+  const mids = await safeJson('https://api.hyperliquid.xyz/info', {
+    retries: 1, timeoutMs: 4000,
+    init: {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ type: 'allMids' }),
-    });
-    if (!r.ok) return null;
-    const mids = await r.json();
-    // Hyperliquid pre-market ticker can be MEGA, kMEGA, MEGAETH — try each.
-    for (const sym of ['MEGA', 'kMEGA', 'MEGAETH', 'Mega']) {
-      const v = mids[sym];
-      if (v != null) {
-        const price = parseFloat(v);
-        if (isFinite(price) && price > 0) return price;
-      }
+    },
+  });
+  if (!mids) return null;
+  // Hyperliquid pre-market ticker can be MEGA, kMEGA, MEGAETH — try each.
+  for (const sym of hlTickerOrder()) {
+    const v = mids[sym];
+    if (v != null) {
+      const price = parseFloat(v);
+      if (isFinite(price) && price > 0) { rememberHlTicker(sym); return price; }
     }
-  } catch (e) {
-    console.warn('Hyperliquid MEGA price fetch failed', e);
   }
   return null;
 }
 
 // Pull daily MEGA closes from Hyperliquid candleSnapshot. Returns array of
 // [unixSec (UTC midnight bucket), closePrice] sorted ascending, or [] on failure.
+// Fires all ticker probes in parallel (they're cheap; DefiLlama + CoinGecko
+// already bottleneck the Promise.all that gates this) and takes the first
+// ticker that returns a non-empty series.
 async function fetchMegaHyperliquidHistory(days = 90) {
   const nowMs = Date.now();
   const startMs = nowMs - days * 86400 * 1000;
-  for (const coin of ['MEGA', 'kMEGA', 'MEGAETH', 'Mega']) {
-    try {
-      const r = await fetch('https://api.hyperliquid.xyz/info', {
+  const candleFor = async (coin) => {
+    const data = await safeJson('https://api.hyperliquid.xyz/info', {
+      retries: 1, timeoutMs: 5000,
+      init: {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           type: 'candleSnapshot',
           req: { coin, interval: '1d', startTime: startMs, endTime: nowMs },
         }),
-      });
-      if (!r.ok) continue;
-      const data = await r.json();
-      if (!Array.isArray(data) || !data.length) continue;
-      const out = data.map(c => {
-        const ts = Math.floor(Number(c.t) / 1000);
-        const close = parseFloat(c.c);
-        return isFinite(ts) && isFinite(close) && close > 0 ? [ts, close] : null;
-      }).filter(Boolean);
-      if (out.length) return out.sort((a, b) => a[0] - b[0]);
-    } catch (e) { /* try next ticker */ }
+      },
+    });
+    if (!Array.isArray(data) || !data.length) return { coin, out: [] };
+    const out = data.map(c => {
+      const ts = Math.floor(Number(c.t) / 1000);
+      const close = parseFloat(c.c);
+      return isFinite(ts) && isFinite(close) && close > 0 ? [ts, close] : null;
+    }).filter(Boolean);
+    return { coin, out };
+  };
+  // Fire them in parallel and take the first non-empty series in preferred
+  // order (cached ticker first, then the rest).
+  const order = hlTickerOrder();
+  const results = await Promise.all(order.map(candleFor));
+  for (const { coin, out } of results) {
+    if (out.length) { rememberHlTicker(coin); return out.sort((a, b) => a[0] - b[0]); }
   }
   return [];
 }
@@ -3062,11 +3086,16 @@ function renderPerformance() {
 // ---------- API fetching ----------
 // Retry transient failures so a fresh/incognito first load doesn't lose fields
 // to a single 429 / Cloudflare flap / upstream 5xx. 4xx (except 429) are
-// intentional rejections — don't retry those, they won't change.
-async function safeJson(url, { retries = 2, retryDelayMs = 600 } = {}) {
+// intentional rejections — don't retry those, they won't change. Per-attempt
+// AbortController timeout stops a single hung TCP connection from wedging the
+// whole page (browsers default to ~60-120s on a stalled socket).
+async function safeJson(url, { retries = 2, retryDelayMs = 600, timeoutMs = 6000, init = {} } = {}) {
   for (let attempt = 0; attempt <= retries; attempt++) {
+    const ctrl = new AbortController();
+    const t = setTimeout(() => ctrl.abort(), timeoutMs);
     try {
-      const r = await fetch(url);
+      const r = await fetch(url, { ...init, signal: ctrl.signal });
+      clearTimeout(t);
       if (r.ok) return await r.json();
       // Non-OK response — decide whether to retry.
       const retryable = r.status === 429 || r.status >= 500;
@@ -3076,9 +3105,10 @@ async function safeJson(url, { retries = 2, retryDelayMs = 600 } = {}) {
         return null;
       }
     } catch (e) {
-      // Network-level failure (offline, CORS, DNS, abort). Retryable.
+      clearTimeout(t);
+      // Network-level failure (offline, CORS, DNS, abort/timeout). Retryable.
       if (attempt >= retries) {
-        console.warn('fetch failed', url, e);
+        console.warn('fetch failed', url, e?.name === 'AbortError' ? 'timeout' : e);
         return null;
       }
     }
@@ -3124,6 +3154,37 @@ function ensureHeavyLoaded() {
   return _heavyPromise;
 }
 
+// Probe several candidate slugs for MegaETH's summary/fees endpoint in
+// parallel (DefiLlama has no canonical name yet) and cache the winner so
+// subsequent refreshes / other sessions skip the rest. This replaces the
+// prior sequential loop that could take up to 24s on cold incognito loads
+// when each failed slug cost a full retry cycle.
+const MEGA_SLUGS = ['megaeth', 'mega-eth', 'megaeth-chain', 'megaeth-l2', 'megaeth-network', 'megaeth-mainnet'];
+const MEGA_SLUG_CACHE_KEY = 'mega-vs-monad:mega-slug:v1';
+function megaSlugOrder() {
+  try {
+    const cached = localStorage.getItem(MEGA_SLUG_CACHE_KEY);
+    if (cached && MEGA_SLUGS.includes(cached)) {
+      return [cached, ...MEGA_SLUGS.filter(s => s !== cached)];
+    }
+  } catch {}
+  return MEGA_SLUGS;
+}
+async function probeMegaSummary(dataType) {
+  const order = megaSlugOrder();
+  const results = await Promise.all(order.map(s =>
+    safeJson(`https://api.llama.fi/summary/fees/${s}?dataType=${dataType}`)
+      .then(r => ({ slug: s, r }))
+  ));
+  for (const { slug, r } of results) {
+    if (r && (r.total24h != null || r.total7d != null)) {
+      try { localStorage.setItem(MEGA_SLUG_CACHE_KEY, slug); } catch {}
+      return r;
+    }
+  }
+  return null;
+}
+
 async function loadAll() {
   // Keep the per-protocol breakdown excluded (huge payload) but DO include the
   // totalDataChart — that's the historical series we graph.
@@ -3142,6 +3203,7 @@ async function loadAll() {
     perpsSnapshot,
     tbillData,
     fdvRatioHistory,
+    megaLivePrice,
   ] = await Promise.all([
     safeJson('https://api.llama.fi/v2/chains'),
     safeJson(`https://api.llama.fi/overview/dexs/MegaETH?${OVR}`),
@@ -3156,24 +3218,10 @@ async function loadAll() {
     // scraped snapshot after Promise.all resolves, so just push nulls here.
     Promise.resolve(null),
     Promise.resolve(null),
-    // Chain-level fees/revenue — try multiple slug variants for MegaETH.
-    (async () => {
-      const slugs = ['megaeth', 'mega-eth', 'megaeth-chain', 'megaeth-l2', 'megaeth-network', 'megaeth-mainnet'];
-      for (const s of slugs) {
-        const r = await safeJson(`https://api.llama.fi/summary/fees/${s}?dataType=dailyFees`);
-        if (r && (r.total24h != null || r.total7d != null)) return r;
-      }
-      return null;
-    })(),
+    // Chain-level fees/revenue — slug probes run in parallel with winner cache.
+    probeMegaSummary('dailyFees'),
     safeJson(`https://api.llama.fi/summary/fees/${R().llamaFeesSlug}?dataType=dailyFees`),
-    (async () => {
-      const slugs = ['megaeth', 'mega-eth', 'megaeth-chain', 'megaeth-l2', 'megaeth-network', 'megaeth-mainnet'];
-      for (const s of slugs) {
-        const r = await safeJson(`https://api.llama.fi/summary/fees/${s}?dataType=dailyRevenue`);
-        if (r && (r.total24h != null || r.total7d != null)) return r;
-      }
-      return null;
-    })(),
+    probeMegaSummary('dailyRevenue'),
     safeJson(`https://api.llama.fi/summary/fees/${R().llamaFeesSlug}?dataType=dailyRevenue`),
     // Heavy payloads are pulled from the deferred _heavyCache, not re-fetched
     // here. First-visit render skips them (null); refresh() triggers
@@ -3194,9 +3242,15 @@ async function loadAll() {
     // Historical TVL per chain — for the 30-day TVL chart.
     safeJson('https://api.llama.fi/v2/historicalChainTvl/MegaETH'),
     safeJson(`https://api.llama.fi/v2/historicalChainTvl/${R().llamaName}`),
-    // Perps snapshot comes from window.__PERPS_SNAPSHOT__ (loaded via <script>
-    // in the <head>). Using a script instead of fetch() so it works from file://.
-    Promise.resolve(typeof window !== 'undefined' ? window.__PERPS_SNAPSHOT__ || null : null),
+    // Perps snapshot — fetch async so the 707KB file doesn't block HTML
+    // parse or force a sync load in <head>. window.__PERPS_SNAPSHOT__ is
+    // still honored if a <script> populated it (e.g. file:// usage).
+    (async () => {
+      if (typeof window !== 'undefined' && window.__PERPS_SNAPSHOT__) {
+        return window.__PERPS_SNAPSHOT__;
+      }
+      return safeJson('public/data/perps.json', { retries: 1, timeoutMs: 8000 });
+    })(),
     // US Treasury Bills aggregate average interest rate — risk-free rate for
     // MegaETH's USDM yield calculation. CORS-open, no auth. Using URL-encoded
     // brackets so the fetch() call doesn't get rejected by the API gateway.
@@ -3204,10 +3258,13 @@ async function loadAll() {
     // Historical FDV multiple (Monad FDV / MegaETH FDV) — parallel with the
     // other fetches so first-paint isn't delayed waiting on Hyperliquid candles.
     fetchFdvMultipleHistory(90),
+    // Live MEGA pre-market price from Hyperliquid — previously awaited
+    // serially after Promise.all, which added a full round trip on top of
+    // the slowest fetch. Parallelize instead.
+    fetchMegaHyperliquidPrice(),
   ]);
 
-  // Pull live MEGA pre-market price from Hyperliquid; if it returns, update the FDV.
-  const megaLivePrice = await fetchMegaHyperliquidPrice();
+  // Apply the live Hyperliquid MEGA price if it came back.
   if (megaLivePrice) {
     MEGA_PRICE = megaLivePrice;
     MEGA_FDV_ESTIMATE = megaLivePrice * MEGA_SUPPLY;
