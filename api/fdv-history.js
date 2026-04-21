@@ -21,15 +21,24 @@ export default async function handler(req) {
   const days = url.searchParams.get('days') || '90';
 
   if (!id || !ALLOWED_IDS.has(id)) {
+    // Cache rejections at the CDN — deterministic for a given query, so a
+    // bogus repeated id with cache-busters can't DoS-amplify into the
+    // Edge Function.
     return new Response(JSON.stringify({ error: 'invalid id' }), {
       status: 400,
-      headers: { 'content-type': 'application/json' },
+      headers: {
+        'content-type': 'application/json',
+        'cache-control': 'public, s-maxage=3600',
+      },
     });
   }
   if (!/^\d{1,4}$/.test(days)) {
     return new Response(JSON.stringify({ error: 'invalid days' }), {
       status: 400,
-      headers: { 'content-type': 'application/json' },
+      headers: {
+        'content-type': 'application/json',
+        'cache-control': 'public, s-maxage=3600',
+      },
     });
   }
 

@@ -35,20 +35,35 @@ const PROTOCOLS = [
   { slug: 'jupiter-perpetual-exchange', chain: 'Solana', name: 'Jupiter Perps', aliases: ['Jupiter Perpetuals'] },
   { slug: 'drift-trade',       chain: 'Solana',  name: 'Drift',            aliases: ['Drift Trade'] },
   { slug: 'zeta',              chain: 'Solana',  name: 'Zeta Markets',     aliases: ['Zeta'] },
+  { slug: 'pacifica',          chain: 'Solana',  name: 'Pacifica',         aliases: [] },
+  { slug: 'gmtrade',           chain: 'Solana',  name: 'GMTrade',          aliases: [] },
+  { slug: 'flash-trade',       chain: 'Solana',  name: 'FlashTrade',       aliases: ['Flash Trade'] },
+  { slug: 'adrena-protocol',   chain: 'Solana',  name: 'Adrena',           aliases: ['Adrena Protocol'] },
+  // BSC additions for completeness.
+  { slug: 'kiloex',            chain: 'BSC',     name: 'KiloEx',           aliases: [] },
+  { slug: 'pancakeswap',       chain: 'BSC',     name: 'PancakeSwap',      aliases: ['PancakeSwap Perps'] },
   // Arbitrum — added Ostium (the previously-misplaced BSC entry is
   // actually 100% Arbitrum-native).
   { slug: 'gmx-v2-perps',      chain: 'Arbitrum', name: 'GMX V2 Perps',    aliases: ['GMX'] },
-  { slug: 'vertex-protocol',   chain: 'Arbitrum', name: 'Vertex Protocol', aliases: ['Vertex'] },
+  { slug: 'vertex-protocol',   chain: 'Arbitrum', name: 'Vertex Protocol', aliases: ['Vertex', 'Vertex Edge', 'vertex-edge'] },
   { slug: 'gains-network',     chain: 'Arbitrum', name: 'Gains Network',   aliases: ['Gains'] },
   { slug: 'mux-protocol',      chain: 'Arbitrum', name: 'MUX Protocol',    aliases: ['MUX'] },
   { slug: 'rage-trade',        chain: 'Arbitrum', name: 'Rage Trade',      aliases: [] },
   { slug: 'ostium',            chain: 'Arbitrum', name: 'Ostium',          aliases: [] },
+  { slug: 'variational',       chain: 'Arbitrum', name: 'Variational',     aliases: [] },
+  { slug: 'boros',             chain: 'Arbitrum', name: 'Boros',           aliases: [] },
+  { slug: 'hibachi',           chain: 'Arbitrum', name: 'Hibachi',         aliases: [] },
+  { slug: 'symmio',            chain: 'Arbitrum', name: 'SYMMIO',          aliases: ['Symm.io', 'Symmio'] },
   // Base — dropped Pear Protocol (primary matching is on Arbitrum) and
   // Aerodrome SlipStream (concentrated-liquidity spot AMM, not perps).
   // Derive (ex-Lyra V2) is deliberately excluded: it runs on its own L2
   // (Derive Chain, OP Stack) and only settles/bridges through Base.
   { slug: 'synfutures-v3',     chain: 'Base',     name: 'SynFutures V3',   aliases: ['SynFutures'] },
   { slug: 'avantis',           chain: 'Base',     name: 'Avantis',         aliases: [] },
+  { slug: 'kiloex',            chain: 'Base',     name: 'KiloEx',          aliases: [] },
+  { slug: 'carbon.inc',        chain: 'Base',     name: 'Carbon',          aliases: ['Carbon.inc'] },
+  { slug: 'gains-network',     chain: 'Base',     name: 'Gains Network',   aliases: ['Gains'] },
+  { slug: 'hibachi',           chain: 'Base',     name: 'Hibachi',         aliases: [] },
 ];
 const CHAINS = ['MegaETH', 'Monad', 'BSC', 'Solana', 'Arbitrum', 'Base'];
 
@@ -339,11 +354,7 @@ async function main() {
 
   await fs.mkdir(path.dirname(outPath), { recursive: true });
   await fs.writeFile(outPath, JSON.stringify(snapshot, null, 2) + '\n');
-  // Also emit a JS file that sets a global, so the dashboard can load it via
-  // <script src="..."> and bypass file:// CORS restrictions on fetch().
-  const jsPath = path.resolve('public/data/perps.js');
-  await fs.writeFile(jsPath, 'window.__PERPS_SNAPSHOT__ = ' + JSON.stringify(snapshot, null, 2) + ';\n');
-  console.log('wrote', outPath, 'and', jsPath);
+  console.log('wrote', outPath);
 }
 
 main().catch(err => {

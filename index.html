@@ -1922,6 +1922,13 @@ function logoFor(proto) {
 }
 
 // ---------- formatters ----------
+// Minimal HTML entity escape — use wherever we interpolate user-supplied or
+// third-party strings (DefiLlama protocol names, token symbols, chain names
+// fed from an API) into innerHTML. Prevents XSS via crafted protocol names
+// that could otherwise inject <img onerror=…> and fire on every visitor.
+const esc = (s) => String(s == null ? '' : s).replace(/[&<>"']/g, c => (
+  { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]
+));
 const fmtUSD = (v) => {
   if (v == null || isNaN(v)) return '—';
   if (v >= 1e9) return `$${(v / 1e9).toFixed(2)}B`;
@@ -2453,7 +2460,7 @@ function renderMultiLineChart(containerId, series, opts = {}) {
       <div class="chart-legend">
         ${series.map(s => {
           const last = s.points[s.points.length - 1][1];
-          return `<span class="chart-key"><span class="dot" style="background:${s.color}"></span>${s.name}${last != null ? ' · ' + yFormat(last) + '/d' : ''}</span>`;
+          return `<span class="chart-key"><span class="dot" style="background:${s.color}"></span>${esc(s.name)}${last != null ? ' · ' + yFormat(last) + '/d' : ''}</span>`;
         }).join('')}
       </div>
     </div>
@@ -2556,7 +2563,7 @@ function renderMultiLineChart(containerId, series, opts = {}) {
       ${series.map((s, k) => {
         const p = nearest[k];
         return `<div class="tt-row" style="--c:${s.color}">
-          <span class="tt-label"><span class="tt-dot" style="background:${s.color}"></span>${s.name}</span>
+          <span class="tt-label"><span class="tt-dot" style="background:${s.color}"></span>${esc(s.name)}</span>
           <span class="tt-val">${p ? yFormat(p[1]) : '—'}</span>
         </div>`;
       }).join('')}`;
@@ -2599,7 +2606,7 @@ function renderStackedArea(containerId, series, opts = {}) {
       <div class="chart-title">${title}</div>
       <div class="chart-legend">
         ${series.map(s => `<span class="chart-key" style="--k:${s.color}">
-          <span class="dot" style="background:${s.color}"></span>${s.name}
+          <span class="dot" style="background:${s.color}"></span>${esc(s.name)}
           · ${yFormat(s.points[s.points.length - 1][1])}/day
         </span>`).join('')}
         <span class="chart-key"><strong>Total ${yFormat(latestTotal)}/day</strong></span>
@@ -2683,7 +2690,7 @@ function renderGroupedBarChart(containerId, series, opts = {}) {
     <div class="chart-header">
       <div class="chart-title">${title}</div>
       <div class="chart-legend">
-        ${series.map((s, k) => `<span class="chart-key"><span class="dot" style="background:${s.color}"></span>${s.name} · ${yFormat(latestVals[k])}</span>`).join('')}
+        ${series.map((s, k) => `<span class="chart-key"><span class="dot" style="background:${s.color}"></span>${esc(s.name)} · ${yFormat(latestVals[k])}</span>`).join('')}
       </div>
     </div>
     <div class="chart-svg-wrap"></div>`;
@@ -2774,7 +2781,7 @@ function renderGroupedBarChart(containerId, series, opts = {}) {
       ${series.map((s, k) => {
         const v = s.values[g];
         return `<div class="tt-row" style="--c:${s.color}">
-          <span class="tt-label"><span class="tt-dot" style="background:${s.color}"></span>${s.name}</span>
+          <span class="tt-label"><span class="tt-dot" style="background:${s.color}"></span>${esc(s.name)}</span>
           <span class="tt-val">${v != null ? yFormat(v) : '—'}</span>
         </div>`;
       }).join('')}`;
@@ -2846,9 +2853,9 @@ function renderStackedBarChart(containerId, series, opts = {}) {
     if (!items.length) return '';
     const keys = items.map(({ s, k }) => {
       const v = valueByDayBySeries[k].get(xs[latestIdx]) || 0;
-      return `<span class="chart-key"><span class="dot" style="background:${s.color}"></span>${s.name} · ${yFormat(v)}</span>`;
+      return `<span class="chart-key"><span class="dot" style="background:${s.color}"></span>${esc(s.name)} · ${yFormat(v)}</span>`;
     }).join('');
-    return `<span class="chart-key"><strong style="color:${color}">${name} total ${yFormat(total)}/d</strong></span>${keys}`;
+    return `<span class="chart-key"><strong style="color:${color}">${esc(name)} total ${yFormat(total)}/d</strong></span>${keys}`;
   };
 
   el.innerHTML = `
@@ -2962,7 +2969,7 @@ function renderStackedBarChart(containerId, series, opts = {}) {
       </div>
       ${rows.map(({ s, v }) => `
         <div class="tt-row" style="--c:${s.color};opacity:0.85">
-          <span class="tt-label" style="padding-left:14px"><span class="tt-dot" style="background:${s.color}"></span>${s.name}</span>
+          <span class="tt-label" style="padding-left:14px"><span class="tt-dot" style="background:${s.color}"></span>${esc(s.name)}</span>
           <span class="tt-val">${yFormat(v)}</span>
         </div>`).join('')}` : '';
     tooltip.innerHTML = `
@@ -3140,12 +3147,20 @@ const HEAVY_URLS = {
   stables:   'https://stablecoins.llama.fi/stablecoins?includePrices=true',
 };
 const _heavyCache = { protocols: null, stables: null };
+const HEAVY_TTL_MS = 5 * 60_000;
 let _heavyPromise = null;
+let _heavyPromiseTs = 0;
 function ensureHeavyLoaded() {
-  if (_heavyPromise) return _heavyPromise;
+  // Reuse the in-flight fetch while it's outstanding, otherwise refresh once
+  // the cache is older than HEAVY_TTL_MS. Previously this memoized the
+  // resolved promise forever, so Top Protocols + Stablecoin Supply froze at
+  // their first-load values for the life of the tab.
+  const stale = Date.now() - _heavyPromiseTs > HEAVY_TTL_MS;
+  if (_heavyPromise && !stale) return _heavyPromise;
+  _heavyPromiseTs = Date.now();
   _heavyPromise = Promise.all([
-    safeJsonMemo(HEAVY_URLS.protocols, 5 * 60_000),
-    safeJsonMemo(HEAVY_URLS.stables,   5 * 60_000),
+    safeJsonMemo(HEAVY_URLS.protocols, HEAVY_TTL_MS),
+    safeJsonMemo(HEAVY_URLS.stables,   HEAVY_TTL_MS),
   ]).then(([protocols, stables]) => {
     if (protocols) _heavyCache.protocols = protocols;
     if (stables)   _heavyCache.stables   = stables;
@@ -3414,9 +3429,13 @@ async function loadAll() {
         totalAllTime: p.volumeAllTime,
         category: 'Derivatives',
       }));
+    // Chart total is the SUM of the listed protocols — that way the chart
+    // and the app list agree. Falling back to DefiLlama's chain-level total
+    // (`perpsVolume24h`) only when our configured list returned nothing, so
+    // a rare scraper miss doesn't blank the card.
     const reported = perpsSnapshot.chains?.[chainName]?.perpsVolume24h;
     const sum = (field) => chainProtos.reduce((a, p) => a + (p[field] || 0), 0);
-    const total24h = reported ?? (sum('volume24h') || null);
+    const total24h = sum('volume24h') || reported || null;
     return {
       total24h,
       total7d:  sum('volume7d')  || null,
@@ -3766,8 +3785,12 @@ function renderStables(d) {
   ].join('');
   renderTable('stable-table', rows);
 
-  const topN = (arr) => arr.sort((a, b) => b.v - a.v).slice(0, 6)
-    .map(x => `<span class="stable-chip">${x.name} ${fmtUSD(x.v)}</span>`).join('');
+  // Copy before sort — `arr` may come from the persisted cache and sorting
+  // in place would permanently reorder it for future reads. Also handle
+  // undefined (old cache lacking this field) instead of throwing.
+  const topN = (arr) => (Array.isArray(arr) ? [...arr] : [])
+    .sort((a, b) => b.v - a.v).slice(0, 6)
+    .map(x => `<span class="stable-chip">${esc(x.name)} ${fmtUSD(x.v)}</span>`).join('');
   document.getElementById('stable-breakdown').innerHTML = `
     <div style="margin-top: 16px;">
       <div style="color: #666; font-size: 11px; letter-spacing: 0.8px; text-transform: uppercase; margin-bottom: 8px;">MegaETH stables</div>
@@ -3957,7 +3980,7 @@ function renderProtocols(d) {
     if (!items.length) return '<li><span class="pname">No data</span><span class="pval">—</span></li>';
     return items.map((p, i) => `
       <li>
-        <span class="pname"><span class="prank">${i + 1}</span>${renderLogo(p)}${p.name}</span>
+        <span class="pname"><span class="prank">${i + 1}</span>${renderLogo(p)}${esc(p.name)}</span>
         <span class="pval">${fmtUSD(p.val)}</span>
       </li>`).join('');
   };
@@ -3975,9 +3998,9 @@ function renderProtocols(d) {
           const tagLabel = p.chain === 'mega' ? 'MEGA' : R().shortName;
           return `
         <li class="proto-row ${p.chain}">
-          <span class="pname"><span class="prank">${i + 1}</span>${renderLogo(p)}${p.name}</span>
+          <span class="pname"><span class="prank">${i + 1}</span>${renderLogo(p)}${esc(p.name)}</span>
           <span class="pval">${fmtUSD(p.val)}</span>
-          <span class="ptag"><span class="chain-tag ${p.chain}">${tagLabel}</span></span>
+          <span class="ptag"><span class="chain-tag ${p.chain}">${esc(tagLabel)}</span></span>
         </li>`;
         }).join('');
     document.getElementById('proto-mega').innerHTML  = '';
@@ -4161,7 +4184,20 @@ function renderEcosystem(d) {
   renderTable('ecosystem-table', rows);
 }
 
-async function refresh() {
+// In-flight guard — prevents the 60s setInterval from stacking a second
+// refresh on top of a slow one that's still fetching. Chain-switcher clicks
+// always force a fresh refresh (passing force=true) so users don't wait on
+// a stale in-flight cycle when they click a different chain.
+let _refreshInFlight = null;
+async function refresh({ force = false } = {}) {
+  if (_refreshInFlight && !force) return _refreshInFlight;
+  _refreshInFlight = (async () => {
+    try { return await _refreshInner(); }
+    finally { _refreshInFlight = null; }
+  })();
+  return _refreshInFlight;
+}
+async function _refreshInner() {
   // Chain-lock: capture the chain this refresh was started for. If the
   // user switches mid-fetch, we drop the stale result so Solana/BNB data
   // can't overwrite the currently-selected chain.
@@ -4228,6 +4264,9 @@ function updateTimestamp() {
 // right-column col-label) for the currently-selected chain. Called on init
 // and on every chain-switcher click.
 function applyChainChrome() {
+  // Monotonic counter used to cancel stale image-decode callbacks when the
+  // user rapid-switches chains faster than decode() can resolve.
+  applyChainChrome._swapToken ??= 0;
   const c = R();
   const logo = document.getElementById('hero-logo-right');
   if (logo) {
@@ -4259,23 +4298,35 @@ function applyChainChrome() {
       logo.style.alignSelf = alignSelf;
     };
     logo.alt = c.displayName;
+    // ALWAYS increment the swap token, even when we don't start a new
+    // preload. Rapid A→B→A clicks can land on A before B's decode has
+    // rendered; if we skipped incrementing, B's stale decode would later
+    // overwrite A's logo. Incrementing invalidates any in-flight swap.
+    const token = ++applyChainChrome._swapToken;
     if (logo.getAttribute('src') !== c.hero) {
       // Preload + decode so the new image is ready before the browser
       // paints it, AND apply styles in the same moment as the src swap.
+      // Multiple triggers: decode() for smooth paint, onload as a reliable
+      // fallback (some browsers/servers hang decode on cold PNGs), and a
+      // 500ms deadline as a last-resort swap so the UI never gets stuck.
       const pre = new Image();
+      let swapped = false;
+      const swap = () => {
+        if (swapped) return;
+        swapped = true;
+        if (token !== applyChainChrome._swapToken) return;
+        applyStyles();
+        logo.src = c.hero;
+      };
+      pre.onload  = swap;
+      pre.onerror = swap;
       pre.src = c.hero;
-      const swap = () => { applyStyles(); logo.src = c.hero; };
-      if (pre.decode) {
-        pre.decode().then(swap).catch(swap);
-      } else if (pre.complete) {
-        swap();
-      } else {
-        pre.onload = swap;
-        pre.onerror = swap;
-      }
+      if (pre.decode) pre.decode().then(swap, swap);
+      setTimeout(swap, 500);
     } else {
-      // Same chain clicked again (e.g. explicit re-click) — apply styles
-      // immediately, no src change needed.
+      // Same chain as currently rendered — apply styles immediately and
+      // do NOT start a preload. The token increment above still guards
+      // against any stale decode that hasn't landed yet.
       applyStyles();
     }
   }
@@ -4310,10 +4361,14 @@ function wireChainSwitcher() {
         const sum = document.getElementById('summary');
         if (sum) sum.innerHTML = '';
         // No full-result cache, but we may still have a fdv-ratio cache
-        // written by fetchFdvMultipleHistory on a past visit.
+        // written by fetchFdvMultipleHistory on a past visit. Try v2 first
+        // (current schema) then fall back to legacy v1 so a freshly-bumped
+        // cache key doesn't blank the chart during the transition.
         let cachedFdv = null;
         try {
-          const raw = localStorage.getItem(`mega-vs-monad:fdv-ratio:${R().key}:v1`);
+          const key = R().key;
+          const raw = localStorage.getItem(`mega-vs-monad:fdv-ratio:${key}:v2`)
+                   || localStorage.getItem(`mega-vs-monad:fdv-ratio:${key}:v1`);
           if (raw) cachedFdv = JSON.parse(raw);
         } catch {}
         const fdvEl = document.getElementById('chart-fdv-ratio');
@@ -4323,7 +4378,7 @@ function wireChainSwitcher() {
           fdvEl.innerHTML = '<div class="chart-empty">Loading…</div>';
         }
       }
-      await refresh();
+      await refresh({ force: true });
     });
   });
 }

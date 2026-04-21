@@ -15,9 +15,15 @@ export default async function handler(req) {
   const id = url.searchParams.get('id');
 
   if (!id || !ALLOWED_IDS.has(id)) {
+    // Cache the rejection — a missing/unknown id is deterministic, so the
+    // CDN can serve it without hitting our function (prevents DoS via
+    // repeated bogus ids with cache-busting query params).
     return new Response(JSON.stringify({ error: 'invalid id' }), {
       status: 400,
-      headers: { 'content-type': 'application/json' },
+      headers: {
+        'content-type': 'application/json',
+        'cache-control': 'public, s-maxage=3600',
+      },
     });
   }
 
