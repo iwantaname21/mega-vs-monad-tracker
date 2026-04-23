@@ -1611,9 +1611,11 @@ async function fetchFdvMultipleHistory(days = 90) {
   // Base has no native token — nothing to compare FDV against. Return empty
   // so the chart paints its "No Token" watermark instead.
   if (chain.noToken || !chain.coingeckoId || !chain.supply) return [];
-  // v2 — invalidates any bad cached series from earlier versions (the
-  // Arbitrum 0.20x last-day cliff, kMEGA scaling artifacts, etc).
-  const cacheKey = `mega-vs-monad:fdv-ratio:${chain.key}:v2`;
+  // v3 — invalidates any bad cached series from earlier versions (the
+  // Arbitrum 0.20x last-day cliff, kMEGA scaling artifacts) AND the v2
+  // 90-day series so existing users get the new 365-day "ALL" range
+  // immediately instead of waiting 30 min for v2 to expire.
+  const cacheKey = `mega-vs-monad:fdv-ratio:${chain.key}:v3`;
   const cacheTsKey = `${cacheKey}:ts`;
 
   // Fast path: if we have a recent cached history for this chain, return it.
@@ -1654,15 +1656,18 @@ async function fetchFdvMultipleHistory(days = 90) {
   // Load the previously cached history (may be older than FDV_HIST_FRESH_MS
   // but still useful as a floor). We won't replace it with a strictly worse
   // result — a partial/empty fresh fetch should NEVER regress the chart.
-  // Read v2 first, then fall back to legacy v1 (so cache-version bumps
-  // don't blank the chart during the transition), then to the last-result
-  // cache's embedded fdvRatioHistory.
+  // Read v3 first, then fall back through v2 / v1 so cache-version bumps
+  // don't blank the chart during the transition; finally fall back to the
+  // last-result cache's embedded fdvRatioHistory.
   let previousCached = [];
   const readArr = (key) => {
     try { const raw = localStorage.getItem(key); if (raw) { const p = JSON.parse(raw); if (Array.isArray(p)) return p; } } catch {}
     return null;
   };
-  previousCached = readArr(cacheKey) || readArr(`mega-vs-monad:fdv-ratio:${chain.key}:v1`) || [];
+  previousCached = readArr(cacheKey)
+    || readArr(`mega-vs-monad:fdv-ratio:${chain.key}:v2`)
+    || readArr(`mega-vs-monad:fdv-ratio:${chain.key}:v1`)
+    || [];
   if (previousCached.length === 0) {
     try {
       const lr = localStorage.getItem(cacheKeyFor(chain.key));
@@ -3298,7 +3303,11 @@ async function loadAll() {
     safeJson('https://api.fiscaldata.treasury.gov/services/api/fiscal_service/v2/accounting/od/avg_interest_rates?filter=security_desc:eq:Treasury%20Bills&sort=-record_date&page%5Bsize%5D=1'),
     // Historical FDV multiple (Monad FDV / MegaETH FDV) — parallel with the
     // other fetches so first-paint isn't delayed waiting on Hyperliquid candles.
-    fetchFdvMultipleHistory(90),
+    // Request 365 days so the "ALL" toggle has MEGA's full pre-market history
+    // (currently ~6 months, will grow). CoinGecko returns up to `days` daily
+    // points; Hyperliquid returns whatever it has. The ratio series is
+    // naturally capped to the intersection of both datasets.
+    fetchFdvMultipleHistory(365),
     // Live MEGA pre-market price from Hyperliquid — previously awaited
     // serially after Promise.all, which added a full round trip on top of
     // the slowest fetch. Parallelize instead.
@@ -4393,7 +4402,8 @@ function wireChainSwitcher() {
         let cachedFdv = null;
         try {
           const key = R().key;
-          const raw = localStorage.getItem(`mega-vs-monad:fdv-ratio:${key}:v2`)
+          const raw = localStorage.getItem(`mega-vs-monad:fdv-ratio:${key}:v3`)
+                   || localStorage.getItem(`mega-vs-monad:fdv-ratio:${key}:v2`)
                    || localStorage.getItem(`mega-vs-monad:fdv-ratio:${key}:v1`);
           if (raw) cachedFdv = JSON.parse(raw);
         } catch {}
