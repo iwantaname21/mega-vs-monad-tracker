@@ -1579,14 +1579,22 @@ async function fetchMegaHyperliquidHistory(days = 90) {
     }).filter(Boolean);
     return { coin, out };
   };
-  // Fire them in parallel and take the first non-empty series in preferred
-  // order (cached ticker first, then the rest).
+  // Fire all tickers in parallel and return as soon as ONE returns a
+  // non-empty series. Promise.all would wait for the slowest (up to ~5s
+  // timeout each) even when the cached ticker already came back in 300ms,
+  // which made the FDV chart feel slow on every chain switch.
   const order = hlTickerOrder();
-  const results = await Promise.all(order.map(candleFor));
-  for (const { coin, out } of results) {
-    if (out.length) { rememberHlTicker(coin); return out.sort((a, b) => a[0] - b[0]); }
+  try {
+    const winner = await Promise.any(order.map(async (coin) => {
+      const r = await candleFor(coin);
+      if (!r.out.length) throw new Error('empty');
+      return r;
+    }));
+    rememberHlTicker(winner.coin);
+    return winner.out.sort((a, b) => a[0] - b[0]);
+  } catch {
+    return [];
   }
-  return [];
 }
 
 // Build a daily [[unixSec, ratio], …] series of Monad FDV / MegaETH FDV.
@@ -1619,19 +1627,24 @@ async function fetchFdvMultipleHistory(days = 90) {
   } catch {}
 
   const fetchRight = async () => {
-    // Edge proxy first (30-min CDN cache across all visitors, dodges CoinGecko
-    // per-IP rate limit). Fall back to direct CoinGecko if the proxy misses.
-    // safeJson already retries 3× with backoff — don't stack another retry
-    // loop on top, or a 404/429 burns ~5s of sleep before falling through.
+    // Edge proxy (30-min CDN cache across all visitors, dodges CoinGecko
+    // per-IP rate limit) and direct CoinGecko fire in parallel — whichever
+    // returns first with a valid price series wins. safeJson already
+    // retries 3× with backoff, and Promise.any short-circuits on first
+    // success so a slow proxy doesn't gate the chart.
     const urls = [
       `/api/fdv-history?id=${encodeURIComponent(chain.coingeckoId)}&days=${days}`,
       `https://api.coingecko.com/api/v3/coins/${chain.coingeckoId}/market_chart?vs_currency=usd&days=${days}&interval=daily`,
     ];
-    for (const url of urls) {
-      const r = await safeJson(url);
-      if (Array.isArray(r?.prices) && r.prices.length) return r.prices;
+    try {
+      return await Promise.any(urls.map(async (url) => {
+        const r = await safeJson(url);
+        if (!Array.isArray(r?.prices) || !r.prices.length) throw new Error('empty');
+        return r.prices;
+      }));
+    } catch {
+      return [];
     }
-    return [];
   };
   const [rightRaw, megaHist] = await Promise.all([
     fetchRight(),
