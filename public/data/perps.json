@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-04-23T15:51:58.344Z",
+  "updatedAt": "2026-04-23T16:44:01.870Z",
   "source": "https://defillama.com",
   "protocols": [
     {
@@ -10,7 +10,7 @@
       "volume24h": 16309999.999999998,
       "volume7d": 62390000,
       "volume30d": 92620000,
-      "volumeAllTime": 153350000,
+      "volumeAllTime": 154900000,
       "chainFiltered": true,
       "dailyChart": [
         [
@@ -303,7 +303,7 @@
         ],
         [
           1776902400000,
-          14763275
+          16310366
         ]
       ]
     },
@@ -53274,7 +53274,7 @@
       "volume24h": 101549,
       "volume7d": 35480000,
       "volume30d": 183380000,
-      "volumeAllTime": 19662000000,
+      "volumeAllTime": 19672000000,
       "chainFiltered": true,
       "dailyChart": [
         [
@@ -55507,7 +55507,7 @@
         ],
         [
           1776902400000,
-          17394940
+          27140541
         ]
       ]
     },
@@ -73490,12 +73490,12 @@
       "raw": "$269.93m"
     },
     "Solana": {
-      "perpsVolume24h": 939780000,
-      "raw": "$939.78m"
+      "perpsVolume24h": 912900000,
+      "raw": "$912.9m"
     },
     "Arbitrum": {
-      "perpsVolume24h": 918750000,
-      "raw": "$918.75m"
+      "perpsVolume24h": 883130000,
+      "raw": "$883.13m"
     },
     "Base": {
       "perpsVolume24h": 281700000,
@@ -73628,7 +73628,7 @@
       },
       {
         "date": "2026-04-23",
-        "value": 939780000
+        "value": 912900000
       }
     ],
     "Arbitrum": [
@@ -73638,7 +73638,7 @@
       },
       {
         "date": "2026-04-23",
-        "value": 918750000
+        "value": 883130000
       }
     ],
     "Base": [
