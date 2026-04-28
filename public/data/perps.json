@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-04-28T21:06:19.011Z",
+  "updatedAt": "2026-04-28T22:56:12.293Z",
   "source": "https://defillama.com",
   "protocols": [
     {
@@ -10,7 +10,7 @@
       "volume24h": 9340000,
       "volume7d": 54600000,
       "volume30d": 133250000,
-      "volumeAllTime": 187260000,
+      "volumeAllTime": 189470000,
       "chainFiltered": true,
       "dailyChart": [
         [
@@ -323,7 +323,7 @@
         ],
         [
           1777334400000,
-          7128966
+          9337599
         ]
       ]
     },
@@ -74046,25 +74046,24 @@
       "raw": "$9.46m"
     },
     "Monad": {
-      "perpsVolume24h": null,
-      "raw": null,
-      "error": "page.goto: Timeout 60000ms exceeded.\nCall log:\n  - navigating to \"https://defillama.com/chain/Monad\", waiting until \"domcontentloaded\"\n"
+      "perpsVolume24h": 20090000,
+      "raw": "$20.09m"
     },
     "BSC": {
-      "perpsVolume24h": 278500000,
-      "raw": "$278.5m"
+      "perpsVolume24h": 278730000,
+      "raw": "$278.73m"
     },
     "Solana": {
-      "perpsVolume24h": 837200000,
-      "raw": "$837.2m"
+      "perpsVolume24h": 839720000,
+      "raw": "$839.72m"
     },
     "Arbitrum": {
-      "perpsVolume24h": 853740000,
-      "raw": "$853.74m"
+      "perpsVolume24h": 855650000,
+      "raw": "$855.65m"
     },
     "Base": {
-      "perpsVolume24h": 472320000,
-      "raw": "$472.32m"
+      "perpsVolume24h": 471380000,
+      "raw": "$471.38m"
     }
   },
   "history": {
@@ -74223,7 +74222,7 @@
       },
       {
         "date": "2026-04-28",
-        "value": 278500000
+        "value": 278730000
       }
     ],
     "Solana": [
@@ -74273,7 +74272,7 @@
       },
       {
         "date": "2026-04-28",
-        "value": 837200000
+        "value": 839720000
       }
     ],
     "Arbitrum": [
@@ -74303,7 +74302,7 @@
       },
       {
         "date": "2026-04-28",
-        "value": 853740000
+        "value": 855650000
       }
     ],
     "Base": [
@@ -74333,7 +74332,7 @@
       },
       {
         "date": "2026-04-28",
-        "value": 472320000
+        "value": 471380000
       }
     ]
   }
