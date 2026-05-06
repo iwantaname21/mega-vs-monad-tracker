@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-05-06T21:09:59.078Z",
+  "updatedAt": "2026-05-06T22:53:09.963Z",
   "source": "https://defillama.com",
   "protocols": [
     {
@@ -10,7 +10,7 @@
       "volume24h": 8480000,
       "volume7d": 190770000,
       "volume30d": 336650000,
-      "volumeAllTime": 394650000,
+      "volumeAllTime": 394800000,
       "chainFiltered": false,
       "dailyChart": [
         [
@@ -355,7 +355,7 @@
         ],
         [
           1778025600000,
-          10225722
+          10377021
         ]
       ]
     },
@@ -74910,8 +74910,8 @@
   ],
   "chains": {
     "MegaETH": {
-      "perpsVolume24h": 11040000,
-      "raw": "$11.04m"
+      "perpsVolume24h": 11700000,
+      "raw": "$11.7m"
     },
     "Monad": {
       "perpsVolume24h": 16410000,
@@ -74926,12 +74926,12 @@
       "raw": "$1.77b"
     },
     "Arbitrum": {
-      "perpsVolume24h": 922320000,
-      "raw": "$922.32m"
+      "perpsVolume24h": 937340000,
+      "raw": "$937.34m"
     },
     "Base": {
-      "perpsVolume24h": 242660000,
-      "raw": "$242.66m"
+      "perpsVolume24h": 243270000,
+      "raw": "$243.27m"
     }
   },
   "history": {
@@ -75018,7 +75018,7 @@
       },
       {
         "date": "2026-05-06",
-        "value": 11040000
+        "value": 11700000
       }
     ],
     "Monad": [
@@ -75330,7 +75330,7 @@
       },
       {
         "date": "2026-05-06",
-        "value": 922320000
+        "value": 937340000
       }
     ],
     "Base": [
@@ -75392,7 +75392,7 @@
       },
       {
         "date": "2026-05-06",
-        "value": 242660000
+        "value": 243270000
       }
     ]
   }
