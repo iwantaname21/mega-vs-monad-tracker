@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-05-06T17:28:36.643Z",
+  "updatedAt": "2026-05-06T19:44:32.043Z",
   "source": "https://defillama.com",
   "protocols": [
     {
@@ -10,7 +10,7 @@
       "volume24h": 8480000,
       "volume7d": 190770000,
       "volume30d": 336650000,
-      "volumeAllTime": 393660000,
+      "volumeAllTime": 393270000,
       "chainFiltered": false,
       "dailyChart": [
         [
@@ -355,7 +355,7 @@
         ],
         [
           1778025600000,
-          9231256
+          9339779
         ]
       ]
     },
@@ -54331,10 +54331,10 @@
         "Symm.io",
         "Symmio"
       ],
-      "volume24h": 100730000,
+      "volume24h": 99150000,
       "volume7d": 556030000,
       "volume30d": 2517000000,
-      "volumeAllTime": 20877000000,
+      "volumeAllTime": 20876000000,
       "chainFiltered": false,
       "dailyChart": [
         [
@@ -56619,7 +56619,7 @@
         ],
         [
           1778025600000,
-          100726897
+          99151529
         ]
       ]
     },
@@ -74914,24 +74914,24 @@
       "raw": "$10.19m"
     },
     "Monad": {
-      "perpsVolume24h": 16730000,
-      "raw": "$16.73m"
+      "perpsVolume24h": 16930000,
+      "raw": "$16.93m"
     },
     "BSC": {
-      "perpsVolume24h": 273250000,
-      "raw": "$273.25m"
+      "perpsVolume24h": 272960000,
+      "raw": "$272.96m"
     },
     "Solana": {
-      "perpsVolume24h": 1757000000,
-      "raw": "$1.757b"
+      "perpsVolume24h": 1769000000,
+      "raw": "$1.769b"
     },
     "Arbitrum": {
-      "perpsVolume24h": 918150000,
-      "raw": "$918.15m"
+      "perpsVolume24h": 922320000,
+      "raw": "$922.32m"
     },
     "Base": {
-      "perpsVolume24h": 244090000,
-      "raw": "$244.09m"
+      "perpsVolume24h": 242940000,
+      "raw": "$242.94m"
     }
   },
   "history": {
@@ -75104,7 +75104,7 @@
       },
       {
         "date": "2026-05-06",
-        "value": 16730000
+        "value": 16930000
       }
     ],
     "BSC": [
@@ -75186,7 +75186,7 @@
       },
       {
         "date": "2026-05-06",
-        "value": 273250000
+        "value": 272960000
       }
     ],
     "Solana": [
@@ -75268,7 +75268,7 @@
       },
       {
         "date": "2026-05-06",
-        "value": 1757000000
+        "value": 1769000000
       }
     ],
     "Arbitrum": [
@@ -75330,7 +75330,7 @@
       },
       {
         "date": "2026-05-06",
-        "value": 918150000
+        "value": 922320000
       }
     ],
     "Base": [
@@ -75392,7 +75392,7 @@
       },
       {
         "date": "2026-05-06",
-        "value": 244090000
+        "value": 242940000
       }
     ]
   }
