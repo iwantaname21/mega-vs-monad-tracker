@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-05-08T13:43:39.861Z",
+  "updatedAt": "2026-05-08T15:25:25.234Z",
   "source": "https://defillama.com",
   "protocols": [
     {
@@ -10929,10 +10929,10 @@
       "aliases": [
         "Jupiter Perpetuals"
       ],
-      "volume24h": 167830000,
+      "volume24h": 163560000,
       "volume7d": 1275000000,
       "volume30d": 5726000000,
-      "volumeAllTime": 477325000000,
+      "volumeAllTime": 477321000000,
       "chainFiltered": false,
       "dailyChart": [
         [
@@ -14229,7 +14229,7 @@
         ],
         [
           1778198400000,
-          167832155
+          163560468
         ]
       ]
     },
@@ -52205,7 +52205,7 @@
         ],
         [
           1778198400000,
-          521143685
+          527132951
         ]
       ]
     },
@@ -75130,24 +75130,24 @@
       "raw": "$28.41m"
     },
     "Monad": {
-      "perpsVolume24h": 14780000,
-      "raw": "$14.78m"
+      "perpsVolume24h": 15620000,
+      "raw": "$15.62m"
     },
     "BSC": {
-      "perpsVolume24h": 277790000,
-      "raw": "$277.79m"
+      "perpsVolume24h": 278870000,
+      "raw": "$278.87m"
     },
     "Solana": {
-      "perpsVolume24h": 1719000000,
-      "raw": "$1.719b"
+      "perpsVolume24h": 1701000000,
+      "raw": "$1.701b"
     },
     "Arbitrum": {
       "perpsVolume24h": 699390000,
       "raw": "$699.39m"
     },
     "Base": {
-      "perpsVolume24h": 212570000,
-      "raw": "$212.57m"
+      "perpsVolume24h": 213250000,
+      "raw": "$213.25m"
     }
   },
   "history": {
@@ -75336,7 +75336,7 @@
       },
       {
         "date": "2026-05-08",
-        "value": 14780000
+        "value": 15620000
       }
     ],
     "BSC": [
@@ -75426,7 +75426,7 @@
       },
       {
         "date": "2026-05-08",
-        "value": 277790000
+        "value": 278870000
       }
     ],
     "Solana": [
@@ -75516,7 +75516,7 @@
       },
       {
         "date": "2026-05-08",
-        "value": 1719000000
+        "value": 1701000000
       }
     ],
     "Arbitrum": [
@@ -75656,7 +75656,7 @@
       },
       {
         "date": "2026-05-08",
-        "value": 212570000
+        "value": 213250000
       }
     ]
   }
