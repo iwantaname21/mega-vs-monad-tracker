@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-05-18T19:43:06.233Z",
+  "updatedAt": "2026-05-18T21:11:43.998Z",
   "source": "https://defillama.com",
   "protocols": [
     {
@@ -9498,10 +9498,10 @@
       "aliases": [
         "MYX"
       ],
-      "volume24h": 248440000,
+      "volume24h": 248950000,
       "volume7d": 1490000000,
       "volume30d": 7314000000,
-      "volumeAllTime": 109337000000,
+      "volumeAllTime": 109338000000,
       "chainFiltered": false,
       "dailyChart": [
         [
@@ -11158,7 +11158,7 @@
         ],
         [
           1779062400000,
-          248435860
+          248954466
         ]
       ]
     },
@@ -76158,16 +76158,16 @@
   ],
   "chains": {
     "MegaETH": {
-      "perpsVolume24h": 11750000,
-      "raw": "$11.75m"
+      "perpsVolume24h": 13340000,
+      "raw": "$13.34m"
     },
     "Monad": {
       "perpsVolume24h": 16510000.000000002,
       "raw": "$16.51m"
     },
     "BSC": {
-      "perpsVolume24h": 250320000,
-      "raw": "$250.32m"
+      "perpsVolume24h": 252700000,
+      "raw": "$252.7m"
     },
     "Solana": {
       "perpsVolume24h": 1441000000,
@@ -76314,7 +76314,7 @@
       },
       {
         "date": "2026-05-18",
-        "value": 11750000
+        "value": 13340000
       }
     ],
     "Monad": [
@@ -76578,7 +76578,7 @@
       },
       {
         "date": "2026-05-18",
-        "value": 250320000
+        "value": 252700000
       }
     ],
     "Solana": [
