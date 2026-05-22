@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-05-22T17:50:26.349Z",
+  "updatedAt": "2026-05-22T19:42:10.901Z",
   "source": "https://defillama.com",
   "protocols": [
     {
@@ -52613,10 +52613,10 @@
       "chain": "Arbitrum",
       "name": "Variational",
       "aliases": [],
-      "volume24h": 890130000,
+      "volume24h": 861350000,
       "volume7d": 4663000000,
       "volume30d": 17143999999.999998,
-      "volumeAllTime": 126255000000,
+      "volumeAllTime": 126226000000,
       "chainFiltered": false,
       "dailyChart": [
         [
@@ -53193,7 +53193,7 @@
         ],
         [
           1779408000000,
-          916051419
+          861345734
         ]
       ]
     },
@@ -76618,24 +76618,24 @@
       "raw": "$4.46m"
     },
     "Monad": {
-      "perpsVolume24h": 15780000,
-      "raw": "$15.78m"
+      "perpsVolume24h": 15140000,
+      "raw": "$15.14m"
     },
     "BSC": {
       "perpsVolume24h": 23220000,
       "raw": "$23.22m"
     },
     "Solana": {
-      "perpsVolume24h": 1542000000,
-      "raw": "$1.542b"
+      "perpsVolume24h": 1524000000,
+      "raw": "$1.524b"
     },
     "Arbitrum": {
       "perpsVolume24h": 1350000000,
       "raw": "$1.35b"
     },
     "Base": {
-      "perpsVolume24h": 293200000,
-      "raw": "$293.2m"
+      "perpsVolume24h": 292710000,
+      "raw": "$292.71m"
     }
   },
   "history": {
@@ -76936,7 +76936,7 @@
       },
       {
         "date": "2026-05-22",
-        "value": 15780000
+        "value": 15140000
       }
     ],
     "BSC": [
@@ -77228,7 +77228,7 @@
       },
       {
         "date": "2026-05-22",
-        "value": 1542000000
+        "value": 1524000000
       }
     ],
     "Arbitrum": [
@@ -77480,7 +77480,7 @@
       },
       {
         "date": "2026-05-22",
-        "value": 293200000
+        "value": 292710000
       }
     ]
   }
