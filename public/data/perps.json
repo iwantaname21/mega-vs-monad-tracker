@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-05-23T19:07:02.463Z",
+  "updatedAt": "2026-05-23T20:50:31.472Z",
   "source": "https://defillama.com",
   "protocols": [
     {
@@ -52681,10 +52681,10 @@
       "chain": "Arbitrum",
       "name": "Variational",
       "aliases": [],
-      "volume24h": 819020000,
+      "volume24h": 783830000,
       "volume7d": 4875000000,
       "volume30d": 17336000000,
-      "volumeAllTime": 127049000000,
+      "volumeAllTime": 127014000000,
       "chainFiltered": false,
       "dailyChart": [
         [
@@ -53265,7 +53265,7 @@
         ],
         [
           1779494400000,
-          800063242
+          783829473
         ]
       ]
     },
@@ -76722,8 +76722,8 @@
   ],
   "chains": {
     "MegaETH": {
-      "perpsVolume24h": 3370000,
-      "raw": "$3.37m"
+      "perpsVolume24h": 3290000,
+      "raw": "$3.29m"
     },
     "Monad": {
       "perpsVolume24h": 10610000,
@@ -76734,16 +76734,16 @@
       "raw": "$13.85m"
     },
     "Solana": {
-      "perpsVolume24h": 2542000000,
-      "raw": "$2.542b"
+      "perpsVolume24h": 2508000000,
+      "raw": "$2.508b"
     },
     "Arbitrum": {
-      "perpsVolume24h": 1215000000,
-      "raw": "$1.215b"
+      "perpsVolume24h": 1179000000,
+      "raw": "$1.179b"
     },
     "Base": {
-      "perpsVolume24h": 350630000,
-      "raw": "$350.63m"
+      "perpsVolume24h": 348730000,
+      "raw": "$348.73m"
     }
   },
   "history": {
@@ -76898,7 +76898,7 @@
       },
       {
         "date": "2026-05-23",
-        "value": 3370000
+        "value": 3290000
       }
     ],
     "Monad": [
@@ -77352,7 +77352,7 @@
       },
       {
         "date": "2026-05-23",
-        "value": 2542000000
+        "value": 2508000000
       }
     ],
     "Arbitrum": [
@@ -77482,7 +77482,7 @@
       },
       {
         "date": "2026-05-23",
-        "value": 1215000000
+        "value": 1179000000
       }
     ],
     "Base": [
@@ -77612,7 +77612,7 @@
       },
       {
         "date": "2026-05-23",
-        "value": 350630000
+        "value": 348730000
       }
     ]
   }
