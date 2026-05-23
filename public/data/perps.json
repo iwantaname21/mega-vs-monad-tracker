@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-05-23T09:51:02.793Z",
+  "updatedAt": "2026-05-23T11:09:45.316Z",
   "source": "https://defillama.com",
   "protocols": [
     {
@@ -52681,10 +52681,10 @@
       "chain": "Arbitrum",
       "name": "Variational",
       "aliases": [],
-      "volume24h": 839580000,
+      "volume24h": 841030000,
       "volume7d": 4875000000,
       "volume30d": 17336000000,
-      "volumeAllTime": 127070000000,
+      "volumeAllTime": 127071000000,
       "chainFiltered": false,
       "dailyChart": [
         [
@@ -53265,7 +53265,7 @@
         ],
         [
           1779494400000,
-          839580981
+          841030788
         ]
       ]
     },
@@ -76722,12 +76722,12 @@
   ],
   "chains": {
     "MegaETH": {
-      "perpsVolume24h": 3720000,
-      "raw": "$3.72m"
+      "perpsVolume24h": 3710000,
+      "raw": "$3.71m"
     },
     "Monad": {
-      "perpsVolume24h": 14710000,
-      "raw": "$14.71m"
+      "perpsVolume24h": 13750000,
+      "raw": "$13.75m"
     },
     "BSC": {
       "perpsVolume24h": 13850000,
@@ -76738,12 +76738,12 @@
       "raw": "$2.575b"
     },
     "Arbitrum": {
-      "perpsVolume24h": 1171000000,
-      "raw": "$1.171b"
+      "perpsVolume24h": 1205000000,
+      "raw": "$1.205b"
     },
     "Base": {
-      "perpsVolume24h": 352130000,
-      "raw": "$352.13m"
+      "perpsVolume24h": 352440000,
+      "raw": "$352.44m"
     }
   },
   "history": {
@@ -76898,7 +76898,7 @@
       },
       {
         "date": "2026-05-23",
-        "value": 3720000
+        "value": 3710000
       }
     ],
     "Monad": [
@@ -77052,7 +77052,7 @@
       },
       {
         "date": "2026-05-23",
-        "value": 14710000
+        "value": 13750000
       }
     ],
     "BSC": [
@@ -77482,7 +77482,7 @@
       },
       {
         "date": "2026-05-23",
-        "value": 1171000000
+        "value": 1205000000
       }
     ],
     "Base": [
@@ -77612,7 +77612,7 @@
       },
       {
         "date": "2026-05-23",
-        "value": 352130000
+        "value": 352440000
       }
     ]
   }
