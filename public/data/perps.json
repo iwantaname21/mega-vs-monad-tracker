@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-05-24T13:22:53.117Z",
+  "updatedAt": "2026-05-24T15:02:47.359Z",
   "source": "https://defillama.com",
   "protocols": [
     {
@@ -52749,10 +52749,10 @@
       "chain": "Arbitrum",
       "name": "Variational",
       "aliases": [],
-      "volume24h": 768260000,
+      "volume24h": 765040000,
       "volume7d": 5211000000,
       "volume30d": 17606000000,
-      "volumeAllTime": 127835000000,
+      "volumeAllTime": 127832000000,
       "chainFiltered": false,
       "dailyChart": [
         [
@@ -53337,7 +53337,7 @@
         ],
         [
           1779580800000,
-          768259534
+          765041879
         ]
       ]
     },
@@ -76834,24 +76834,24 @@
       "raw": "$2.51m"
     },
     "Monad": {
-      "perpsVolume24h": 8520000,
-      "raw": "$8.52m"
+      "perpsVolume24h": 8650000,
+      "raw": "$8.65m"
     },
     "BSC": {
       "perpsVolume24h": 14160000,
       "raw": "$14.16m"
     },
     "Solana": {
-      "perpsVolume24h": 935120000,
-      "raw": "$935.12m"
+      "perpsVolume24h": 933590000,
+      "raw": "$933.59m"
     },
     "Arbitrum": {
-      "perpsVolume24h": 1061000000,
-      "raw": "$1.061b"
+      "perpsVolume24h": 1044999999.9999999,
+      "raw": "$1.045b"
     },
     "Base": {
-      "perpsVolume24h": 221610000,
-      "raw": "$221.61m"
+      "perpsVolume24h": 224220000,
+      "raw": "$224.22m"
     }
   },
   "history": {
@@ -77168,7 +77168,7 @@
       },
       {
         "date": "2026-05-24",
-        "value": 8520000
+        "value": 8650000
       }
     ],
     "BSC": [
@@ -77476,7 +77476,7 @@
       },
       {
         "date": "2026-05-24",
-        "value": 935120000
+        "value": 933590000
       }
     ],
     "Arbitrum": [
@@ -77610,7 +77610,7 @@
       },
       {
         "date": "2026-05-24",
-        "value": 1061000000
+        "value": 1044999999.9999999
       }
     ],
     "Base": [
@@ -77744,7 +77744,7 @@
       },
       {
         "date": "2026-05-24",
-        "value": 221610000
+        "value": 224220000
       }
     ]
   }
