@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-05-26T18:24:41.284Z",
+  "updatedAt": "2026-05-26T21:43:29.567Z",
   "source": "https://defillama.com",
   "protocols": [
     {
@@ -4603,10 +4603,10 @@
       "chain": "Monad",
       "name": "Perpl",
       "aliases": [],
-      "volume24h": 2130000,
+      "volume24h": 2150000,
       "volume7d": 18710000,
       "volume30d": 60400000,
-      "volumeAllTime": 105580000,
+      "volumeAllTime": 105600000,
       "chainFiltered": false,
       "dailyChart": [
         [
@@ -5019,7 +5019,7 @@
         ],
         [
           1779753600000,
-          2125687
+          2148252
         ]
       ]
     },
@@ -53241,10 +53241,10 @@
       "chain": "Arbitrum",
       "name": "Variational",
       "aliases": [],
-      "volume24h": 843230000,
+      "volume24h": 920650000,
       "volume7d": 5305000000,
       "volume30d": 18097000000,
-      "volumeAllTime": 129196000000,
+      "volumeAllTime": 129274000000,
       "chainFiltered": false,
       "dailyChart": [
         [
@@ -53837,7 +53837,7 @@
         ],
         [
           1779753600000,
-          843227794
+          920648132
         ]
       ]
     },
@@ -77406,24 +77406,24 @@
       "raw": "$2.85m"
     },
     "Monad": {
-      "perpsVolume24h": 14950000,
-      "raw": "$14.95m"
+      "perpsVolume24h": 15450000,
+      "raw": "$15.45m"
     },
     "BSC": {
       "perpsVolume24h": 20520000,
       "raw": "$20.52m"
     },
     "Solana": {
-      "perpsVolume24h": 782280000,
-      "raw": "$782.28m"
+      "perpsVolume24h": 802210000,
+      "raw": "$802.21m"
     },
     "Arbitrum": {
-      "perpsVolume24h": 1148000000,
-      "raw": "$1.148b"
+      "perpsVolume24h": 1282000000,
+      "raw": "$1.282b"
     },
     "Base": {
-      "perpsVolume24h": 186300000,
-      "raw": "$186.3m"
+      "perpsVolume24h": 182210000,
+      "raw": "$182.21m"
     }
   },
   "history": {
@@ -77756,7 +77756,7 @@
       },
       {
         "date": "2026-05-26",
-        "value": 14950000
+        "value": 15450000
       }
     ],
     "BSC": [
@@ -78080,7 +78080,7 @@
       },
       {
         "date": "2026-05-26",
-        "value": 782280000
+        "value": 802210000
       }
     ],
     "Arbitrum": [
@@ -78222,7 +78222,7 @@
       },
       {
         "date": "2026-05-26",
-        "value": 1148000000
+        "value": 1282000000
       }
     ],
     "Base": [
@@ -78364,7 +78364,7 @@
       },
       {
         "date": "2026-05-26",
-        "value": 186300000
+        "value": 182210000
       }
     ]
   }
