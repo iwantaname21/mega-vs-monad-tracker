@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-05-30T22:57:03.147Z",
+  "updatedAt": "2026-05-31T03:38:37.300Z",
   "source": "https://defillama.com",
   "protocols": [
     {
@@ -10,7 +10,7 @@
       "volume24h": 1580000,
       "volume7d": 14160000,
       "volume30d": 385000000,
-      "volumeAllTime": 626020000,
+      "volumeAllTime": 625940000,
       "chainFiltered": false,
       "dailyChart": [
         [
@@ -451,7 +451,7 @@
         ],
         [
           1780099200000,
-          680910
+          602209
         ]
       ]
     },
@@ -4635,10 +4635,10 @@
       "chain": "Monad",
       "name": "Perpl",
       "aliases": [],
-      "volume24h": 1820000,
+      "volume24h": 1850000,
       "volume7d": 12720000,
       "volume30d": 66489999.99999999,
-      "volumeAllTime": 113000000,
+      "volumeAllTime": 113030000,
       "chainFiltered": false,
       "dailyChart": [
         [
@@ -5067,7 +5067,7 @@
         ],
         [
           1780099200000,
-          1824161
+          1847984
         ]
       ]
     },
@@ -5076,7 +5076,7 @@
       "chain": "Monad",
       "name": "LeverUp",
       "aliases": [],
-      "volume24h": 8130000.000000001,
+      "volume24h": 7890000,
       "volume7d": 76200000,
       "volume30d": 365380000,
       "volumeAllTime": 2788000000,
@@ -5832,7 +5832,7 @@
         ],
         [
           1780099200000,
-          8126829
+          7887977
         ]
       ]
     },
@@ -11457,10 +11457,10 @@
       "aliases": [
         "Jupiter Perpetuals"
       ],
-      "volume24h": 82330000,
+      "volume24h": 69660000,
       "volume7d": 1128000000,
       "volume30d": 5183000000,
-      "volumeAllTime": 481025000000,
+      "volumeAllTime": 481012000000,
       "chainFiltered": false,
       "dailyChart": [
         [
@@ -14845,7 +14845,7 @@
         ],
         [
           1780099200000,
-          82329210
+          69663396
         ]
       ]
     },
@@ -22667,7 +22667,7 @@
       "volume24h": 462650000,
       "volume7d": 2536000000,
       "volume30d": 11950000000,
-      "volumeAllTime": 98236000000,
+      "volumeAllTime": 98202000000,
       "chainFiltered": false,
       "dailyChart": [
         [
@@ -24092,7 +24092,7 @@
         ],
         [
           1780099200000,
-          316770290
+          282641252
         ]
       ]
     },
@@ -53537,10 +53537,10 @@
       "chain": "Arbitrum",
       "name": "Variational",
       "aliases": [],
-      "volume24h": 660590000,
-      "volume7d": 6103000000,
-      "volume30d": 19746000000,
-      "volumeAllTime": 132994000000,
+      "volume24h": 633680000,
+      "volume7d": 5900000000,
+      "volume30d": 19976000000,
+      "volumeAllTime": 132967000000.00002,
       "chainFiltered": false,
       "dailyChart": [
         [
@@ -54149,7 +54149,7 @@
         ],
         [
           1780099200000,
-          660587294
+          627807197
         ]
       ]
     },
@@ -54158,7 +54158,7 @@
       "chain": "Arbitrum",
       "name": "Boros",
       "aliases": [],
-      "volume24h": 3350000,
+      "volume24h": 3220000,
       "volume7d": 608770000,
       "volume30d": 1586000000,
       "volumeAllTime": 16355000000,
@@ -55374,7 +55374,7 @@
         ],
         [
           1780099200000,
-          3353550
+          3215278
         ]
       ]
     },
@@ -56599,7 +56599,7 @@
         ],
         [
           1780099200000,
-          15316630
+          14715816
         ]
       ]
     },
@@ -56611,10 +56611,10 @@
         "Symm.io",
         "Symmio"
       ],
-      "volume24h": 32650000,
+      "volume24h": 35910000,
       "volume7d": 450740000,
       "volume30d": 2305000000,
-      "volumeAllTime": 22626000000,
+      "volumeAllTime": 22629000000,
       "chainFiltered": false,
       "dailyChart": [
         [
@@ -58995,7 +58995,7 @@
         ],
         [
           1780099200000,
-          30095885
+          35909114
         ]
       ]
     },
@@ -77851,35 +77851,35 @@
         ],
         [
           1780099200000,
-          15316630
+          14715816
         ]
       ]
     }
   ],
   "chains": {
     "MegaETH": {
-      "perpsVolume24h": 1340000,
-      "raw": "$1.34m"
+      "perpsVolume24h": 1260000,
+      "raw": "$1.26m"
     },
     "Monad": {
-      "perpsVolume24h": 10040000,
-      "raw": "$10.04m"
+      "perpsVolume24h": 9610000,
+      "raw": "$9.61m"
     },
     "BSC": {
-      "perpsVolume24h": 21240000,
-      "raw": "$21.24m"
+      "perpsVolume24h": 8580000,
+      "raw": "$8.58m"
     },
     "Solana": {
-      "perpsVolume24h": 1812000000,
-      "raw": "$1.812b"
+      "perpsVolume24h": 618870000,
+      "raw": "$618.87m"
     },
     "Arbitrum": {
-      "perpsVolume24h": 987830000,
-      "raw": "$987.83m"
+      "perpsVolume24h": 730760000,
+      "raw": "$730.76m"
     },
     "Base": {
-      "perpsVolume24h": 328130000,
-      "raw": "$328.13m"
+      "perpsVolume24h": 163830000,
+      "raw": "$163.83m"
     }
   },
   "history": {
@@ -78063,6 +78063,10 @@
       {
         "date": "2026-05-30",
         "value": 1340000
+      },
+      {
+        "date": "2026-05-31",
+        "value": 1260000
       }
     ],
     "Monad": [
@@ -78245,6 +78249,10 @@
       {
         "date": "2026-05-30",
         "value": 10040000
+      },
+      {
+        "date": "2026-05-31",
+        "value": 9610000
       }
     ],
     "BSC": [
@@ -78423,6 +78431,10 @@
       {
         "date": "2026-05-30",
         "value": 21240000
+      },
+      {
+        "date": "2026-05-31",
+        "value": 8580000
       }
     ],
     "Solana": [
@@ -78601,6 +78613,10 @@
       {
         "date": "2026-05-30",
         "value": 1812000000
+      },
+      {
+        "date": "2026-05-31",
+        "value": 618870000
       }
     ],
     "Arbitrum": [
@@ -78759,6 +78775,10 @@
       {
         "date": "2026-05-30",
         "value": 987830000
+      },
+      {
+        "date": "2026-05-31",
+        "value": 730760000
       }
     ],
     "Base": [
@@ -78917,6 +78937,10 @@
       {
         "date": "2026-05-30",
         "value": 328130000
+      },
+      {
+        "date": "2026-05-31",
+        "value": 163830000
       }
     ]
   }
