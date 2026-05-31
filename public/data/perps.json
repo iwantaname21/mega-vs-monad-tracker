@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-05-31T13:41:46.715Z",
+  "updatedAt": "2026-05-31T15:16:46.462Z",
   "source": "https://defillama.com",
   "protocols": [
     {
@@ -53605,10 +53605,10 @@
       "chain": "Arbitrum",
       "name": "Variational",
       "aliases": [],
-      "volume24h": 642050000,
+      "volume24h": 624530000,
       "volume7d": 5900000000,
       "volume30d": 19976000000,
-      "volumeAllTime": 133609000000.00002,
+      "volumeAllTime": 133591000000.00002,
       "chainFiltered": false,
       "dailyChart": [
         [
@@ -54221,7 +54221,7 @@
         ],
         [
           1780185600000,
-          642048841
+          624533331
         ]
       ]
     },
@@ -59090,7 +59090,7 @@
       "aliases": [
         "SynFutures"
       ],
-      "volume24h": 61420000,
+      "volume24h": 61090000,
       "volume7d": 493390000,
       "volume30d": 2199000000,
       "volumeAllTime": 333693000000,
@@ -62334,7 +62334,7 @@
         ],
         [
           1780185600000,
-          61416357
+          61093188
         ]
       ]
     },
@@ -77966,8 +77966,8 @@
   ],
   "chains": {
     "MegaETH": {
-      "perpsVolume24h": 1350000,
-      "raw": "$1.35m"
+      "perpsVolume24h": 1370000,
+      "raw": "$1.37m"
     },
     "Monad": {
       "perpsVolume24h": 8670000,
@@ -77978,16 +77978,16 @@
       "raw": "$8.58m"
     },
     "Solana": {
-      "perpsVolume24h": 596440000,
-      "raw": "$596.44m"
+      "perpsVolume24h": 604430000,
+      "raw": "$604.43m"
     },
     "Arbitrum": {
-      "perpsVolume24h": 733650000,
-      "raw": "$733.65m"
+      "perpsVolume24h": 708050000,
+      "raw": "$708.05m"
     },
     "Base": {
-      "perpsVolume24h": 163930000,
-      "raw": "$163.93m"
+      "perpsVolume24h": 164100000,
+      "raw": "$164.1m"
     }
   },
   "history": {
@@ -78174,7 +78174,7 @@
       },
       {
         "date": "2026-05-31",
-        "value": 1350000
+        "value": 1370000
       }
     ],
     "Monad": [
@@ -78724,7 +78724,7 @@
       },
       {
         "date": "2026-05-31",
-        "value": 596440000
+        "value": 604430000
       }
     ],
     "Arbitrum": [
@@ -78886,7 +78886,7 @@
       },
       {
         "date": "2026-05-31",
-        "value": 733650000
+        "value": 708050000
       }
     ],
     "Base": [
@@ -79048,7 +79048,7 @@
       },
       {
         "date": "2026-05-31",
-        "value": 163930000
+        "value": 164100000
       }
     ]
   }
