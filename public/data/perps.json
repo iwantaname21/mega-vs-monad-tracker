@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-06-06T10:02:52.682Z",
+  "updatedAt": "2026-06-06T13:28:52.797Z",
   "source": "https://defillama.com",
   "protocols": [
     {
@@ -54013,10 +54013,10 @@
       "chain": "Arbitrum",
       "name": "Variational",
       "aliases": [],
-      "volume24h": 1579000000,
+      "volume24h": 1456000000,
       "volume7d": 8555000000,
       "volume30d": 24772000000,
-      "volumeAllTime": 142467000000,
+      "volumeAllTime": 142344000000,
       "chainFiltered": false,
       "dailyChart": [
         [
@@ -54653,7 +54653,7 @@
         ],
         [
           1780704000000,
-          1578883996
+          1455701255
         ]
       ]
     },
@@ -78614,28 +78614,28 @@
   ],
   "chains": {
     "MegaETH": {
-      "perpsVolume24h": 3680000,
-      "raw": "$3.68m"
+      "perpsVolume24h": 4550000,
+      "raw": "$4.55m"
     },
     "Monad": {
-      "perpsVolume24h": 28360000,
-      "raw": "$28.36m"
+      "perpsVolume24h": 26960000,
+      "raw": "$26.96m"
     },
     "BSC": {
       "perpsVolume24h": 8760000,
       "raw": "$8.76m"
     },
     "Solana": {
-      "perpsVolume24h": 2966000000,
-      "raw": "$2.966b"
+      "perpsVolume24h": 2917000000,
+      "raw": "$2.917b"
     },
     "Arbitrum": {
-      "perpsVolume24h": 2414000000,
-      "raw": "$2.414b"
+      "perpsVolume24h": 2428000000,
+      "raw": "$2.428b"
     },
     "Base": {
-      "perpsVolume24h": 408050000,
-      "raw": "$408.05m"
+      "perpsVolume24h": 390320000,
+      "raw": "$390.32m"
     }
   },
   "history": {
@@ -78846,7 +78846,7 @@
       },
       {
         "date": "2026-06-06",
-        "value": 3680000
+        "value": 4550000
       }
     ],
     "Monad": [
@@ -79056,7 +79056,7 @@
       },
       {
         "date": "2026-06-06",
-        "value": 28360000
+        "value": 26960000
       }
     ],
     "BSC": [
@@ -79468,7 +79468,7 @@
       },
       {
         "date": "2026-06-06",
-        "value": 2966000000
+        "value": 2917000000
       }
     ],
     "Arbitrum": [
@@ -79654,7 +79654,7 @@
       },
       {
         "date": "2026-06-06",
-        "value": 2414000000
+        "value": 2428000000
       }
     ],
     "Base": [
@@ -79840,7 +79840,7 @@
       },
       {
         "date": "2026-06-06",
-        "value": 408050000
+        "value": 390320000
       }
     ]
   }
