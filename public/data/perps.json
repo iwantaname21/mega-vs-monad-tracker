@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-06-07T21:10:53.397Z",
+  "updatedAt": "2026-06-07T23:03:44.541Z",
   "source": "https://defillama.com",
   "protocols": [
     {
@@ -54734,10 +54734,10 @@
       "chain": "Arbitrum",
       "name": "Boros",
       "aliases": [],
-      "volume24h": 11920000,
+      "volume24h": 21110000,
       "volume7d": 249040000,
       "volume30d": 1600000000,
-      "volumeAllTime": 16616000000,
+      "volumeAllTime": 16626000000.000002,
       "chainFiltered": false,
       "dailyChart": [
         [
@@ -55982,7 +55982,7 @@
         ],
         [
           1780790400000,
-          11921038
+          21107859
         ]
       ]
     },
@@ -78726,8 +78726,8 @@
       "raw": "$376,236"
     },
     "Monad": {
-      "perpsVolume24h": 35440000,
-      "raw": "$35.44m"
+      "perpsVolume24h": 34850000,
+      "raw": "$34.85m"
     },
     "BSC": {
       "perpsVolume24h": 8580000,
@@ -78738,12 +78738,12 @@
       "raw": "$610.62m"
     },
     "Arbitrum": {
-      "perpsVolume24h": 904800000,
-      "raw": "$904.8m"
+      "perpsVolume24h": 940400000,
+      "raw": "$940.4m"
     },
     "Base": {
-      "perpsVolume24h": 150890000,
-      "raw": "$150.89m"
+      "perpsVolume24h": 152200000,
+      "raw": "$152.2m"
     }
   },
   "history": {
@@ -79172,7 +79172,7 @@
       },
       {
         "date": "2026-06-07",
-        "value": 35440000
+        "value": 34850000
       }
     ],
     "BSC": [
@@ -79782,7 +79782,7 @@
       },
       {
         "date": "2026-06-07",
-        "value": 904800000
+        "value": 940400000
       }
     ],
     "Base": [
@@ -79972,7 +79972,7 @@
       },
       {
         "date": "2026-06-07",
-        "value": 150890000
+        "value": 152200000
       }
     ]
   }
