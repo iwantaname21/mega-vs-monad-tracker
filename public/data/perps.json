@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-06-09T10:59:00.079Z",
+  "updatedAt": "2026-06-09T14:47:04.278Z",
   "source": "https://defillama.com",
   "protocols": [
     {
@@ -10,7 +10,7 @@
       "volume24h": 1880000,
       "volume7d": 21170000,
       "volume30d": 195280000,
-      "volumeAllTime": 652540000,
+      "volumeAllTime": 652550000,
       "chainFiltered": false,
       "dailyChart": [
         [
@@ -491,7 +491,7 @@
         ],
         [
           1780963200000,
-          1601256
+          1616736
         ]
       ]
     },
@@ -4715,7 +4715,7 @@
       "chain": "Monad",
       "name": "Perpl",
       "aliases": [],
-      "volume24h": 130388,
+      "volume24h": 135416,
       "volume7d": 1490000,
       "volume30d": 75480000,
       "volumeAllTime": 130430000,
@@ -5187,7 +5187,7 @@
         ],
         [
           1780963200000,
-          130388
+          135416
         ]
       ]
     },
@@ -5196,7 +5196,7 @@
       "chain": "Monad",
       "name": "LeverUp",
       "aliases": [],
-      "volume24h": 29390000,
+      "volume24h": 29150000,
       "volume7d": 232380000,
       "volume30d": 507790000,
       "volumeAllTime": 3072000000,
@@ -5992,7 +5992,7 @@
         ],
         [
           1780963200000,
-          29393987
+          29146021
         ]
       ]
     },
@@ -11697,10 +11697,10 @@
       "aliases": [
         "Jupiter Perpetuals"
       ],
-      "volume24h": 235690000,
+      "volume24h": 245460000,
       "volume7d": 2350000000,
       "volume30d": 6220000000,
-      "volumeAllTime": 483913000000,
+      "volumeAllTime": 483923000000,
       "chainFiltered": false,
       "dailyChart": [
         [
@@ -15125,7 +15125,7 @@
         ],
         [
           1780963200000,
-          234935681
+          245462533
         ]
       ]
     },
@@ -51615,7 +51615,7 @@
         ],
         [
           1780963200000,
-          597406
+          598394
         ]
       ]
     },
@@ -54217,10 +54217,10 @@
       "chain": "Arbitrum",
       "name": "Variational",
       "aliases": [],
-      "volume24h": 759550000,
+      "volume24h": 734190000,
       "volume7d": 8116000000,
       "volume30d": 25601000000,
-      "volumeAllTime": 143886000000,
+      "volumeAllTime": 143861000000,
       "chainFiltered": false,
       "dailyChart": [
         [
@@ -54869,7 +54869,7 @@
         ],
         [
           1780963200000,
-          759547563
+          734190586
         ]
       ]
     },
@@ -54878,10 +54878,10 @@
       "chain": "Arbitrum",
       "name": "Boros",
       "aliases": [],
-      "volume24h": 31880000,
+      "volume24h": 45970000,
       "volume7d": 291220000,
       "volume30d": 1591000000,
-      "volumeAllTime": 16699000000.000002,
+      "volumeAllTime": 16713000000.000002,
       "chainFiltered": false,
       "dailyChart": [
         [
@@ -56134,7 +56134,7 @@
         ],
         [
           1780963200000,
-          31878593
+          45967039
         ]
       ]
     },
@@ -56143,10 +56143,10 @@
       "chain": "Arbitrum",
       "name": "Hibachi",
       "aliases": [],
-      "volume24h": 21390000,
+      "volume24h": 22120000,
       "volume7d": 152150000,
       "volume30d": 584900000,
-      "volumeAllTime": 8579000000.000001,
+      "volumeAllTime": 8580000000,
       "chainFiltered": false,
       "dailyChart": [
         [
@@ -57399,7 +57399,7 @@
         ],
         [
           1780963200000,
-          21389357
+          22120873
         ]
       ]
     },
@@ -57411,7 +57411,7 @@
         "Symm.io",
         "Symmio"
       ],
-      "volume24h": 58950000,
+      "volume24h": 58810000,
       "volume7d": 411620000,
       "volume30d": 2007000000,
       "volumeAllTime": 23221000000,
@@ -59835,7 +59835,7 @@
         ],
         [
           1780963200000,
-          58945457
+          58806572
         ]
       ]
     },
@@ -59846,10 +59846,10 @@
       "aliases": [
         "SynFutures"
       ],
-      "volume24h": 74160000,
+      "volume24h": 73410000,
       "volume7d": 692390000,
       "volume30d": 2405000000,
-      "volumeAllTime": 334552000000,
+      "volumeAllTime": 334551000000,
       "chainFiltered": false,
       "dailyChart": [
         [
@@ -63126,7 +63126,7 @@
         ],
         [
           1780963200000,
-          74157120
+          73413886
         ]
       ]
     },
@@ -77675,10 +77675,10 @@
       "chain": "Base",
       "name": "Hibachi",
       "aliases": [],
-      "volume24h": 21390000,
+      "volume24h": 22120000,
       "volume7d": 152150000,
       "volume30d": 584900000,
-      "volumeAllTime": 8579000000.000001,
+      "volumeAllTime": 8580000000,
       "chainFiltered": false,
       "dailyChart": [
         [
@@ -78931,35 +78931,35 @@
         ],
         [
           1780963200000,
-          21389357
+          22120873
         ]
       ]
     }
   ],
   "chains": {
     "MegaETH": {
-      "perpsVolume24h": 1800000,
-      "raw": "$1.8m"
+      "perpsVolume24h": 1810000,
+      "raw": "$1.81m"
     },
     "Monad": {
-      "perpsVolume24h": 29280000,
-      "raw": "$29.28m"
+      "perpsVolume24h": 20680000,
+      "raw": "$20.68m"
     },
     "BSC": {
       "perpsVolume24h": 8770000,
       "raw": "$8.77m"
     },
     "Solana": {
-      "perpsVolume24h": 2065999999.9999998,
-      "raw": "$2.066b"
+      "perpsVolume24h": 2031000000.0000002,
+      "raw": "$2.031b"
     },
     "Arbitrum": {
-      "perpsVolume24h": 1100000000,
-      "raw": "$1.1b"
+      "perpsVolume24h": 1074000000,
+      "raw": "$1.074b"
     },
     "Base": {
-      "perpsVolume24h": 159380000,
-      "raw": "$159.38m"
+      "perpsVolume24h": 142650000,
+      "raw": "$142.65m"
     }
   },
   "history": {
@@ -79182,7 +79182,7 @@
       },
       {
         "date": "2026-06-09",
-        "value": 1800000
+        "value": 1810000
       }
     ],
     "Monad": [
@@ -79404,7 +79404,7 @@
       },
       {
         "date": "2026-06-09",
-        "value": 29280000
+        "value": 20680000
       }
     ],
     "BSC": [
@@ -79840,7 +79840,7 @@
       },
       {
         "date": "2026-06-09",
-        "value": 2065999999.9999998
+        "value": 2031000000.0000002
       }
     ],
     "Arbitrum": [
@@ -80038,7 +80038,7 @@
       },
       {
         "date": "2026-06-09",
-        "value": 1100000000
+        "value": 1074000000
       }
     ],
     "Base": [
@@ -80236,7 +80236,7 @@
       },
       {
         "date": "2026-06-09",
-        "value": 159380000
+        "value": 142650000
       }
     ]
   }
