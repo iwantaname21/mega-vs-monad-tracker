@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-06-14T15:50:23.347Z",
+  "updatedAt": "2026-06-14T17:19:29.238Z",
   "source": "https://defillama.com",
   "protocols": [
     {
@@ -4755,10 +4755,10 @@
       "chain": "Monad",
       "name": "Perpl",
       "aliases": [],
-      "volume24h": 830805,
+      "volume24h": 821869,
       "volume7d": 4250000,
       "volume30d": 64470000,
-      "volumeAllTime": 135130000,
+      "volumeAllTime": 135120000,
       "chainFiltered": false,
       "dailyChart": [
         [
@@ -5247,7 +5247,7 @@
         ],
         [
           1781395200000,
-          830805
+          821869
         ]
       ]
     },
@@ -23151,7 +23151,7 @@
       "volume24h": 208460000,
       "volume7d": 3190000000,
       "volume30d": 11977000000,
-      "volumeAllTime": 104071000000,
+      "volumeAllTime": 104072000000,
       "chainFiltered": false,
       "dailyChart": [
         [
@@ -24628,7 +24628,7 @@
         ],
         [
           1781395200000,
-          204542786
+          206345045
         ]
       ]
     },
@@ -79474,12 +79474,12 @@
       "raw": "$508.48m"
     },
     "Arbitrum": {
-      "perpsVolume24h": 504810000,
-      "raw": "$504.81m"
+      "perpsVolume24h": 505180000,
+      "raw": "$505.18m"
     },
     "Base": {
-      "perpsVolume24h": 156350000,
-      "raw": "$156.35m"
+      "perpsVolume24h": 154040000,
+      "raw": "$154.04m"
     }
   },
   "history": {
@@ -80658,7 +80658,7 @@
       },
       {
         "date": "2026-06-14",
-        "value": 504810000
+        "value": 505180000
       }
     ],
     "Base": [
@@ -80876,7 +80876,7 @@
       },
       {
         "date": "2026-06-14",
-        "value": 156350000
+        "value": 154040000
       }
     ]
   }
