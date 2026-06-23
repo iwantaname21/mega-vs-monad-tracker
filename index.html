@@ -1793,6 +1793,11 @@ const NATIVE_NORM = {
   mega: new Set(NATIVE_APPS.mega.map(normName)),
   monad: new Set(NATIVE_APPS.monad.filter(n => n !== 'Pancake Swap').map(normName)),
 };
+// Protocols to keep OUT of the Spot Volume ranking even though DeFiLlama files
+// them under "dexs". Monster (MNSTR) is a physical trading-card game — its
+// marketplace turnover isn't spot-DEX volume, so it shouldn't rank there. It
+// still counts as a native app and shows in the Fees ranking.
+const SPOT_VOLUME_EXCLUDE = new Set(['Monster', 'MNSTR'].map(normName));
 // Exclude centralized-exchange wallets + non-DeFi categories from every
 // chain-level ranking (TVL sum, Top Protocols, etc). DeFiLlama tags CEXs
 // as category 'CEX' but their wallet reserves aren't DeFi capital.
@@ -3946,7 +3951,11 @@ function renderProtocols(d) {
         .map(p => ({ name: p.name, val: p._val, logo: p.logo, slug: p.slug || p.defillamaId, category: p.category }));
     }
     if (focus === 'volspot') {
-      return overviewPick(chain === 'mega' ? d.dexMega : d.dexMonad);
+      const pool = chain === 'mega' ? d.dexMega : d.dexMonad;
+      const filtered = pool
+        ? { ...pool, protocols: (pool.protocols || []).filter(p => !SPOT_VOLUME_EXCLUDE.has(normName(p.name))) }
+        : pool;
+      return overviewPick(filtered);
     }
     if (focus === 'volperps') {
       // 1) Start with the synthesized perps overview (from the scraped snapshot).
