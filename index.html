@@ -3454,7 +3454,20 @@ async function loadAll() {
     if (!perpsSnapshot) return null;
     const chainProtos = (perpsSnapshot.protocols || [])
       .filter(p => p.chain === chainName);
-    const protocols = chainProtos
+    // DeFiLlama's chain-level perps total (scraped from /chain/{chain}) is the
+    // authoritative 24h figure. Per-protocol volumes are only chain-specific
+    // when the scraper successfully chain-filtered them (`chainFiltered`);
+    // otherwise they carry the protocol's CROSS-CHAIN total, which massively
+    // over-attributes multi-chain DEXs to smaller chains (e.g. GMX's ~$37M
+    // Arbitrum volume leaking onto MegaETH, whose entire perps total is ~$1M).
+    const reported = perpsSnapshot.chains?.[chainName]?.perpsVolume24h ?? null;
+    // A single protocol can't out-trade its whole chain. Drop any non-chain-
+    // filtered entry whose 24h blows past the chain total — that value is a
+    // cross-chain leak, and omitting it beats showing an impossible number.
+    const isLeak = (p) =>
+      p.chainFiltered !== true && reported != null && (p.volume24h || 0) > reported * 1.05;
+    const clean = chainProtos.filter(p => !isLeak(p));
+    const protocols = clean
       .filter(p => p.volume24h != null)
       .map(p => ({
         name: p.name,
@@ -3465,13 +3478,10 @@ async function loadAll() {
         totalAllTime: p.volumeAllTime,
         category: 'Derivatives',
       }));
-    // Chart total is the SUM of the listed protocols — that way the chart
-    // and the app list agree. Falling back to DefiLlama's chain-level total
-    // (`perpsVolume24h`) only when our configured list returned nothing, so
-    // a rare scraper miss doesn't blank the card.
-    const reported = perpsSnapshot.chains?.[chainName]?.perpsVolume24h;
-    const sum = (field) => chainProtos.reduce((a, p) => a + (p[field] || 0), 0);
-    const total24h = sum('volume24h') || reported || null;
+    const sum = (field) => clean.reduce((a, p) => a + (p[field] || 0), 0);
+    // Prefer DeFiLlama's authoritative chain-level 24h total; fall back to the
+    // (leak-filtered) protocol sum only when the chain-level scrape is missing.
+    const total24h = reported ?? (sum('volume24h') || null);
     return {
       total24h,
       total7d:  sum('volume7d')  || null,

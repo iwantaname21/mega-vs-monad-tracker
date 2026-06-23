@@ -197,34 +197,44 @@ async function scrapePerpsByChain(page, chain) {
   await waitForHydration(page);
 
   return await page.evaluate(() => {
-    const valRe     = /^\$\s*[\d,]+(?:\.\d+)?\s*[BbMmKk]?$/;
-    const nChainRe  = /^\d+\s+chains?$/i;
-    const text      = document.body.innerText || '';
-    const lines     = text.split('\n').map(s => s.trim()).filter(Boolean);
+    const valRe   = /^\$\s*[\d,]+(?:\.\d+)?\s*[BbMmKk]?$/;
+    // Cells that legitimately sit between a protocol's name and its $ columns:
+    // a rank number, the "N chains" marker, a % change, or an empty-cell dash.
+    // We used to anchor on "N chains" being the very next line — DefiLlama's
+    // row layout drifted, that match broke for nearly every protocol, and the
+    // merge silently fell back to (wrong) cross-chain totals. Skipping filler
+    // cells instead makes the row-finder resilient to that layout drift.
+    const fillerRe = /^(\d+\s*chains?|\d+|[+\-]?\d+(?:\.\d+)?\s*%|[-—–]|N\/A)$/i;
+    const text    = document.body.innerText || '';
+    const lines   = text.split('\n').map(s => s.trim()).filter(Boolean);
+
+    // Start just after the table's "Name" column header.
     let start = 0;
     for (let i = 0; i < lines.length; i++) {
       if (/^Name$/i.test(lines[i])) { start = i + 1; break; }
     }
-    // Skip past any remaining header rows.
-    while (start < lines.length && !nChainRe.test(lines[start + 1] || '')) start++;
 
     const out = {};
     let i = start;
     while (i < lines.length) {
       const name = lines[i];
-      if (!name || name.length > 80) { i++; continue; }
-      if (!nChainRe.test(lines[i + 1] || '')) { i++; continue; }
-      // Collect consecutive $ values after "N chains".
+      // A row label is plain text — skip headers, $ values and filler cells.
+      if (!name || name.length > 80 || valRe.test(name) || fillerRe.test(name)) { i++; continue; }
+      // Skip any filler cells (rank / "N chains" / % change / dash) between the
+      // name and the numeric columns, then collect the run of $ values.
+      let j = i + 1, guard = 0;
+      while (j < lines.length && !valRe.test(lines[j]) && fillerRe.test(lines[j]) && guard < 5) { j++; guard++; }
       const vals = [];
-      let j = i + 2;
       while (j < lines.length && valRe.test(lines[j])) { vals.push(lines[j]); j++; }
       if (vals.length >= 3) {
-        const [v24h, v7d, v30d] = vals.length === 4
+        const [v24h, v7d, v30d] = vals.length >= 4
           ? [vals[0], vals[2], vals[3]]    // [norm24h, rep24h, 7d, 30d]
           : [vals[0], vals[1], vals[2]];   // [24h, 7d, 30d]
         out[name] = { v24h, v7d, v30d };
+        i = j;            // consumed this row
+      } else {
+        i++;              // not a data row — keep scanning
       }
-      i = j; // advance past this row
     }
     return out;
   });
@@ -277,6 +287,15 @@ async function main() {
     }
   }
 
+  // A slug configured on more than one chain is a multi-chain deployment. For
+  // those, the protocol page's CROSS-CHAIN total is not a valid per-chain
+  // number, so if the chain-filtered scrape misses we must NOT fall back to it
+  // (that's exactly how GMX's ~$37M Arbitrum volume was leaking onto MegaETH).
+  // Single-chain slugs are safe to fall back since cross-chain ≈ chain total.
+  const slugCounts = {};
+  for (const p of PROTOCOLS) slugCounts[p.slug] = (slugCounts[p.slug] || 0) + 1;
+  const isMultiChain = (slug) => (slugCounts[slug] || 0) > 1;
+
   // 3) Merge — prefer the chain-filtered values for 24h/7d/30d; keep
   //    all-time from the protocol page (there's no chain-filtered all-time).
   for (const p of PROTOCOLS) {
@@ -297,11 +316,14 @@ async function main() {
       v7d:  parseUsd(hit.v7d),
       v30d: parseUsd(hit.v30d),
     } : {};
+    // Cross-chain fallback only for single-chain slugs; multi-chain slugs that
+    // weren't chain-filtered get null (unknown) rather than a leaked total.
+    const fb = isMultiChain(p.slug) ? {} : totals;
     snapshot.protocols.push({
       ...p,
-      volume24h:     chainFiltered.v24h ?? totals.v24h ?? null,
-      volume7d:      chainFiltered.v7d  ?? totals.v7d  ?? null,
-      volume30d:     chainFiltered.v30d ?? totals.v30d ?? null,
+      volume24h:     chainFiltered.v24h ?? fb.v24h ?? null,
+      volume7d:      chainFiltered.v7d  ?? fb.v7d  ?? null,
+      volume30d:     chainFiltered.v30d ?? fb.v30d ?? null,
       volumeAllTime: totals.vAll ?? null,
       chainFiltered: !!hit,
       // Daily series scraped from DefiLlama's __NEXT_DATA__ — [[tsMs, vol], …].
