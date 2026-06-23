@@ -21,6 +21,8 @@ const PROTOCOLS = [
   // MegaETH
   { slug: 'world-markets',     chain: 'MegaETH', name: 'World Markets',    aliases: [] },
   { slug: 'gmx-v2-perps',      chain: 'MegaETH', name: 'GMX V2 Perps',     aliases: ['GMX'] },
+  { slug: 'gains-network',     chain: 'MegaETH', name: 'Gains Network',    aliases: ['Gains'] },
+  { slug: 'euphoria-finance',  chain: 'MegaETH', name: 'Euphoria Finance', aliases: ['Euphoria'] },
   // Monad
   { slug: 'perpl',             chain: 'Monad',   name: 'Perpl',            aliases: [] },
   { slug: 'leverup',           chain: 'Monad',   name: 'LeverUp',          aliases: [] },
@@ -197,16 +199,15 @@ async function scrapePerpsByChain(page, chain) {
   await waitForHydration(page);
 
   return await page.evaluate(() => {
-    const valRe   = /^\$\s*[\d,]+(?:\.\d+)?\s*[BbMmKk]?$/;
+    // A $ token anywhere in a line (DefiLlama now renders a row's numeric
+    // columns as ONE tab-joined line — "$a\t$b\t$c\t$d" — not one value per
+    // line, which is what silently broke chain-filtering and leaked cross-chain
+    // totals into smaller chains like MegaETH).
+    const valTok   = /\$\s*[\d,]+(?:\.\d+)?\s*[BbMmKk]?/g;
     // Cells that legitimately sit between a protocol's name and its $ columns:
     // a rank number, the "N chains" marker, a % change, or an empty-cell dash.
-    // We used to anchor on "N chains" being the very next line — DefiLlama's
-    // row layout drifted, that match broke for nearly every protocol, and the
-    // merge silently fell back to (wrong) cross-chain totals. Skipping filler
-    // cells instead makes the row-finder resilient to that layout drift.
     const fillerRe = /^(\d+\s*chains?|\d+|[+\-]?\d+(?:\.\d+)?\s*%|[-—–]|N\/A)$/i;
-    const text    = document.body.innerText || '';
-    const lines   = text.split('\n').map(s => s.trim()).filter(Boolean);
+    const lines = (document.body.innerText || '').split('\n').map(s => s.trim()).filter(Boolean);
 
     // Start just after the table's "Name" column header.
     let start = 0;
@@ -218,18 +219,23 @@ async function scrapePerpsByChain(page, chain) {
     let i = start;
     while (i < lines.length) {
       const name = lines[i];
-      // A row label is plain text — skip headers, $ values and filler cells.
-      if (!name || name.length > 80 || valRe.test(name) || fillerRe.test(name)) { i++; continue; }
-      // Skip any filler cells (rank / "N chains" / % change / dash) between the
-      // name and the numeric columns, then collect the run of $ values.
+      // A row label is plain text — skip headers, $ value lines and filler cells.
+      if (!name || name.length > 80 || name.includes('$') || fillerRe.test(name)) { i++; continue; }
+      // Accumulate every $ token from the next few lines, skipping filler cells.
+      // Handles both the tab-joined layout and a one-value-per-line layout.
       let j = i + 1, guard = 0;
-      while (j < lines.length && !valRe.test(lines[j]) && fillerRe.test(lines[j]) && guard < 5) { j++; guard++; }
       const vals = [];
-      while (j < lines.length && valRe.test(lines[j])) { vals.push(lines[j]); j++; }
+      while (j < lines.length && guard < 6) {
+        const ln = lines[j];
+        if (ln.includes('$')) { vals.push(...(ln.match(valTok) || [])); j++; guard++; continue; }
+        if (fillerRe.test(ln)) { j++; guard++; continue; }
+        break; // reached the next row's name
+      }
       if (vals.length >= 3) {
-        const [v24h, v7d, v30d] = vals.length >= 4
-          ? [vals[0], vals[2], vals[3]]    // [norm24h, rep24h, 7d, 30d]
-          : [vals[0], vals[1], vals[2]];   // [24h, 7d, 30d]
+        // Column order is [Normalized 24h, Reported 24h, (Open Interest), 7d,
+        // 30d] with the middle cells optional, so 24h is ALWAYS the first value
+        // and 7d / 30d are ALWAYS the last two — robust to 3-, 4- or 5-col rows.
+        const v24h = vals[0], v7d = vals[vals.length - 2], v30d = vals[vals.length - 1];
         out[name] = { v24h, v7d, v30d };
         i = j;            // consumed this row
       } else {

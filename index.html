@@ -3484,13 +3484,21 @@ async function loadAll() {
         category: 'Derivatives',
       }));
     const sum = (field) => clean.reduce((a, p) => a + (p[field] || 0), 0);
-    // Prefer DeFiLlama's authoritative chain-level 24h total; fall back to the
-    // (leak-filtered) protocol sum only when the chain-level scrape is missing.
-    const total24h = reported ?? (sum('volume24h') || null);
+    // Derive all windows from the same (leak-filtered) protocol sums so they
+    // stay internally consistent. Fall back to DeFiLlama's chain-level 24h
+    // total only when the per-protocol 24h is empty (e.g. a scraper miss).
+    let total24h = sum('volume24h') || reported || null;
+    let total7d  = sum('volume7d')  || null;
+    let total30d = sum('volume30d') || null;
+    // A longer window contains the shorter one, so it can never be smaller.
+    // If a partial scrape leaves them inconsistent, lift the longer window to
+    // the shorter — the card must never show 7d < 24h or 30d < 7d.
+    if (total24h != null && total7d  != null) total7d  = Math.max(total7d,  total24h);
+    if (total7d  != null && total30d != null) total30d = Math.max(total30d, total7d);
     return {
       total24h,
-      total7d:  sum('volume7d')  || null,
-      total30d: sum('volume30d') || null,
+      total7d,
+      total30d,
       totalAllTime: sum('volumeAllTime') || null,
       protocols,
     };
