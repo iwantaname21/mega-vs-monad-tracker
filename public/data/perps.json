@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-06-26T21:16:46.426Z",
+  "updatedAt": "2026-06-26T23:03:44.549Z",
   "source": "https://defillama.com",
   "protocols": [
     {
@@ -9319,7 +9319,7 @@
       "volume24h": 8354,
       "volume7d": 100772,
       "volume30d": 479418,
-      "volumeAllTime": 2160000,
+      "volumeAllTime": 2150000,
       "chainFiltered": true,
       "dailyChart": [
         [
@@ -9544,7 +9544,7 @@
         ],
         [
           1782432000000,
-          9034
+          8354
         ]
       ]
     },
@@ -28234,7 +28234,7 @@
       "chain": "Solana",
       "name": "Pacifica",
       "aliases": [],
-      "volume24h": 596360000,
+      "volume24h": 594680000,
       "volume7d": 2870000000,
       "volume30d": 13353000000,
       "volumeAllTime": 110276000000,
@@ -65988,7 +65988,7 @@
       "aliases": [
         "SynFutures"
       ],
-      "volume24h": 116370000,
+      "volume24h": 107550000,
       "volume7d": 668160000,
       "volume30d": 2613000000,
       "volumeAllTime": 335943000000,
@@ -84157,7 +84157,7 @@
       "chain": "Base",
       "name": "Hibachi",
       "aliases": [],
-      "volume24h": 1640000,
+      "volume24h": 1730000,
       "volume7d": 27370000,
       "volume30d": 101850000,
       "volumeAllTime": 8858000000,
@@ -85488,28 +85488,28 @@
   ],
   "chains": {
     "MegaETH": {
-      "perpsVolume24h": 67612,
-      "raw": "$67,612"
+      "perpsVolume24h": 70124,
+      "raw": "$70,124"
     },
     "Monad": {
-      "perpsVolume24h": 11720000,
-      "raw": "$11.72m"
+      "perpsVolume24h": 11550000,
+      "raw": "$11.55m"
     },
     "BSC": {
       "perpsVolume24h": 28170000,
       "raw": "$28.17m"
     },
     "Solana": {
-      "perpsVolume24h": 1903000000,
-      "raw": "$1.903b"
+      "perpsVolume24h": 1912000000,
+      "raw": "$1.912b"
     },
     "Arbitrum": {
-      "perpsVolume24h": 1219000000,
-      "raw": "$1.219b"
+      "perpsVolume24h": 1183000000,
+      "raw": "$1.183b"
     },
     "Base": {
-      "perpsVolume24h": 268149999.99999997,
-      "raw": "$268.15m"
+      "perpsVolume24h": 259420000.00000003,
+      "raw": "$259.42m"
     }
   },
   "history": {
@@ -85752,7 +85752,7 @@
       },
       {
         "date": "2026-06-26",
-        "value": 67612
+        "value": 70124
       }
     ],
     "Monad": [
@@ -85994,7 +85994,7 @@
       },
       {
         "date": "2026-06-26",
-        "value": 11720000
+        "value": 11550000
       }
     ],
     "BSC": [
@@ -86478,7 +86478,7 @@
       },
       {
         "date": "2026-06-26",
-        "value": 1903000000
+        "value": 1912000000
       }
     ],
     "Arbitrum": [
@@ -86720,7 +86720,7 @@
       },
       {
         "date": "2026-06-26",
-        "value": 1219000000
+        "value": 1183000000
       }
     ],
     "Base": [
@@ -86962,7 +86962,7 @@
       },
       {
         "date": "2026-06-26",
-        "value": 268149999.99999997
+        "value": 259420000.00000003
       }
     ]
   }
