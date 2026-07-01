@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-07-01T21:26:26.884Z",
+  "updatedAt": "2026-07-01T23:13:34.480Z",
   "source": "https://defillama.com",
   "protocols": [
     {
@@ -9376,7 +9376,7 @@
       "aliases": [
         "Euphoria"
       ],
-      "volume24h": 4484,
+      "volume24h": 5573,
       "volume7d": 86888,
       "volume30d": 420180,
       "volumeAllTime": 2190000,
@@ -9624,7 +9624,7 @@
         ],
         [
           1782864000000,
-          4500
+          5573
         ]
       ]
     },
@@ -9633,10 +9633,10 @@
       "chain": "Monad",
       "name": "Perpl",
       "aliases": [],
-      "volume24h": 7320000,
+      "volume24h": 9220000,
       "volume7d": 48130000,
       "volume30d": 110540000,
-      "volumeAllTime": 241120000,
+      "volumeAllTime": 241070000,
       "chainFiltered": true,
       "dailyChart": [
         [
@@ -10193,7 +10193,7 @@
         ],
         [
           1782864000000,
-          9555779
+          9514154
         ]
       ]
     },
@@ -10202,7 +10202,7 @@
       "chain": "Monad",
       "name": "LeverUp",
       "aliases": [],
-      "volume24h": 17580000,
+      "volume24h": 17260000,
       "volume7d": 66959999.99999999,
       "volume30d": 579240000,
       "volumeAllTime": 3390000000,
@@ -28434,7 +28434,7 @@
       "chain": "Solana",
       "name": "Pacifica",
       "aliases": [],
-      "volume24h": 439870000,
+      "volume24h": 438880000,
       "volume7d": 3018000000,
       "volume30d": 13150000000,
       "volumeAllTime": 112073000000,
@@ -52253,7 +52253,7 @@
       "aliases": [
         "MUX"
       ],
-      "volume24h": 131808,
+      "volume24h": 236106,
       "volume7d": 2520000,
       "volume30d": 11410000,
       "volumeAllTime": 39931000000,
@@ -60463,7 +60463,7 @@
       "chain": "Arbitrum",
       "name": "Variational",
       "aliases": [],
-      "volume24h": 1124000000,
+      "volume24h": 1162000000,
       "volume7d": 6270000000,
       "volume30d": 27115000000,
       "volumeAllTime": 163141000000,
@@ -63921,7 +63921,7 @@
         "Symm.io",
         "Symmio"
       ],
-      "volume24h": 152659,
+      "volume24h": 151642,
       "volume7d": 2700000,
       "volume30d": 90010000,
       "volumeAllTime": 24011000000,
@@ -66444,7 +66444,7 @@
       "aliases": [
         "SynFutures"
       ],
-      "volume24h": 86590000,
+      "volume24h": 90480000,
       "volume7d": 615640000,
       "volume30d": 2660000000,
       "volumeAllTime": 336308000000,
@@ -86060,28 +86060,28 @@
   ],
   "chains": {
     "MegaETH": {
-      "perpsVolume24h": 523754,
-      "raw": "$523,754"
+      "perpsVolume24h": 524220,
+      "raw": "$524,220"
     },
     "Monad": {
-      "perpsVolume24h": 26880000,
-      "raw": "$26.88m"
+      "perpsVolume24h": 26580000,
+      "raw": "$26.58m"
     },
     "BSC": {
       "perpsVolume24h": 33590000,
       "raw": "$33.59m"
     },
     "Solana": {
-      "perpsVolume24h": 1230000000,
-      "raw": "$1.23b"
+      "perpsVolume24h": 1261000000,
+      "raw": "$1.261b"
     },
     "Arbitrum": {
-      "perpsVolume24h": 1369000000,
-      "raw": "$1.369b"
+      "perpsVolume24h": 1370000000,
+      "raw": "$1.37b"
     },
     "Base": {
-      "perpsVolume24h": 159770000,
-      "raw": "$159.77m"
+      "perpsVolume24h": 163660000,
+      "raw": "$163.66m"
     }
   },
   "history": {
@@ -86324,7 +86324,7 @@
       },
       {
         "date": "2026-07-01",
-        "value": 523754
+        "value": 524220
       }
     ],
     "Monad": [
@@ -86566,7 +86566,7 @@
       },
       {
         "date": "2026-07-01",
-        "value": 26880000
+        "value": 26580000
       }
     ],
     "BSC": [
@@ -87050,7 +87050,7 @@
       },
       {
         "date": "2026-07-01",
-        "value": 1230000000
+        "value": 1261000000
       }
     ],
     "Arbitrum": [
@@ -87292,7 +87292,7 @@
       },
       {
         "date": "2026-07-01",
-        "value": 1369000000
+        "value": 1370000000
       }
     ],
     "Base": [
@@ -87534,7 +87534,7 @@
       },
       {
         "date": "2026-07-01",
-        "value": 159770000
+        "value": 163660000
       }
     ]
   }
