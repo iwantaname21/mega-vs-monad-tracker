@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-07-27T17:41:09.549Z",
+  "updatedAt": "2026-07-27T19:24:15.440Z",
   "source": "https://defillama.com",
   "protocols": [
     {
@@ -9680,7 +9680,7 @@
       "aliases": [
         "Euphoria"
       ],
-      "volume24h": 1652,
+      "volume24h": 1274,
       "volume7d": 74822,
       "volume30d": 302114,
       "volumeAllTime": 2420000,
@@ -29450,7 +29450,7 @@
       "chain": "Solana",
       "name": "Pacifica",
       "aliases": [],
-      "volume24h": 281450000,
+      "volume24h": 309450000,
       "volume7d": 2294000000,
       "volume30d": 10539000000,
       "volumeAllTime": 121106000000,
@@ -68804,7 +68804,7 @@
       "aliases": [
         "SynFutures"
       ],
-      "volume24h": 79890000,
+      "volume24h": 79720000,
       "volume7d": 513919999.99999994,
       "volume30d": 2300000000,
       "volumeAllTime": 337942000000,
@@ -87581,7 +87581,7 @@
       "chain": "Base",
       "name": "Hibachi",
       "aliases": [],
-      "volume24h": 1400000,
+      "volume24h": 1010000,
       "volume7d": 22400000,
       "volume30d": 112800000,
       "volumeAllTime": 9296000000,
@@ -89044,20 +89044,20 @@
       "raw": "$69.34m"
     },
     "BSC": {
-      "perpsVolume24h": 5150000,
-      "raw": "$5.15m"
+      "perpsVolume24h": 5280000,
+      "raw": "$5.28m"
     },
     "Solana": {
-      "perpsVolume24h": 797240000,
-      "raw": "$797.24m"
+      "perpsVolume24h": 824270000,
+      "raw": "$824.27m"
     },
     "Arbitrum": {
-      "perpsVolume24h": 1042999999.9999999,
-      "raw": "$1.043b"
+      "perpsVolume24h": 1064000000,
+      "raw": "$1.064b"
     },
     "Base": {
-      "perpsVolume24h": 171490000,
-      "raw": "$171.49m"
+      "perpsVolume24h": 170940000,
+      "raw": "$170.94m"
     }
   },
   "history": {
@@ -89784,7 +89784,7 @@
       },
       {
         "date": "2026-07-27",
-        "value": 5150000
+        "value": 5280000
       }
     ],
     "Solana": [
@@ -90026,7 +90026,7 @@
       },
       {
         "date": "2026-07-27",
-        "value": 797240000
+        "value": 824270000
       }
     ],
     "Arbitrum": [
@@ -90268,7 +90268,7 @@
       },
       {
         "date": "2026-07-27",
-        "value": 1042999999.9999999
+        "value": 1064000000
       }
     ],
     "Base": [
@@ -90510,7 +90510,7 @@
       },
       {
         "date": "2026-07-27",
-        "value": 171490000
+        "value": 170940000
       }
     ]
   }
