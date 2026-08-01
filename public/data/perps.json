@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-08-01T20:49:11.800Z",
+  "updatedAt": "2026-08-01T22:53:17.356Z",
   "source": "https://defillama.com",
   "protocols": [
     {
@@ -29650,7 +29650,7 @@
       "chain": "Solana",
       "name": "Pacifica",
       "aliases": [],
-      "volume24h": 140310000,
+      "volume24h": 134900000,
       "volume7d": 2266000000,
       "volume30d": 10610000000,
       "volumeAllTime": 122852000000,
@@ -89620,24 +89620,24 @@
       "raw": "$2.71m"
     },
     "Monad": {
-      "perpsVolume24h": 50780000,
-      "raw": "$50.78m"
+      "perpsVolume24h": 53280000,
+      "raw": "$53.28m"
     },
     "BSC": {
       "perpsVolume24h": 23150000,
       "raw": "$23.15m"
     },
     "Solana": {
-      "perpsVolume24h": 1352000000,
-      "raw": "$1.352b"
+      "perpsVolume24h": 1351000000,
+      "raw": "$1.351b"
     },
     "Arbitrum": {
-      "perpsVolume24h": 857580000,
-      "raw": "$857.58m"
+      "perpsVolume24h": 833870000,
+      "raw": "$833.87m"
     },
     "Base": {
-      "perpsVolume24h": 267019999.99999997,
-      "raw": "$267.02m"
+      "perpsVolume24h": 271310000,
+      "raw": "$271.31m"
     }
   },
   "history": {
@@ -90122,7 +90122,7 @@
       },
       {
         "date": "2026-08-01",
-        "value": 50780000
+        "value": 53280000
       }
     ],
     "BSC": [
@@ -90606,7 +90606,7 @@
       },
       {
         "date": "2026-08-01",
-        "value": 1352000000
+        "value": 1351000000
       }
     ],
     "Arbitrum": [
@@ -90848,7 +90848,7 @@
       },
       {
         "date": "2026-08-01",
-        "value": 857580000
+        "value": 833870000
       }
     ],
     "Base": [
@@ -91090,7 +91090,7 @@
       },
       {
         "date": "2026-08-01",
-        "value": 267019999.99999997
+        "value": 271310000
       }
     ]
   }
