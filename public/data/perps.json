@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-08-08T06:48:36.907Z",
+  "updatedAt": "2026-08-08T08:38:01.738Z",
   "source": "https://defillama.com",
   "protocols": [
     {
@@ -90420,8 +90420,8 @@
   ],
   "chains": {
     "MegaETH": {
-      "perpsVolume24h": 137145,
-      "raw": "$137,145"
+      "perpsVolume24h": 137195,
+      "raw": "$137,195"
     },
     "Monad": {
       "perpsVolume24h": 92940000,
@@ -90432,12 +90432,12 @@
       "raw": "$25.59m"
     },
     "Solana": {
-      "perpsVolume24h": 1254000000,
-      "raw": "$1.254b"
+      "perpsVolume24h": 1236000000,
+      "raw": "$1.236b"
     },
     "Arbitrum": {
-      "perpsVolume24h": 985010000,
-      "raw": "$985.01m"
+      "perpsVolume24h": 969620000,
+      "raw": "$969.62m"
     },
     "Base": {
       "perpsVolume24h": 104360000,
@@ -90684,7 +90684,7 @@
       },
       {
         "date": "2026-08-08",
-        "value": 137145
+        "value": 137195
       }
     ],
     "Monad": [
@@ -91410,7 +91410,7 @@
       },
       {
         "date": "2026-08-08",
-        "value": 1254000000
+        "value": 1236000000
       }
     ],
     "Arbitrum": [
@@ -91652,7 +91652,7 @@
       },
       {
         "date": "2026-08-08",
-        "value": 985010000
+        "value": 969620000
       }
     ],
     "Base": [
