@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-08-11T18:58:31.006Z",
+  "updatedAt": "2026-08-11T20:40:25.693Z",
   "source": "https://defillama.com",
   "protocols": [
     {
@@ -70176,7 +70176,7 @@
       "aliases": [
         "SynFutures"
       ],
-      "volume24h": 70080000,
+      "volume24h": 69010000,
       "volume7d": 456350000,
       "volume30d": 2142999999.9999998,
       "volumeAllTime": 338986000000,
@@ -90768,12 +90768,12 @@
   ],
   "chains": {
     "MegaETH": {
-      "perpsVolume24h": 52133,
-      "raw": "$52,133"
+      "perpsVolume24h": 53727,
+      "raw": "$53,727"
     },
     "Monad": {
-      "perpsVolume24h": 99080000,
-      "raw": "$99.08m"
+      "perpsVolume24h": 97640000,
+      "raw": "$97.64m"
     },
     "BSC": {
       "perpsVolume24h": 25960000,
@@ -90784,12 +90784,12 @@
       "raw": "$1.416b"
     },
     "Arbitrum": {
-      "perpsVolume24h": 911540000,
-      "raw": "$911.54m"
+      "perpsVolume24h": 905570000,
+      "raw": "$905.57m"
     },
     "Base": {
-      "perpsVolume24h": 122610000,
-      "raw": "$122.61m"
+      "perpsVolume24h": 121550000,
+      "raw": "$121.55m"
     }
   },
   "history": {
@@ -91032,7 +91032,7 @@
       },
       {
         "date": "2026-08-11",
-        "value": 52133
+        "value": 53727
       }
     ],
     "Monad": [
@@ -91274,7 +91274,7 @@
       },
       {
         "date": "2026-08-11",
-        "value": 99080000
+        "value": 97640000
       }
     ],
     "BSC": [
@@ -92000,7 +92000,7 @@
       },
       {
         "date": "2026-08-11",
-        "value": 911540000
+        "value": 905570000
       }
     ],
     "Base": [
@@ -92242,7 +92242,7 @@
       },
       {
         "date": "2026-08-11",
-        "value": 122610000
+        "value": 121550000
       }
     ]
   }
