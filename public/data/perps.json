@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-08-17T06:50:30.688Z",
+  "updatedAt": "2026-08-17T08:39:53.789Z",
   "source": "https://defillama.com",
   "protocols": [
     {
@@ -12213,9 +12213,9 @@
       "aliases": [
         "Thena"
       ],
-      "volume24h": 694,
-      "volume7d": 48981,
-      "volume30d": 245629,
+      "volume24h": 9274,
+      "volume7d": 58174,
+      "volume30d": 204743,
       "volumeAllTime": 1198000000,
       "chainFiltered": true,
       "dailyChart": [
@@ -36777,9 +36777,9 @@
       "chain": "BSC",
       "name": "KiloEx",
       "aliases": [],
-      "volume24h": 4910000,
-      "volume7d": 67560000,
-      "volume30d": 254820000,
+      "volume24h": 4800000,
+      "volume7d": 68180000,
+      "volume30d": 259550000,
       "volumeAllTime": 53467000000,
       "chainFiltered": true,
       "dailyChart": [
@@ -91444,20 +91444,20 @@
       "raw": "$35,310"
     },
     "Monad": {
-      "perpsVolume24h": 117040000,
-      "raw": "$117.04m"
+      "perpsVolume24h": 116680000,
+      "raw": "$116.68m"
     },
     "BSC": {
       "perpsVolume24h": 13050000,
       "raw": "$13.05m"
     },
     "Solana": {
-      "perpsVolume24h": 322640000,
-      "raw": "$322.64m"
+      "perpsVolume24h": 327160000,
+      "raw": "$327.16m"
     },
     "Arbitrum": {
-      "perpsVolume24h": 700270000,
-      "raw": "$700.27m"
+      "perpsVolume24h": 722140000,
+      "raw": "$722.14m"
     },
     "Base": {
       "perpsVolume24h": 99140000,
@@ -91946,7 +91946,7 @@
       },
       {
         "date": "2026-08-17",
-        "value": 117040000
+        "value": 116680000
       }
     ],
     "BSC": [
@@ -92430,7 +92430,7 @@
       },
       {
         "date": "2026-08-17",
-        "value": 322640000
+        "value": 327160000
       }
     ],
     "Arbitrum": [
@@ -92672,7 +92672,7 @@
       },
       {
         "date": "2026-08-17",
-        "value": 700270000
+        "value": 722140000
       }
     ],
     "Base": [
