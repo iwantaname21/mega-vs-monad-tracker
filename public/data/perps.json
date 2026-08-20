@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-08-20T20:24:57.790Z",
+  "updatedAt": "2026-08-20T22:24:30.320Z",
   "source": "https://defillama.com",
   "protocols": [
     {
@@ -11190,7 +11190,7 @@
       "chain": "Monad",
       "name": "LeverUp",
       "aliases": [],
-      "volume24h": 9610000,
+      "volume24h": 9520000,
       "volume7d": 57840000,
       "volume30d": 515400000,
       "volumeAllTime": 4222000000.0000005,
@@ -30410,7 +30410,7 @@
       "chain": "Solana",
       "name": "Pacifica",
       "aliases": [],
-      "volume24h": 556250000,
+      "volume24h": 568850000,
       "volume7d": 1651000000,
       "volume30d": 8234000000,
       "volumeAllTime": 127817000000,
@@ -70972,7 +70972,7 @@
       "aliases": [
         "SynFutures"
       ],
-      "volume24h": 116870000,
+      "volume24h": 112020000,
       "volume7d": 505610000,
       "volume30d": 2121000000,
       "volumeAllTime": 339670000000,
@@ -90229,7 +90229,7 @@
       "chain": "Base",
       "name": "Hibachi",
       "aliases": [],
-      "volume24h": 914088,
+      "volume24h": 1080000,
       "volume7d": 12640000,
       "volume30d": 77140000,
       "volumeAllTime": 9623000000,
@@ -91780,12 +91780,12 @@
   ],
   "chains": {
     "MegaETH": {
-      "perpsVolume24h": 22668,
-      "raw": "$22,668"
+      "perpsVolume24h": 22365,
+      "raw": "$22,365"
     },
     "Monad": {
-      "perpsVolume24h": 102500000,
-      "raw": "$102.5m"
+      "perpsVolume24h": 94600000,
+      "raw": "$94.6m"
     },
     "BSC": {
       "perpsVolume24h": 24960000,
@@ -91800,8 +91800,8 @@
       "raw": "$2.227b"
     },
     "Base": {
-      "perpsVolume24h": 233090000,
-      "raw": "$233.09m"
+      "perpsVolume24h": 222670000,
+      "raw": "$222.67m"
     }
   },
   "history": {
@@ -92044,7 +92044,7 @@
       },
       {
         "date": "2026-08-20",
-        "value": 22668
+        "value": 22365
       }
     ],
     "Monad": [
@@ -92286,7 +92286,7 @@
       },
       {
         "date": "2026-08-20",
-        "value": 102500000
+        "value": 94600000
       }
     ],
     "BSC": [
@@ -93254,7 +93254,7 @@
       },
       {
         "date": "2026-08-20",
-        "value": 233090000
+        "value": 222670000
       }
     ]
   }
